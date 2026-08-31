@@ -1,0 +1,57 @@
+name: Feature request
+description: Propose a measurable product or engineering improvement.
+title: "feat: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user or operational problem without prescribing implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: State the expected behavior and measurable benefit.
+    validations:
+      required: true
+  - type: dropdown
+    id: users
+    attributes:
+      label: Primary users
+      multiple: true
+      options:
+        - Technician
+        - Supervisor
+        - Administrator
+        - Maintainer or developer
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Likely component
+      options:
+        - Mobile
+        - Admin web
+        - Cloud Functions
+        - Firebase rules or indexes
+        - Shared contracts
+        - Documentation or tooling
+        - Not yet known
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Security and data considerations
+      description: Note authentication, authorization, location, photos, retention, audit, or privacy impact.

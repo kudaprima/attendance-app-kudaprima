@@ -1,0 +1,11 @@
+# Temporary owner while the repository has one contributor.
+# Replace with @kudaprima/attendance-maintainers after that team exists.
+* @anubizzzz
+
+# Security- and governance-sensitive paths are listed explicitly for visibility.
+/.github/ @anubizzzz
+/.agents/ @anubizzzz
+/firebase/ @anubizzzz
+/services/functions/ @anubizzzz
+/docs/security-and-retention.md @anubizzzz
+/SECURITY.md @anubizzzz
