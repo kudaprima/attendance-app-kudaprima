@@ -1,0 +1,30 @@
+{
+  "name": "@kuda-prima/attendance",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": "22.x",
+    "pnpm": ">=10.33.0 <11"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "dev:admin": "pnpm --filter @kuda-prima/admin dev",
+    "dev:functions": "pnpm --filter @kuda-prima/functions build:watch",
+    "emulators": "firebase emulators:start --project kuda-prima-attandance-dev",
+    "firebase": "firebase",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "firebase-tools": "15.28.2",
+    "oxlint": "^1.80.0",
+    "prettier": "3.9.6",
+    "typescript": "~6.0.3",
+    "vitest": "4.1.11"
+  }
+}

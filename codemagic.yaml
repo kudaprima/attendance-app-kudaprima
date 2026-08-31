@@ -1,0 +1,22 @@
+workflows:
+  mobile-quality:
+    name: Mobile Quality (Manual)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: 3.47.2
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Resolve Flutter dependencies
+        script: |
+          cd apps/mobile
+          flutter pub get
+      - name: Analyze Dart
+        script: |
+          cd apps/mobile
+          flutter analyze
+      - name: Run Flutter tests
+        script: |
+          cd apps/mobile
+          flutter test

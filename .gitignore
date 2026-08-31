@@ -1,0 +1,39 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+**/firebase_options.dart
+**/google-services.json
+**/GoogleService-Info.plist
+
+# JavaScript
+node_modules/
+.pnpm-store/
+dist/
+services/functions/lib/
+coverage/
+*.tsbuildinfo
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# IDE and OS
+.idea/
+.vscode/*.log
+.tools/
+.DS_Store
+Thumbs.db
+
+# Local emulator data
+.emulator-data/

@@ -1,0 +1,9 @@
+packages:
+  - "apps/admin"
+  - "services/functions"
+  - "packages/*"
+
+onlyBuiltDependencies:
+  - "@firebase/util"
+  - esbuild
+  - protobufjs

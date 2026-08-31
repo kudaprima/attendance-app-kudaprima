@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info:
+  title: PT Kuda Prima Attendance API
+  version: 0.1.0
+  description: Contract for explicit HTTP endpoints. Firebase callable functions remain documented in code.
+servers:
+  - url: http://127.0.0.1:5001/kuda-prima-attandance-dev/asia-southeast2
+    description: Firebase Functions emulator
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy.
