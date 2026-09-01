@@ -1,0 +1,72 @@
+{
+  "dart.flutterSdkPath": "D:\\FlutterSDK",
+  "dart.addSdkToTerminalPath": true,
+  "files.encoding": "utf8",
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.dart_tool": true,
+    "**/.emulator-data": true,
+    "**/.firebase": true,
+    "**/.gradle": true,
+    "**/.pnpm-store": true,
+    "**/.tools": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "services/functions/lib": true
+  },
+  "search.exclude": {
+    "**/.dart_tool/**": true,
+    "**/.emulator-data/**": true,
+    "**/.firebase/**": true,
+    "**/.gradle/**": true,
+    "**/.pnpm-store/**": true,
+    "**/.tools/**": true,
+    "**/build/**": true,
+    "**/dist/**": true,
+    "**/node_modules/**": true,
+    "services/functions/lib/**": true
+  },
+  "files.watcherExclude": {
+    "**/.dart_tool/**": true,
+    "**/.emulator-data/**": true,
+    "**/.firebase/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.gradle/**": true,
+    "**/.pnpm-store/**": true,
+    "**/.tools/**": true,
+    "**/build/**": true,
+    "**/dist/**": true,
+    "**/node_modules/**": true,
+    "services/functions/lib/**": true
+  },
+  "workbench.editorAssociations": {
+    "*.xml": "default"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "npm.packageManager": "pnpm",
+  "java.server.launchMode": "LightWeight",
+  "java.import.gradle.enabled": false,
+  "java.project.importOnFirstTimeStartup": "disabled",
+  "java.configuration.updateBuildConfiguration": "disabled",
+  "java.import.gradle.user.home": "D:\\Development\\Caches\\gradle",
+  "gradle.autoDetect": "off",
+  "terminal.integrated.env.windows": {
+    "ANDROID_HOME": "D:\\Android\\Sdk",
+    "ANDROID_SDK_ROOT": "D:\\Android\\Sdk",
+    "ANDROID_USER_HOME": "D:\\Android\\UserHome",
+    "ANDROID_AVD_HOME": "D:\\Android\\Avd",
+    "FIREBASE_EMULATORS_PATH": "D:\\Development\\Caches\\firebase-emulators",
+    "GRADLE_USER_HOME": "D:\\Development\\Caches\\gradle",
+    "NPM_CONFIG_CACHE": "D:\\Development\\Caches\\npm",
+    "PUB_CACHE": "D:\\Development\\Caches\\dart-pub",
+    "SKIP_JDK_VERSION_CHECK": "1"
+  },
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
+  }
+}

@@ -15,6 +15,7 @@ coverage/
 *.tsbuildinfo
 
 # Flutter / Dart
+.gradle/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
