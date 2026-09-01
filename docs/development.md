@@ -50,6 +50,20 @@ flutterfire configure --project=kuda-prima-attandance-dev --platforms=android,io
 
 Periksa diff sebelum commit karena perintah kedua menghasilkan konfigurasi aplikasi. Tidak ada deploy otomatis dari mesin lokal.
 
+File **apps/mobile/firebase.json**, **firebase_options.dart**, **google-services.json**, dan **GoogleService-Info.plist** adalah konfigurasi generated lokal yang tidak di-commit. Android memakai konfigurasi native **google-services.json**; Firebase diinisialisasi tanpa menyalin identifier project ke source tracked.
+
+Jalankan Auth Emulator dari root, lalu mobile dengan flag eksplisit berikut:
+
+```powershell
+pnpm emulators:auth
+cd apps\mobile
+flutter run --dart-define=USE_FIREBASE_EMULATORS=true
+```
+
+Android Emulator mengakses host melalui **10.0.2.2:9099**. iOS simulator dan host desktop memakai **127.0.0.1:9099**. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug.
+
+Gunakan **pnpm emulators** hanya ketika Functions, Firestore, Hosting, dan Storage juga diperlukan. Untuk tahap autentikasi, **pnpm emulators:auth** memperkecil penggunaan resource dan mencegah service yang belum diemulasikan ikut dipanggil oleh Functions.
+
 ## Quality gate
 
 Perubahan harus lulus format, lint, typecheck, unit test, dan build yang relevan. Uji aturan domain terpisah dari widget/UI. Untuk fungsi yang menyentuh Firestore, tambahkan test terhadap Firebase Emulator Suite.

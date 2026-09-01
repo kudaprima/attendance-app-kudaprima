@@ -1,3 +1,4 @@
+import 'package:attendance/src/core/config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -97,6 +98,14 @@ class AttendanceHomePage extends StatelessWidget {
               title: 'Antrean offline',
               subtitle: '0 event menunggu sinkronisasi',
             ),
+            if (AppConfig.useFirebaseEmulators)
+              _StatusTile(
+                icon: Icons.developer_mode_outlined,
+                title: 'Firebase development',
+                subtitle:
+                    'Auth Emulator aktif di ${AppConfig.firebaseEmulatorHost}:'
+                    '${AppConfig.authEmulatorPort}',
+              ),
             const _StatusTile(
               icon: Icons.badge_outlined,
               title: 'Profil karyawan',
@@ -110,8 +119,12 @@ class AttendanceHomePage extends StatelessWidget {
 
   void _showDevelopmentMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Firebase dev akan diaktifkan setelah konfigurasi akun.'),
+      SnackBar(
+        content: Text(
+          AppConfig.useFirebaseEmulators
+              ? 'Auth Emulator aktif. Login development tersedia pada tahap berikutnya.'
+              : 'Firebase siap. Login Google tersedia pada tahap berikutnya.',
+        ),
       ),
     );
   }
