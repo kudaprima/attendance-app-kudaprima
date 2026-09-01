@@ -18,7 +18,7 @@ Vitest covers admin, contracts, and Functions; Flutter Test covers mobile. Name 
 
 ## Commit & Pull Request Guidelines
 
-Use imperative Conventional Commits such as **feat(mobile): add field attendance note**. Keep commits focused. Pull requests must explain behavior, tests, security/data impact, linked issue, and screenshots for UI changes. Never commit credentials or generated Firebase app configuration.
+Read **CONTRIBUTING.md** before Git operations. Use imperative Conventional Commits such as **feat(mobile): add field attendance note** and short-lived branches such as **feat/mobile-attendance-note**. Keep commits focused. Pull requests must explain behavior, tests, security/data impact, linked issue, and screenshots for UI changes. Never commit credentials or generated Firebase app configuration. For branch, commit, push, pull request, or recovery work, apply **.agents/skills/kuda-prima-github-governance**.
 
 ## Domain and Safety Guardrails
 

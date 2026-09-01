@@ -1,0 +1,58 @@
+name: Bug report
+description: Report reproducible incorrect behavior using synthetic data.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, employee personal data, attendance photos, or production records.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Mobile
+        - Admin web
+        - Cloud Functions
+        - Firebase rules or indexes
+        - Shared contracts
+        - Development tooling
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: Explain what happened and why it is incorrect.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Use a development environment and synthetic data.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include app version, OS/device, browser, and development or emulator context.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, personal data, photos, and production records from this report.
+          required: true

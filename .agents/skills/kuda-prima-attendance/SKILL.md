@@ -11,7 +11,7 @@ Use this workflow for every product or code change in this repository.
 2. Read **docs/architecture.md**, **docs/domain-rules.md**, and **docs/security-and-retention.md**. For setup or account work, also read **docs/development.md** and **docs/setup/external-accounts.md**.
 3. Identify the affected boundary: Flutter mobile, React admin, Cloud Functions, Firebase rules, or shared contracts.
 4. Preserve these invariants:
-   - Technical Firebase Project ID is exactly **kuda-prima-attandance-dev**; user-facing names use “attendance”.
+   - Technical Firebase Project ID is exactly **kuda-prima-attandance-dev**; user-facing names use **attendance**.
    - Mobile/admin submit commands through Functions; raw attendance events are immutable.
    - Outside-office attendance is allowed with a required note and is not automatically an approval case.
    - Location and camera run only during attendance; gallery upload and background tracking stay disabled.
@@ -21,5 +21,7 @@ Use this workflow for every product or code change in this repository.
 6. Run the narrow checks first, then the full relevant quality gate from **AGENTS.md**.
 
 Use **. .\scripts\use-dev-env.ps1** before commands on Windows so caches and AVD remain on drive D.
+
+For any Git or GitHub mutation, also apply **.agents/skills/kuda-prima-github-governance**.
 
 Never request passwords, OTPs, recovery codes, service-account keys, or signing certificates. Never deploy, enable billing, create production resources, or publish store builds without explicit user authorization.
