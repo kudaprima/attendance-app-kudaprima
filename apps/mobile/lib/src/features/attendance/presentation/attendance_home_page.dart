@@ -119,8 +119,10 @@ class AttendanceHomePage extends ConsumerWidget {
                 icon: Icons.developer_mode_outlined,
                 title: 'Firebase development',
                 subtitle:
-                    'Auth Emulator aktif di ${AppConfig.firebaseEmulatorHost}:'
-                    '${AppConfig.authEmulatorPort}',
+                    'Auth ${AppConfig.firebaseEmulatorHost}:'
+                    '${AppConfig.authEmulatorPort} • Firestore '
+                    '${AppConfig.firebaseEmulatorHost}:'
+                    '${AppConfig.firestoreEmulatorPort}',
               ),
             const _StatusTile(
               icon: Icons.badge_outlined,
@@ -138,7 +140,7 @@ class AttendanceHomePage extends ConsumerWidget {
       SnackBar(
         content: Text(
           AppConfig.useFirebaseEmulators
-              ? 'Auth Emulator aktif. Login development tersedia pada tahap berikutnya.'
+              ? 'Auth dan Firestore Emulator dikonfigurasi untuk development.'
               : 'Firebase siap. Login Google tersedia pada tahap berikutnya.',
         ),
       ),

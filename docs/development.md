@@ -12,7 +12,7 @@ Buka root repository, bukan hanya **apps/mobile** atau **apps/admin**. Konfigura
 
 **node_modules** juga dikecualikan dari Dart Analysis Server. Firebase CLI menyertakan template proyek Dart yang dependency-nya belum dipulihkan; template tersebut bukan source aplikasi dan tidak boleh diedit atau dijalankan dengan **dart pub get**.
 
-Gunakan **Terminal: Run Task** untuk **Project: Bootstrap**, **Admin: Dev**, **Android: Start Emulator**, atau **Quality: All**. Gunakan konfigurasi **Flutter: Mobile (Auth Emulator)** pada panel Run and Debug. Setelah perubahan konfigurasi workspace, jalankan **Developer: Reload Window** agar extension host dan terminal baru memuat environment yang benar.
+Gunakan **Terminal: Run Task** untuk **Project: Bootstrap**, **Admin: Dev**, **Android: Start Emulator**, atau **Quality: All**. Gunakan konfigurasi **Flutter: Mobile (Firebase Emulators)** pada panel Run and Debug. Setelah perubahan konfigurasi workspace, jalankan **Developer: Reload Window** agar extension host dan terminal baru memuat environment yang benar.
 
 Java memakai mode ringan dan Gradle auto-import dinonaktifkan untuk workspace ini karena Flutter mengelola build Android. Aktifkan mode Java standar serta import Gradle sementara hanya ketika melakukan pengembangan native Android yang memerlukan analisis semantik Java lengkap.
 
@@ -52,17 +52,17 @@ Periksa diff sebelum commit karena perintah kedua menghasilkan konfigurasi aplik
 
 File **apps/mobile/firebase.json**, **firebase_options.dart**, **google-services.json**, dan **GoogleService-Info.plist** adalah konfigurasi generated lokal yang tidak di-commit. Android memakai konfigurasi native **google-services.json**; Firebase diinisialisasi tanpa menyalin identifier project ke source tracked.
 
-Jalankan Auth Emulator dari root, lalu mobile dengan flag eksplisit berikut:
+Jalankan Auth dan Firestore Emulator dari root, lalu mobile dengan flag eksplisit berikut:
 
 ```powershell
-pnpm emulators:auth
+pnpm emulators:profile
 cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Android Emulator mengakses host melalui **10.0.2.2:9099**. iOS simulator dan host desktop memakai **127.0.0.1:9099**. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug.
+Android Emulator mengakses Auth melalui **10.0.2.2:9099** dan Firestore melalui **10.0.2.2:8080**. iOS simulator dan host desktop memakai **127.0.0.1** dengan port yang sama. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug. Persistensi Firestore dinonaktifkan khusus pada mode emulator agar cache lokal tidak mencampur data antar-sesi pengujian; konfigurasi Firebase non-emulator tidak diubah.
 
-Gunakan **pnpm emulators** hanya ketika Functions, Firestore, Hosting, dan Storage juga diperlukan. Untuk tahap autentikasi, **pnpm emulators:auth** memperkecil penggunaan resource dan mencegah service yang belum diemulasikan ikut dipanggil oleh Functions.
+Gunakan **pnpm emulators** hanya ketika Functions, Hosting, dan Storage juga diperlukan. **pnpm emulators:profile** adalah profil development utama untuk alur login dan profil. **pnpm emulators:auth** tetap tersedia untuk pengujian autentikasi secara terisolasi.
 
 ### Akun autentikasi development
 
@@ -83,14 +83,14 @@ Seeder hanya terhubung ke **127.0.0.1:9099** dan membuat atau memperbarui akun b
 
 Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Jalankan ulang seeder setiap kali Auth Emulator dimulai ulang karena data emulator bersifat sementara.
 
-Kemudian jalankan aplikasi dengan **Flutter: Mobile (Auth Emulator)** atau:
+Kemudian jalankan aplikasi dengan **Flutter: Mobile (Firebase Emulators)** atau:
 
 ```powershell
 cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Uji login, pemulihan sesi setelah aplikasi dibuka ulang, pergantian ketiga role melalui logout/login, kata sandi salah, dan logout. Auth Emulator UI pada **http://127.0.0.1:4000/auth** harus menampilkan tiga akun. Akun ini belum memiliki dokumen profil Firestore; profile completion ditambahkan pada vertical slice berikutnya.
+Uji login, pemulihan sesi setelah aplikasi dibuka ulang, pergantian ketiga role melalui logout/login, kata sandi salah, dan logout. Emulator Suite UI pada **http://127.0.0.1:4000** harus menampilkan Auth pada port **9099** dan Firestore pada port **8080**. Akun ini belum memiliki dokumen profil Firestore; profile completion ditambahkan pada vertical slice berikutnya.
 
 ## Quality gate
 

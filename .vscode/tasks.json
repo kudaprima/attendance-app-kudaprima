@@ -46,6 +46,24 @@
       "problemMatcher": []
     },
     {
+      "label": "Firebase: Auth + Firestore Emulators",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Set-Location -LiteralPath '${workspaceFolder}'; . ./scripts/use-dev-env.ps1; pnpm emulators:profile }"
+      ],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Firebase: Auth Emulator",
       "type": "process",
       "command": "powershell.exe",
