@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present build",
-    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "build:contracts": "pnpm --filter @kuda-prima/contracts build",
+    "check": "pnpm build:contracts && pnpm lint && pnpm typecheck && pnpm test",
     "dev:admin": "pnpm --filter @kuda-prima/admin dev",
     "dev:functions": "pnpm --filter @kuda-prima/functions build:watch",
     "emulators": "firebase emulators:start --project kuda-prima-attandance-dev",
