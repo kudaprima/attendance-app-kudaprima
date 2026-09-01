@@ -1,6 +1,7 @@
 {
   "dart.flutterSdkPath": "D:\\FlutterSDK",
   "dart.addSdkToTerminalPath": true,
+  "dart.analysisExcludedFolders": ["node_modules"],
   "files.encoding": "utf8",
   "files.eol": "\n",
   "files.exclude": {

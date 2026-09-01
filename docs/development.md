@@ -10,6 +10,8 @@ Flutter Doctor dapat menampilkan warning bahwa junction **D:\FlutterSDK** mengar
 
 Buka root repository, bukan hanya **apps/mobile** atau **apps/admin**. Konfigurasi bersama di **.vscode** memakai junction Flutter **D:\FlutterSDK**, mengarahkan cache terminal ke D, mengembalikan file XML ke editor teks default, dan mengecualikan dependency serta artefak build dari watcher/search.
 
+**node_modules** juga dikecualikan dari Dart Analysis Server. Firebase CLI menyertakan template proyek Dart yang dependency-nya belum dipulihkan; template tersebut bukan source aplikasi dan tidak boleh diedit atau dijalankan dengan **dart pub get**.
+
 Gunakan **Terminal: Run Task** untuk **Project: Bootstrap**, **Admin: Dev**, **Android: Start Emulator**, atau **Quality: All**. Gunakan konfigurasi **Flutter: Mobile** pada panel Run and Debug. Setelah perubahan konfigurasi workspace, jalankan **Developer: Reload Window** agar extension host dan terminal baru memuat environment yang benar.
 
 Java memakai mode ringan dan Gradle auto-import dinonaktifkan untuk workspace ini karena Flutter mengelola build Android. Aktifkan mode Java standar serta import Gradle sementara hanya ketika melakukan pengembangan native Android yang memerlukan analisis semantik Java lengkap.
