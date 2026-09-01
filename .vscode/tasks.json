@@ -64,6 +64,23 @@
       }
     },
     {
+      "label": "Firebase: Seed Auth Accounts",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Set-Location -LiteralPath '${workspaceFolder}'; . ./scripts/use-dev-env.ps1; pnpm emulators:auth:seed }"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Quality: Web and Functions",
       "type": "process",
       "command": "powershell.exe",

@@ -1,12 +1,10 @@
-import 'package:attendance/src/features/attendance/presentation/attendance_home_page.dart';
+import 'package:attendance/src/features/auth/presentation/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 final _router = GoRouter(
-  routes: [
-    GoRoute(path: '/', builder: (context, state) => const AttendanceHomePage()),
-  ],
+  routes: [GoRoute(path: '/', builder: (context, state) => const AuthGate())],
 );
 
 class AttendanceApp extends StatelessWidget {
