@@ -5,6 +5,7 @@
 **/firebase_options.dart
 **/google-services.json
 **/GoogleService-Info.plist
+/apps/mobile/firebase.json
 
 # JavaScript
 node_modules/

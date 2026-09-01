@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json --watch",
     "lint": "oxlint src test",
+    "seed:auth-emulator": "pnpm build && node lib/development/seed-auth-emulator.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -2,12 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter: Mobile",
+      "name": "Flutter: Mobile (Auth Emulator)",
       "type": "dart",
       "request": "launch",
       "cwd": "${workspaceFolder}/apps/mobile",
       "program": "${workspaceFolder}/apps/mobile/lib/main.dart",
-      "flutterMode": "debug"
+      "flutterMode": "debug",
+      "toolArgs": ["--dart-define=USE_FIREBASE_EMULATORS=true"]
     }
   ]
 }

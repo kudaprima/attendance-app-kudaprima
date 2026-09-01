@@ -13,6 +13,8 @@
     "dev:admin": "pnpm --filter @kuda-prima/admin dev",
     "dev:functions": "pnpm --filter @kuda-prima/functions build:watch",
     "emulators": "firebase emulators:start --project kuda-prima-attandance-dev",
+    "emulators:auth": "firebase emulators:start --only auth --project kuda-prima-attandance-dev",
+    "emulators:auth:seed": "pnpm --filter @kuda-prima/functions seed:auth-emulator",
     "firebase": "firebase",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

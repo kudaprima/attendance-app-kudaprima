@@ -1,11 +1,18 @@
+import 'package:attendance/src/core/config/app_config.dart';
+import 'package:attendance/src/features/auth/application/auth_error_message.dart';
+import 'package:attendance/src/features/auth/application/auth_providers.dart';
+import 'package:attendance/src/features/auth/domain/auth_session.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class AttendanceHomePage extends StatelessWidget {
-  const AttendanceHomePage({super.key});
+class AttendanceHomePage extends ConsumerWidget {
+  const AttendanceHomePage({required this.session, super.key});
+
+  final AuthSession session;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final date = DateFormat('EEEE, d MMMM y', 'id_ID').format(now);
 
@@ -18,6 +25,11 @@ class AttendanceHomePage extends StatelessWidget {
             onPressed: () => _showDevelopmentMessage(context),
             icon: const Icon(Icons.settings_outlined),
           ),
+          IconButton(
+            tooltip: 'Keluar',
+            onPressed: () => _signOut(context, ref),
+            icon: const Icon(Icons.logout),
+          ),
         ],
       ),
       body: SafeArea(
@@ -25,12 +37,17 @@ class AttendanceHomePage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Selamat datang',
+              'Selamat datang, ${session.greetingName}',
               style: Theme.of(context).textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(date, style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Peran: ${session.role.label}',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
             const SizedBox(height: 20),
             Card(
               child: Padding(
@@ -97,6 +114,14 @@ class AttendanceHomePage extends StatelessWidget {
               title: 'Antrean offline',
               subtitle: '0 event menunggu sinkronisasi',
             ),
+            if (AppConfig.useFirebaseEmulators)
+              _StatusTile(
+                icon: Icons.developer_mode_outlined,
+                title: 'Firebase development',
+                subtitle:
+                    'Auth Emulator aktif di ${AppConfig.firebaseEmulatorHost}:'
+                    '${AppConfig.authEmulatorPort}',
+              ),
             const _StatusTile(
               icon: Icons.badge_outlined,
               title: 'Profil karyawan',
@@ -110,10 +135,24 @@ class AttendanceHomePage extends StatelessWidget {
 
   void _showDevelopmentMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Firebase dev akan diaktifkan setelah konfigurasi akun.'),
+      SnackBar(
+        content: Text(
+          AppConfig.useFirebaseEmulators
+              ? 'Auth Emulator aktif. Login development tersedia pada tahap berikutnya.'
+              : 'Firebase siap. Login Google tersedia pada tahap berikutnya.',
+        ),
       ),
     );
+  }
+
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(AuthErrorMessage.from(error))));
+    }
   }
 }
 
