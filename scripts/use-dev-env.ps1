@@ -10,6 +10,10 @@ $env:PUB_CACHE = Join-Path $developmentRoot 'Caches\dart-pub'
 $env:PNPM_HOME = Join-Path $developmentRoot 'pnpm'
 $env:FIREBASE_EMULATORS_PATH = Join-Path $developmentRoot 'Caches\firebase-emulators'
 
+# OpenJDK 21 reports a single-component version that Android's Windows
+# sdkmanager launcher misclassifies. The actual Java requirement is satisfied.
+$env:SKIP_JDK_VERSION_CHECK = '1'
+
 @(
   $env:GRADLE_USER_HOME,
   $env:NPM_CONFIG_CACHE,

@@ -1,0 +1,87 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Project: Bootstrap",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/bootstrap.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Admin: Dev",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Set-Location -LiteralPath '${workspaceFolder}'; . ./scripts/use-dev-env.ps1; pnpm dev:admin }"
+      ],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Android: Start Emulator",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/start-android-emulator.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Quality: Web and Functions",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Set-Location -LiteralPath '${workspaceFolder}'; . ./scripts/use-dev-env.ps1; pnpm format:check; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; pnpm check; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; pnpm build; exit $LASTEXITCODE }"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Quality: Flutter",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Set-Location -LiteralPath '${workspaceFolder}'; . ./scripts/use-dev-env.ps1; Push-Location ./apps/mobile; try { dart format --output=none --set-exit-if-changed lib test; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; flutter analyze; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; flutter test; exit $LASTEXITCODE } finally { Pop-Location } }"
+      ],
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Quality: All",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Quality: Web and Functions", "Quality: Flutter"],
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}
