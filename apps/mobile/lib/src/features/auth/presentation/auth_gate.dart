@@ -1,7 +1,7 @@
-import 'package:attendance/src/features/attendance/presentation/attendance_home_page.dart';
 import 'package:attendance/src/features/auth/application/auth_error_message.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/presentation/login_page.dart';
+import 'package:attendance/src/features/profile/presentation/employee_profile_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,7 +16,7 @@ class AuthGate extends ConsumerWidget {
       loading: () => const _AuthLoadingPage(),
       data: (value) => value == null
           ? const LoginPage()
-          : AttendanceHomePage(session: value),
+          : EmployeeProfileGate(session: value),
       error: (error, stackTrace) => _AuthFailurePage(error: error),
     );
   }

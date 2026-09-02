@@ -2,14 +2,20 @@ import 'package:attendance/src/core/config/app_config.dart';
 import 'package:attendance/src/features/auth/application/auth_error_message.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
+import 'package:attendance/src/features/profile/domain/employee_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 class AttendanceHomePage extends ConsumerWidget {
-  const AttendanceHomePage({required this.session, super.key});
+  const AttendanceHomePage({
+    required this.session,
+    required this.profile,
+    super.key,
+  });
 
   final AuthSession session;
+  final EmployeeProfile profile;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,7 +43,7 @@ class AttendanceHomePage extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Selamat datang, ${session.greetingName}',
+              'Selamat datang, ${profile.fullName}',
               style: Theme.of(context).textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
@@ -45,7 +51,7 @@ class AttendanceHomePage extends ConsumerWidget {
             Text(date, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 4),
             Text(
-              'Peran: ${session.role.label}',
+              '${profile.employeeId} • ${session.role.label}',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 20),
@@ -124,10 +130,12 @@ class AttendanceHomePage extends ConsumerWidget {
                     '${AppConfig.firebaseEmulatorHost}:'
                     '${AppConfig.firestoreEmulatorPort}',
               ),
-            const _StatusTile(
+            _StatusTile(
               icon: Icons.badge_outlined,
               title: 'Profil karyawan',
-              subtitle: 'Lengkapi nama lengkap dan nomor telepon setelah login',
+              subtitle:
+                  '${profile.employmentStatus.label} • Mulai '
+                  '${profile.employmentStartDate}',
             ),
           ],
         ),
