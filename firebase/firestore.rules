@@ -16,13 +16,48 @@ service cloud.firestore {
         && request.auth.token.role in ['admin', 'supervisor'];
     }
 
-    match /users/{userId} {
-      allow read: if activeUser() && (request.auth.uid == userId || isManager());
-      allow update: if activeUser()
+    function validOptionalString(value, maximumLength) {
+      return value == null
+        || (value is string && value.size() <= maximumLength);
+    }
+
+    function validOwnProfileUpdate(userId) {
+      let changedFields = request.resource.data.diff(resource.data).affectedKeys();
+      return activeUser()
         && request.auth.uid == userId
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['fullName', 'phone', 'birthDate', 'gender', 'homeAddress', 'updatedAt', 'updatedBy']);
+        && changedFields.hasOnly([
+          'fullName',
+          'phone',
+          'birthDate',
+          'gender',
+          'homeAddress',
+          'updatedAt',
+          'updatedBy'
+        ])
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() >= 2
+        && request.resource.data.fullName.size() <= 120
+        && validOptionalString(request.resource.data.phone, 30)
+        && validOptionalString(request.resource.data.birthDate, 10)
+        && request.resource.data.gender in [null, 'male', 'female']
+        && validOptionalString(request.resource.data.homeAddress, 500)
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn()
+        && (request.auth.uid == userId || isManager());
+      allow update: if validOwnProfileUpdate(userId);
       allow create, delete: if false;
+    }
+
+    match /systemCounters/{counterId} {
+      allow read, write: if false;
+    }
+
+    match /auditLogs/{auditId} {
+      allow read, write: if false;
     }
 
     match /attendanceEvents/{eventId} {
