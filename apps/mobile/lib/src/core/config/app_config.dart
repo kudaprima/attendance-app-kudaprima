@@ -7,6 +7,7 @@ abstract final class AppConfig {
     'USE_FIREBASE_EMULATORS',
   );
   static const authEmulatorPort = 9099;
+  static const firestoreEmulatorPort = 8080;
   static const officeGeofenceRadiusMeters = 100.0;
   static const offlineQueueLimit = Duration(hours: 12);
   static const photoRetention = Duration(days: 90);

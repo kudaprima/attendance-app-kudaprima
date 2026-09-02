@@ -1,4 +1,5 @@
 import 'package:attendance/src/core/config/app_config.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -18,6 +19,14 @@ abstract final class FirebaseBootstrap {
     await FirebaseAuth.instance.useAuthEmulator(
       AppConfig.firebaseEmulatorHost,
       AppConfig.authEmulatorPort,
+    );
+
+    final firestore = FirebaseFirestore.instance;
+    firestore.settings = const Settings(persistenceEnabled: false);
+    firestore.useFirestoreEmulator(
+      AppConfig.firebaseEmulatorHost,
+      AppConfig.firestoreEmulatorPort,
+      automaticHostMapping: false,
     );
   }
 }
