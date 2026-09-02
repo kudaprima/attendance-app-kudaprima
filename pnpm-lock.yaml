@@ -160,6 +160,12 @@ importers:
         specifier: 7.3.2
         version: 7.3.2(firebase-admin@14.3.0(@firebase/app-compat@0.5.17)(@firebase/app@0.16.1))
     devDependencies:
+      "@firebase/rules-unit-testing":
+        specifier: 5.0.2
+        version: 5.0.2(firebase@12.18.0)
+      firebase:
+        specifier: 12.18.0
+        version: 12.18.0
       oxlint:
         specifier: 1.80.0
         version: 1.80.0
@@ -873,6 +879,15 @@ packages:
       }
     peerDependencies:
       "@firebase/app": 0.x
+
+  "@firebase/rules-unit-testing@5.0.2":
+    resolution:
+      {
+        integrity: sha512-g053AaFcuf4gpAQbwRK/GIIGfPHhpomW3qkIYLi4xnaTUrf65yGP+0TPdojoXfB/ejrfevkXmMs5qXOTSwdN6A==,
+      }
+    engines: { node: ">=20.0.0" }
+    peerDependencies:
+      firebase: ^12.0.0
 
   "@firebase/storage-compat@0.4.5":
     resolution:
@@ -10062,6 +10077,10 @@ snapshots:
       "@firebase/logger": 0.5.2
       "@firebase/util": 1.15.3
       tslib: 2.8.1
+
+  "@firebase/rules-unit-testing@5.0.2(firebase@12.18.0)":
+    dependencies:
+      firebase: 12.18.0
 
   "@firebase/storage-compat@0.4.5(@firebase/app-compat@0.5.17)(@firebase/app-types@0.9.6)(@firebase/app@0.16.1)":
     dependencies:

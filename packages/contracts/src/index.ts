@@ -14,6 +14,27 @@ export const attendanceEventTypeSchema = z.enum([
 ]);
 export const attendanceLocationTypeSchema = z.enum(["office", "field"]);
 
+export const employeeIdSchema = z.string().regex(/^KP-\d{6}$/);
+
+const calendarDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return (
+      !Number.isNaN(date.valueOf()) && date.toISOString().startsWith(value)
+    );
+  }, "Tanggal kalender tidak valid.");
+
+export const provisionEmployeeProfileCommandSchema = z.object({
+  authUid: z.string().trim().min(1).max(128),
+  email: z.string().trim().toLowerCase().pipe(z.email()),
+  fullName: z.string().trim().min(2).max(120),
+  role: userRoleSchema,
+  employmentStatus: employmentStatusSchema,
+  employmentStartDate: calendarDateSchema,
+});
+
 export const attendanceCommandSchema = z
   .object({
     eventType: attendanceEventTypeSchema,
@@ -38,4 +59,7 @@ export const attendanceCommandSchema = z
 export type AttendanceCommand = z.infer<typeof attendanceCommandSchema>;
 export type AttendanceEventType = z.infer<typeof attendanceEventTypeSchema>;
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
+export type ProvisionEmployeeProfileCommand = z.infer<
+  typeof provisionEmployeeProfileCommandSchema
+>;
 export type UserRole = z.infer<typeof userRoleSchema>;

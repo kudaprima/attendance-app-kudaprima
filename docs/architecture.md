@@ -24,3 +24,9 @@ React admin ────┘                                  │              �
 Collection **attendanceEvents** append-only. Koreksi, persetujuan, dan pembatalan dibuat sebagai record baru dengan actor, alasan, dan server timestamp. Waktu disimpan UTC dan ditampilkan sebagai Asia/Jakarta. Employee ID publik berbentuk **KP-000001**; document ID internal tetap acak.
 
 Tidak ada pelacakan 24 jam. Lokasi dan kamera hanya digunakan ketika pengguna memulai presensi.
+
+## Profil karyawan
+
+Dokumen **users/{authUid}** hanya dibuat oleh backend. Provisioning menghasilkan Employee ID berurutan **KP-000001**, menyimpan role, status kerja, tanggal mulai, status aktif, serta server timestamp. Counter internal berada di **systemCounters** dan setiap provisioning menambahkan record immutable di **auditLogs**.
+
+Mobile membaca profil setelah Firebase Auth berhasil. Akun tanpa profil, nonaktif, atau memiliki role/email yang tidak konsisten tidak dapat masuk ke halaman presensi. Pengguna tidak dapat membuat profil atau mengubah Employee ID, role, status kerja, tanggal mulai, dan status aktif dari client.
