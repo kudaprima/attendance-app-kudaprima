@@ -46,6 +46,19 @@
       "problemMatcher": []
     },
     {
+      "label": "Android: Prepare Physical Device",
+      "type": "process",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/prepare-android-device.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Firebase: Auth + Firestore Emulators",
       "type": "process",
       "command": "powershell.exe",
