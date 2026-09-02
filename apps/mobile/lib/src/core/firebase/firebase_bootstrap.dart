@@ -19,6 +19,7 @@ abstract final class FirebaseBootstrap {
     await FirebaseAuth.instance.useAuthEmulator(
       AppConfig.firebaseEmulatorHost,
       AppConfig.authEmulatorPort,
+      automaticHostMapping: false,
     );
 
     final firestore = FirebaseFirestore.instance;
