@@ -6,7 +6,7 @@ This monorepo contains the Flutter employee app in **apps/mobile**, the React ad
 
 ## Build, Test, and Development Commands
 
-On Windows, first run **. .\scripts\use-dev-env.ps1** so caches and Android tooling use drive D. Use **pnpm install --frozen-lockfile** to restore JavaScript dependencies, **pnpm dev:admin** for the admin portal, and **pnpm emulators** for local Firebase services. Run **pnpm check** and **pnpm build** before review. For mobile, use **flutter analyze**, **flutter test**, and **flutter run** from **apps/mobile**. Start the Android 10 AVD with **.\scripts\start-android-emulator.ps1**.
+On Windows, first run **. .\scripts\use-dev-env.ps1** so caches and Android tooling use drive D. Use **pnpm install --frozen-lockfile** to restore JavaScript dependencies, **pnpm dev:admin** for the admin portal, and **pnpm emulators** for local Firebase services. Run **pnpm check** and **pnpm build** before review. For mobile, use **flutter analyze**, **flutter test**, and **flutter run** from **apps/mobile**. Start the Android 10 AVD with **.\scripts\start-android-emulator.ps1**. For USB hardware, run **.\scripts\prepare-android-device.ps1** and follow **docs/testing/android-physical-device.md**.
 
 ## Coding Style & Naming Conventions
 
@@ -19,6 +19,8 @@ Vitest covers admin, contracts, and Functions; Flutter Test covers mobile. Name 
 ## Commit & Pull Request Guidelines
 
 Read **CONTRIBUTING.md** before Git operations. Use imperative Conventional Commits such as **feat(mobile): add field attendance note** and short-lived branches such as **feat/mobile-attendance-note**. Keep commits focused. Pull requests must explain behavior, tests, security/data impact, linked issue, and screenshots for UI changes. Never commit credentials or generated Firebase app configuration. For branch, commit, push, pull request, or recovery work, apply **.agents/skills/kuda-prima-github-governance**.
+
+For Samsung or other physical Android device setup and diagnosis, apply **.agents/skills/kuda-prima-android-device-testing**.
 
 ## Domain and Safety Guardrails
 
