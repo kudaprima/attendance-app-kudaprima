@@ -18,6 +18,16 @@ void main() {
       );
     });
 
+    test('uses an explicit host override for a physical Android device', () {
+      expect(
+        AppConfig.firebaseEmulatorHostFor(
+          TargetPlatform.android,
+          override: ' 127.0.0.1 ',
+        ),
+        '127.0.0.1',
+      );
+    });
+
     test('uses the configured Auth and Firestore ports', () {
       expect(AppConfig.authEmulatorPort, 9099);
       expect(AppConfig.firestoreEmulatorPort, 8080);
