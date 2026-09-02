@@ -60,20 +60,20 @@ cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Android Emulator mengakses Auth melalui **10.0.2.2:9099** dan Firestore melalui **10.0.2.2:8080**. iOS simulator dan host desktop memakai **127.0.0.1** dengan port yang sama. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug. Persistensi Firestore dinonaktifkan khusus pada mode emulator agar cache lokal tidak mencampur data antar-sesi pengujian; konfigurasi Firebase non-emulator tidak diubah.
+Android Emulator mengakses Auth melalui **10.0.2.2:9099**, Firestore melalui **10.0.2.2:8080**, dan Functions melalui **10.0.2.2:5001**. iOS simulator dan host desktop memakai **127.0.0.1** dengan port yang sama. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug. Persistensi Firestore dinonaktifkan khusus pada mode emulator agar cache lokal tidak mencampur data antar-sesi pengujian; konfigurasi Firebase non-emulator tidak diubah.
 
 Gunakan **pnpm emulators** hanya ketika Functions, Hosting, dan Storage juga diperlukan. **pnpm emulators:profile** adalah profil development utama untuk alur login dan profil. **pnpm emulators:auth** tetap tersedia untuk pengujian autentikasi secara terisolasi.
 
-### Akun autentikasi development
+### Akun dan profil development
 
-Setelah Auth Emulator siap, buka terminal baru dari root repository dan jalankan seeder idempotent:
+Setelah profil emulator siap, buka terminal baru dari root repository dan jalankan seeder idempotent:
 
 ```powershell
 . .\scripts\use-dev-env.ps1
-pnpm emulators:auth:seed
+pnpm emulators:profile:seed
 ```
 
-Seeder hanya terhubung ke **127.0.0.1:9099** dan membuat atau memperbarui akun berikut:
+Seeder hanya terhubung ke Auth **127.0.0.1:9099** dan Firestore **127.0.0.1:8080**, lalu membuat atau memperbarui akun berikut:
 
 | Peran      | Email                             |
 | ---------- | --------------------------------- |
@@ -81,7 +81,7 @@ Seeder hanya terhubung ke **127.0.0.1:9099** dan membuat atau memperbarui akun b
 | Supervisor | **supervisor.dev@kudaprima.test** |
 | Admin      | **admin.dev@kudaprima.test**      |
 
-Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Jalankan ulang seeder setiap kali Auth Emulator dimulai ulang karena data emulator bersifat sementara.
+Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Seeder juga membuat profil **users**, counter Employee ID, dan audit provisioning melalui service backend yang sama secara idempotent. Jalankan ulang seeder setiap kali Emulator Suite dimulai ulang karena data emulator bersifat sementara. Gunakan **pnpm emulators:auth:seed** hanya untuk test Auth yang sengaja tidak membutuhkan profil.
 
 Kemudian jalankan aplikasi dengan **Flutter: Mobile (Firebase Emulators)** atau:
 
@@ -90,7 +90,22 @@ cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Uji login, pemulihan sesi setelah aplikasi dibuka ulang, pergantian ketiga role melalui logout/login, kata sandi salah, dan logout. Emulator Suite UI pada **http://127.0.0.1:4000** harus menampilkan Auth pada port **9099** dan Firestore pada port **8080**. Akun ini belum memiliki dokumen profil Firestore; profile completion ditambahkan pada vertical slice berikutnya.
+Uji login, pemulihan sesi setelah aplikasi dibuka ulang, pergantian ketiga role melalui logout/login, kata sandi salah, dan logout. Emulator Suite UI pada **http://127.0.0.1:4000** harus menampilkan Auth pada port **9099**, Firestore pada port **8080**, dan Functions pada port **5001**. Firestore harus berisi tiga dokumen **users**, **systemCounters/employeeId**, serta tiga record **auditLogs**. Dashboard menampilkan Employee ID dan status kerja dari profil, bukan dari input pengguna.
+
+### Integration test Firestore
+
+Jika Emulator Suite tidak berjalan, gunakan wrapper yang menyalakan Firestore sementara lalu menghentikannya otomatis:
+
+```powershell
+pnpm test:emulator:profile
+```
+
+Jika **pnpm emulators:profile** sedang berjalan, jangan membuka instance kedua pada port 8080. Jalankan test langsung terhadap emulator aktif, lalu jalankan ulang seeder karena test membersihkan data sintetisnya:
+
+```powershell
+pnpm --filter @kuda-prima/functions test:emulator
+pnpm emulators:profile:seed
+```
 
 ## Quality gate
 
