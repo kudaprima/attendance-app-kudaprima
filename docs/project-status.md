@@ -9,7 +9,8 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 - Tanggal: 3 September 2026
 - Baseline `main`: `1ad29f1` (`fix(mobile): stabilize physical emulator routing (#7)`)
-- Pekerjaan aktif: `feat/brand-system` (belum dipush atau dibuatkan PR)
+- Pekerjaan aktif: brand system diajukan melalui PR #8; job CI `mobile` dan
+  `web-and-functions` telah lulus
 - Tahap produk: fondasi development serta autentikasi/profil development; belum siap produksi
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
@@ -45,8 +46,8 @@ serta self-approval dilarang.
 | Admin           | Shell responsif dan komponen shadcn/ui tersedia, tetapi KPI/tabel masih data kosong dan belum terhubung ke backend.                                  |
 | Kualitas        | Pada PR #7: Prettier, lint/typecheck/test/build pnpm, Dart format, `flutter analyze`, 16 Flutter tests, dan simulasi login perangkat fisik lulus.    |
 
-PR #7 telah di-squash merge pada 3 September 2026. Branch aktif menambahkan source logo
-kanonis, login mobile berlogo, dan design token bersama untuk mobile/admin. Prettier, seluruh
+PR #7 telah di-squash merge pada 3 September 2026. PR #8 menambahkan source logo kanonis,
+login mobile berlogo, dan design token bersama untuk mobile/admin. Prettier, seluruh
 check/build pnpm, `flutter analyze`, 18 test Flutter, serta APK debug telah lulus secara lokal;
 visual smoke test halaman login pada Samsung SM-M156B juga lulus. Source logo 120 x 79 px
 masih menjadi risiko ketajaman yang harus diselesaikan sebelum rilis store.
