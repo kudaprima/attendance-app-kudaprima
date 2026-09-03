@@ -25,6 +25,10 @@ Collection **attendanceEvents** append-only. Koreksi, persetujuan, dan pembatala
 
 Tidak ada pelacakan 24 jam. Lokasi dan kamera hanya digunakan ketika pengguna memulai presensi.
 
+Konfigurasi kantor berada pada data backend yang hanya dapat diubah melalui operasi admin yang
+terotorisasi dan diaudit. Client mengirim sampel lokasi serta akurasinya, tetapi Functions yang
+mengambil konfigurasi aktif dan menentukan klasifikasi kantor atau lapangan.
+
 ## Profil karyawan
 
 Dokumen **users/{authUid}** hanya dibuat oleh backend. Provisioning menghasilkan Employee ID berurutan **KP-000001**, menyimpan role, status kerja, tanggal mulai, status aktif, serta server timestamp. Counter internal berada di **systemCounters** dan setiap provisioning menambahkan record immutable di **auditLogs**.

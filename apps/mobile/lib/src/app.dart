@@ -1,3 +1,4 @@
+import 'package:attendance/src/core/theme/app_theme.dart';
 import 'package:attendance/src/features/auth/presentation/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,14 +19,7 @@ class AttendanceApp extends StatelessWidget {
       locale: const Locale('id', 'ID'),
       supportedLocales: const [Locale('id', 'ID')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF155E75),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF7F8FA),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       routerConfig: _router,
     );
   }
