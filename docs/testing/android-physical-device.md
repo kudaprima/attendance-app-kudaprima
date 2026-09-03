@@ -6,7 +6,9 @@ This workflow runs the Flutter development build on a physical Android phone whi
 
 - Use only synthetic development accounts and the Firebase project `kuda-prima-attandance-dev`.
 - Never remove the release-mode emulator guard or expose emulator ports to the LAN.
-- Developer options are a temporary development exception. The future employee release must still detect and reject developer mode or mock location according to the security requirements.
+- Developer Options alone are permitted by product policy. USB debugging remains a development-only
+  exception; the live employee build must block confirmed mock-location signals according to the
+  security requirements.
 - `adb reverse` sends device traffic for selected localhost ports through USB. It does not enable 24-hour location tracking.
 
 ## 1. Prepare the Samsung Galaxy M15 5G

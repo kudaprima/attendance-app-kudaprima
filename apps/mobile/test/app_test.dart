@@ -10,6 +10,7 @@ import 'package:attendance/src/features/auth/domain/auth_session.dart';
 import 'package:attendance/src/features/profile/application/profile_providers.dart';
 import 'package:attendance/src/features/profile/domain/employee_profile.dart';
 import 'package:attendance/src/features/profile/domain/employee_profile_repository.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -71,6 +72,7 @@ void main() {
     await tester.tap(find.byTooltip('Keluar'));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('login-brand-logo')), findsOneWidget);
     expect(find.text('Masuk ke aplikasi presensi'), findsOneWidget);
     expect(repository.signOutCalls, 1);
   });
