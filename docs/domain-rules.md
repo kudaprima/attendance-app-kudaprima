@@ -6,6 +6,10 @@
 - Check-in dibuka 07.00. Setelah 08.15 berstatus terlambat dan memerlukan persetujuan.
 - Check-out sebelum 17.00 berstatus pulang awal dan memerlukan persetujuan.
 - Presensi kantor memakai radius maksimum 100 meter.
+- Titik kantor utama adalah `-6.214737033753623, 106.76089760397757` dengan zona waktu
+  Asia/Jakarta. Konfigurasi aktif dibaca backend dan perubahannya harus diaudit.
+- Akurasi horizontal di atas 50 meter meminta pengambilan lokasi ulang. Jika tetap buruk,
+  presensi diperlakukan sebagai lapangan dengan catatan wajib dan flag audit `lowAccuracy`.
 - Di luar radius tetap sah sebagai presensi lapangan; catatan bebas wajib, lokasi pelanggan tidak didaftarkan, dan kondisi ini sendiri tidak memerlukan persetujuan.
 - Event masuk dan pulang wajib membawa selfie kamera langsung, koordinat, akurasi, device signal, captured time, serta idempotency key.
 

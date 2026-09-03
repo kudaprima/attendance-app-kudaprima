@@ -7,9 +7,9 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 2 September 2026
-- Baseline `main`: `1eec238` (`feat: support Android physical device testing (#6)`)
-- PR aktif: #7, perbaikan routing Firebase Emulator untuk perangkat Android fisik
+- Tanggal: 3 September 2026
+- Baseline `main`: `1ad29f1` (`fix(mobile): stabilize physical emulator routing (#7)`)
+- Pekerjaan aktif: `feat/brand-system` (belum dipush atau dibuatkan PR)
 - Tahap produk: fondasi development serta autentikasi/profil development; belum siap produksi
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
@@ -24,6 +24,10 @@ Geofence kantor maksimal 100 meter. Presensi lapangan tetap sah tanpa lokasi pel
 didaftarkan, tetapi wajib catatan. Presensi memakai GPS satu kali dan selfie kamera langsung;
 tidak ada pelacakan 24 jam, galeri, MDM, atau face-liveness. Aplikasi menargetkan Android 10+
 dan iOS yang masih mendukung iPhone X. Admin web memakai React dan shadcn/ui.
+
+Palet visual memakai `#F7FAFC` 40%, `#F25923` 30%, `#283989` 20%, dan `#504074`
+10% sebagai pedoman bobot visual. Token semantik serta aksesibilitas lebih penting daripada
+penerapan persentase secara literal.
 
 Data presensi dan audit disimpan satu tahun, foto tiga bulan tanpa backup foto. Backup bulanan
 hanya memuat data. Event presensi asli immutable, waktu disimpan UTC dan ditampilkan WIB,
@@ -40,6 +44,12 @@ serta self-approval dilarang.
 | Perangkat fisik | Login dan pembacaan profil berhasil pada Samsung SM-M156B melalui `adb reverse`; Auth/Firestore memakai `127.0.0.1`.                                 |
 | Admin           | Shell responsif dan komponen shadcn/ui tersedia, tetapi KPI/tabel masih data kosong dan belum terhubung ke backend.                                  |
 | Kualitas        | Pada PR #7: Prettier, lint/typecheck/test/build pnpm, Dart format, `flutter analyze`, 16 Flutter tests, dan simulasi login perangkat fisik lulus.    |
+
+PR #7 telah di-squash merge pada 3 September 2026. Branch aktif menambahkan source logo
+kanonis, login mobile berlogo, dan design token bersama untuk mobile/admin. Prettier, seluruh
+check/build pnpm, `flutter analyze`, 18 test Flutter, serta APK debug telah lulus secara lokal;
+visual smoke test halaman login pada Samsung SM-M156B juga lulus. Source logo 120 x 79 px
+masih menjadi risiko ketajaman yang harus diselesaikan sebelum rilis store.
 
 ## Belum Diimplementasikan
 

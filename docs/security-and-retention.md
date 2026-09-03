@@ -4,7 +4,19 @@
 
 - Firebase Auth memakai Google; Sign in with Apple ditambahkan untuk iOS.
 - App Check memakai Play Integrity pada Android serta App Attest/DeviceCheck pada iOS.
-- Device dengan developer options atau sinyal mock location diblokir sejauh platform mengizinkan. Kontrol aplikasi bukan pengganti MDM dan tidak dapat menjamin perangkat tidak di-root/jailbreak.
+- Developer Options saja diperbolehkan. Target build live Android adalah memblokir konten
+  terproteksi ketika platform menyediakan bukti bahwa mock-location aktif; lokasi yang ditandai
+  mock harus selalu ditolak tanpa bypass pengguna. Android hanya menyediakan sinyal publik yang
+  andal setelah sampel lokasi diterima melalui
+  [`Location.isMock()`](<https://developer.android.com/reference/android/location/Location#isMock()>);
+  pengaturan lama
+  [`ALLOW_MOCK_LOCATION`](https://developer.android.com/reference/android/provider/Settings.Secure#ALLOW_MOCK_LOCATION)
+  sudah deprecated dan tidak dapat dijadikan kontrol. Enumerasi semua aplikasi terpasang juga
+  tidak boleh dijadikan jalan pintas karena menambah risiko privasi dan kebijakan store. Karena
+  itu, deteksi aplikasi mock yang baru dipilih tetapi belum mengirim lokasi bersifat best-effort
+  dan harus dilapis dengan App Check, Play Integrity, validasi server, timestamp, serta audit.
+  Aplikasi tidak boleh mengklaim jaminan absolut terhadap perangkat root/jailbreak atau framework
+  manipulasi tingkat lanjut.
 - Foto hanya berasal dari kamera aplikasi; izin photo library tidak diminta.
 - Offline queue maksimum 12 jam dan payload sensitif dienkripsi memakai kunci dari secure storage.
 - Custom claims menentukan role; Security Rules bersifat deny-by-default.
