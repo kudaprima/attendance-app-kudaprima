@@ -40,15 +40,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.badge_outlined, size: 52),
-                      const SizedBox(height: 16),
-                      Text(
-                        'PT Kuda Prima',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                        textAlign: TextAlign.center,
+                      Semantics(
+                        label: 'Logo PT Kuda Prima',
+                        image: true,
+                        child: Image.asset(
+                          'assets/branding/pt-kuda-prima-logo.png',
+                          key: const Key('login-brand-logo'),
+                          height: 88,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                          excludeFromSemantics: true,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 12),
                       Text(
                         'Masuk ke aplikasi presensi',
                         style: Theme.of(context).textTheme.bodyMedium,
