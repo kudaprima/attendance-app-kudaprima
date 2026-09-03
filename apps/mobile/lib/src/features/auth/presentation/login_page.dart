@@ -79,17 +79,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             color: Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Padding(
-            padding: EdgeInsets.all(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.developer_mode_outlined),
-                SizedBox(width: 10),
+                const Icon(Icons.developer_mode_outlined),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Mode development. Akun di halaman ini hanya tersimpan '
-                    'di Auth Emulator lokal.',
+                    'di Auth Emulator lokal pada '
+                    '${AppConfig.firebaseEmulatorHost}:'
+                    '${AppConfig.authEmulatorPort}.',
                   ),
                 ),
               ],

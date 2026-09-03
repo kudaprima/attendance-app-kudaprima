@@ -1,3 +1,4 @@
+import 'package:attendance/src/core/config/app_config.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -18,7 +19,10 @@ abstract final class AuthErrorMessage {
         'too-many-requests' =>
           'Terlalu banyak percobaan. Tunggu sebentar lalu coba kembali.',
         'network-request-failed' =>
-          'Auth Emulator tidak dapat dijangkau. Periksa Terminal 1.',
+          'Auth Emulator tidak dapat dijangkau di '
+              '${AppConfig.firebaseEmulatorHost}:'
+              '${AppConfig.authEmulatorPort}. Periksa konfigurasi Run dan '
+              'Terminal 1.',
         _ => 'Autentikasi gagal. Silakan coba kembali.',
       };
     }

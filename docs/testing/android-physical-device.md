@@ -65,6 +65,8 @@ flutter run -d RXXXXXXXXXX --dart-define=USE_FIREBASE_EMULATORS=true --dart-defi
 
 Replace `RXXXXXXXXXX` with the actual serial. A physical phone uses `127.0.0.1` through `adb reverse`; `10.0.2.2` is only for the Android emulator. The application banner must show Firebase emulator hosts at `127.0.0.1`.
 
+In VS Code, first select the connected phone in the device picker, then use **Flutter: Physical Android (Firebase Emulators)**. Never use the AVD launch configuration for a USB phone. The development notice on the login page must show `127.0.0.1:9099` before credentials are entered.
+
 ## 5. First Test Scenarios
 
 Record pass/fail and any device log for each scenario:
@@ -93,7 +95,7 @@ flutter logs -d RXXXXXXXXXX
 
 - `unauthorized`: unlock the phone, revoke USB debugging authorizations if needed, reconnect, and accept the new RSA prompt.
 - no device: verify the data cable, File Transfer USB mode, another USB port, then the Samsung driver.
-- Firebase unavailable: confirm the Emulator Suite is running and all three reverse mappings appear.
+- Firebase unavailable: confirm the Emulator Suite is running, all three reverse mappings appear, and the login notice shows `127.0.0.1:9099`. A log saying `Mapping Auth Emulator host "127.0.0.1" to "10.0.2.2"` means automatic host mapping was not disabled in the build.
 - more than one target: pass the physical serial explicitly to both the helper and `flutter run`.
 
 Stop `flutter run` with `q`. After testing, disable USB debugging and re-enable Samsung Auto Blocker. Revoke the PC's USB debugging authorization when the PC is no longer trusted.

@@ -12,7 +12,7 @@ Buka root repository, bukan hanya **apps/mobile** atau **apps/admin**. Konfigura
 
 **node_modules** juga dikecualikan dari Dart Analysis Server. Firebase CLI menyertakan template proyek Dart yang dependency-nya belum dipulihkan; template tersebut bukan source aplikasi dan tidak boleh diedit atau dijalankan dengan **dart pub get**.
 
-Gunakan **Terminal: Run Task** untuk **Project: Bootstrap**, **Admin: Dev**, **Android: Start Emulator**, atau **Quality: All**. Gunakan konfigurasi **Flutter: Mobile (Firebase Emulators)** pada panel Run and Debug. Setelah perubahan konfigurasi workspace, jalankan **Developer: Reload Window** agar extension host dan terminal baru memuat environment yang benar.
+Gunakan **Terminal: Run Task** untuk **Project: Bootstrap**, **Admin: Dev**, **Android: Start Emulator**, atau **Quality: All**. Pada panel Run and Debug, pilih **Flutter: Android AVD (Firebase Emulators)** untuk emulator atau **Flutter: Physical Android (Firebase Emulators)** untuk ponsel USB yang sudah disiapkan dengan `adb reverse`. Setelah perubahan konfigurasi workspace, jalankan **Developer: Reload Window** agar extension host dan terminal baru memuat environment yang benar.
 
 Java memakai mode ringan dan Gradle auto-import dinonaktifkan untuk workspace ini karena Flutter mengelola build Android. Aktifkan mode Java standar serta import Gradle sementara hanya ketika melakukan pengembangan native Android yang memerlukan analisis semantik Java lengkap.
 
@@ -52,7 +52,7 @@ Periksa diff sebelum commit karena perintah kedua menghasilkan konfigurasi aplik
 
 File **apps/mobile/firebase.json**, **firebase_options.dart**, **google-services.json**, dan **GoogleService-Info.plist** adalah konfigurasi generated lokal yang tidak di-commit. Android memakai konfigurasi native **google-services.json**; Firebase diinisialisasi tanpa menyalin identifier project ke source tracked.
 
-Jalankan Auth dan Firestore Emulator dari root, lalu mobile dengan flag eksplisit berikut:
+Jalankan profil emulator dari root, lalu mobile dengan flag eksplisit berikut untuk AVD:
 
 ```powershell
 pnpm emulators:profile
@@ -60,9 +60,11 @@ cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true
 ```
 
-Android Emulator mengakses Auth melalui **10.0.2.2:9099**, Firestore melalui **10.0.2.2:8080**, dan Functions melalui **10.0.2.2:5001**. iOS simulator dan host desktop memakai **127.0.0.1** dengan port yang sama. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug. Persistensi Firestore dinonaktifkan khusus pada mode emulator agar cache lokal tidak mencampur data antar-sesi pengujian; konfigurasi Firebase non-emulator tidak diubah.
+Perangkat Android fisik harus menambahkan `--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1` setelah menjalankan `scripts/prepare-android-device.ps1`. Jangan memakai konfigurasi AVD pada perangkat fisik.
 
-Gunakan **pnpm emulators** hanya ketika Functions, Hosting, dan Storage juga diperlukan. **pnpm emulators:profile** adalah profil development utama untuk alur login dan profil. **pnpm emulators:auth** tetap tersedia untuk pengujian autentikasi secara terisolasi.
+Android Emulator mengakses Auth melalui **10.0.2.2:9099**, Firestore melalui **10.0.2.2:8080**, dan Functions melalui **10.0.2.2:5001**. iOS simulator, host desktop, dan perangkat Android dengan `adb reverse` memakai **127.0.0.1** dengan port yang sama. Automatic Android host mapping dinonaktifkan untuk Auth dan Firestore karena host sudah dipilih secara eksplisit; jika dibiarkan aktif, Firebase Auth akan mengganti `127.0.0.1` menjadi `10.0.2.2` pada perangkat fisik. Release build menolak flag emulator, dan cleartext HTTP hanya diizinkan oleh manifest Android debug. Persistensi Firestore dinonaktifkan khusus pada mode emulator agar cache lokal tidak mencampur data antar-sesi pengujian; konfigurasi Firebase non-emulator tidak diubah.
+
+Gunakan **pnpm emulators** hanya ketika Functions, Hosting, dan Storage juga diperlukan. **pnpm emulators:profile** adalah profil development utama untuk alur login dan profil. Kedua perintah yang memuat Functions selalu membangun shared contracts lebih dulu agar deklarasi TypeScript tidak kedaluwarsa. **pnpm emulators:auth** tetap tersedia untuk pengujian autentikasi secara terisolasi.
 
 ### Akun dan profil development
 
@@ -83,7 +85,7 @@ Seeder hanya terhubung ke Auth **127.0.0.1:9099** dan Firestore **127.0.0.1:8080
 
 Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Seeder juga membuat profil **users**, counter Employee ID, dan audit provisioning melalui service backend yang sama secara idempotent. Jalankan ulang seeder setiap kali Emulator Suite dimulai ulang karena data emulator bersifat sementara. Gunakan **pnpm emulators:auth:seed** hanya untuk test Auth yang sengaja tidak membutuhkan profil.
 
-Kemudian jalankan aplikasi dengan **Flutter: Mobile (Firebase Emulators)** atau:
+Kemudian jalankan aplikasi dengan konfigurasi Run yang sesuai perangkat, atau:
 
 ```powershell
 cd apps\mobile

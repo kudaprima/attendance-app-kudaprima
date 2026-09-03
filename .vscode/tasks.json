@@ -59,7 +59,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Firebase: Auth + Firestore Emulators",
+      "label": "Firebase: Profile Emulators",
       "type": "process",
       "command": "powershell.exe",
       "args": [
