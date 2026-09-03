@@ -14,6 +14,16 @@ export const attendanceEventTypeSchema = z.enum([
 ]);
 export const attendanceLocationTypeSchema = z.enum(["office", "field"]);
 
+export const officeLocationSchema = z.object({
+  active: z.boolean(),
+  accuracyThresholdMeters: z.number().positive().max(1000),
+  latitude: z.number().gte(-90).lte(90),
+  longitude: z.number().gte(-180).lte(180),
+  name: z.string().trim().min(2).max(120),
+  radiusMeters: z.number().positive().max(1000),
+  timeZone: z.literal("Asia/Jakarta"),
+});
+
 export const employeeIdSchema = z.string().regex(/^KP-\d{6}$/);
 
 const calendarDateSchema = z
@@ -59,6 +69,7 @@ export const attendanceCommandSchema = z
 export type AttendanceCommand = z.infer<typeof attendanceCommandSchema>;
 export type AttendanceEventType = z.infer<typeof attendanceEventTypeSchema>;
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
+export type OfficeLocation = z.infer<typeof officeLocationSchema>;
 export type ProvisionEmployeeProfileCommand = z.infer<
   typeof provisionEmployeeProfileCommandSchema
 >;

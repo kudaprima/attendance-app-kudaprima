@@ -69,6 +69,15 @@ async function seedRuleProfiles(): Promise<void> {
       fullName: "Manager Rules",
       role: "supervisor",
     });
+    await setDoc(doc(database, "officeLocations/main"), {
+      active: true,
+      accuracyThresholdMeters: 50,
+      latitude: -6.214737033753623,
+      longitude: 106.76089760397757,
+      name: "Kantor PT Kuda Prima",
+      radiusMeters: 100,
+      timeZone: "Asia/Jakarta",
+    });
   });
 }
 
@@ -259,5 +268,23 @@ describe("employee profile Firestore rules", () => {
         authUid: "unprovisioned-user",
       }),
     );
+  });
+
+  it("allows active employees to read but not write office configuration", async () => {
+    const employeeDatabase = testEnvironment
+      .authenticatedContext("rules-technician", { role: "technician" })
+      .firestore();
+    const reference = doc(employeeDatabase, "officeLocations/main");
+
+    await assertSucceeds(getDoc(reference));
+    await assertFails(updateDoc(reference, { radiusMeters: 200 }));
+  });
+
+  it("denies inactive employees from reading office configuration", async () => {
+    const inactiveDatabase = testEnvironment
+      .authenticatedContext("rules-inactive", { role: "technician" })
+      .firestore();
+
+    await assertFails(getDoc(doc(inactiveDatabase, "officeLocations/main")));
   });
 });

@@ -1,4 +1,7 @@
 import 'package:attendance/src/core/config/app_config.dart';
+import 'package:attendance/src/features/attendance/application/location_error_message.dart';
+import 'package:attendance/src/features/attendance/application/location_providers.dart';
+import 'package:attendance/src/features/attendance/domain/office_location.dart';
 import 'package:attendance/src/features/auth/application/auth_error_message.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
@@ -7,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class AttendanceHomePage extends ConsumerWidget {
+class AttendanceHomePage extends ConsumerStatefulWidget {
   const AttendanceHomePage({
     required this.session,
     required this.profile,
@@ -18,9 +21,20 @@ class AttendanceHomePage extends ConsumerWidget {
   final EmployeeProfile profile;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AttendanceHomePage> createState() => _AttendanceHomePageState();
+}
+
+class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
+  LocationReadiness? _locationReadiness;
+  String? _locationError;
+  bool _checkingLocation = false;
+  int _lowAccuracySamples = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final now = DateTime.now();
     final date = DateFormat('EEEE, d MMMM y', 'id_ID').format(now);
+    final officeLocation = ref.watch(primaryOfficeLocationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,7 +57,7 @@ class AttendanceHomePage extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Selamat datang, ${profile.fullName}',
+              'Selamat datang, ${widget.profile.fullName}',
               style: Theme.of(context).textTheme.headlineSmall
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
@@ -51,35 +65,11 @@ class AttendanceHomePage extends ConsumerWidget {
             Text(date, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 4),
             Text(
-              '${profile.employeeId} • ${session.role.label}',
+              '${widget.profile.employeeId} • ${widget.session.role.label}',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 20),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.location_on_outlined),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text('Lokasi presensi belum diperiksa'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Di kantor berlaku radius 100 meter. Di luar kantor tetap boleh '
-                      'presensi lapangan dengan catatan wajib.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildLocationCard(context, officeLocation),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -96,7 +86,9 @@ class AttendanceHomePage extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: () => _showDevelopmentMessage(context),
+                        onPressed: _locationReadiness?.canAttend == true
+                            ? () => _showDevelopmentMessage(context)
+                            : null,
                         icon: const Icon(Icons.login),
                         label: const Text('Presensi masuk'),
                       ),
@@ -134,13 +126,198 @@ class AttendanceHomePage extends ConsumerWidget {
               icon: Icons.badge_outlined,
               title: 'Profil karyawan',
               subtitle:
-                  '${profile.employmentStatus.label} • Mulai '
-                  '${profile.employmentStartDate}',
+                  '${widget.profile.employmentStatus.label} • Mulai '
+                  '${widget.profile.employmentStartDate}',
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildLocationCard(
+    BuildContext context,
+    AsyncValue<OfficeLocation> officeLocation,
+  ) {
+    final theme = Theme.of(context);
+    final result = _locationReadiness;
+    final (icon, title, description, color) = _locationPresentation(
+      context,
+      officeLocation,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(description, style: theme.textTheme.bodySmall),
+            if (_locationError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _locationError!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonalIcon(
+                key: const Key('check-location-button'),
+                onPressed: _checkingLocation
+                    ? null
+                    : officeLocation.valueOrNull == null
+                    ? null
+                    : () => _checkLocation(officeLocation.requireValue),
+                icon: _checkingLocation
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location),
+                label: Text(
+                  result == null
+                      ? 'Periksa lokasi'
+                      : result.status == LocationReadinessStatus.retryAccuracy
+                      ? 'Coba ambil lokasi lagi'
+                      : 'Periksa ulang lokasi',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  (IconData, String, String, Color) _locationPresentation(
+    BuildContext context,
+    AsyncValue<OfficeLocation> officeLocation,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    if (officeLocation.isLoading) {
+      return (
+        Icons.location_searching,
+        'Memuat konfigurasi kantor',
+        'Menyiapkan batas lokasi presensi yang dikelola sistem.',
+        colors.primary,
+      );
+    }
+    if (officeLocation.hasError) {
+      return (
+        Icons.location_off_outlined,
+        'Konfigurasi lokasi tidak tersedia',
+        LocationErrorMessage.from(officeLocation.error!),
+        colors.error,
+      );
+    }
+
+    final office = officeLocation.requireValue;
+    final result = _locationReadiness;
+    if (result == null) {
+      return (
+        Icons.location_on_outlined,
+        'Lokasi presensi belum diperiksa',
+        '${office.name} memakai radius ${office.radiusMeters.toStringAsFixed(0)} meter. '
+            'Lokasi hanya diambil saat tombol ditekan.',
+        colors.primary,
+      );
+    }
+
+    final accuracy = result.sample.accuracyMeters.toStringAsFixed(0);
+    final distance = _formatMeters(result.distanceMeters);
+    return switch (result.status) {
+      LocationReadinessStatus.office => (
+        Icons.verified_outlined,
+        'Lokasi kantor terverifikasi',
+        'Jarak sekitar $distance dengan akurasi ±$accuracy m. '
+            'Presensi dapat dilanjutkan.',
+        Colors.green.shade700,
+      ),
+      LocationReadinessStatus.field => (
+        Icons.business_center_outlined,
+        'Lokasi presensi lapangan',
+        result.lowAccuracy
+            ? 'Akurasi tetap rendah (±$accuracy m). Presensi diperlakukan sebagai '
+                  'lapangan, ditandai lowAccuracy, dan catatan wajib.'
+            : 'Jarak sekitar $distance dari kantor. Catatan lokasi/kegiatan wajib '
+                  'pada tahap presensi.',
+        colors.tertiary,
+      ),
+      LocationReadinessStatus.retryAccuracy => (
+        Icons.gps_not_fixed,
+        'Akurasi GPS belum memadai',
+        'Akurasi ±$accuracy m, melebihi batas '
+            '${office.accuracyThresholdMeters.toStringAsFixed(0)} m. '
+            'Pindah ke area terbuka lalu ambil lokasi sekali lagi.',
+        Colors.orange.shade800,
+      ),
+      LocationReadinessStatus.mockBlocked => (
+        Icons.gpp_bad_outlined,
+        'Presensi diblokir: lokasi mock terdeteksi',
+        'Login dan dashboard tetap dapat digunakan, tetapi seluruh aksi presensi '
+            'dinonaktifkan. Matikan aplikasi lokasi palsu lalu ambil sampel baru.',
+        colors.error,
+      ),
+    };
+  }
+
+  Future<void> _checkLocation(OfficeLocation office) async {
+    if (_checkingLocation) return;
+    setState(() {
+      _checkingLocation = true;
+      _locationError = null;
+    });
+
+    try {
+      final sample = await ref
+          .read(deviceLocationServiceProvider)
+          .captureCurrentLocation();
+      if (!mounted) return;
+
+      final result = LocationReadinessPolicy.evaluate(
+        office: office,
+        sample: sample,
+        allowLowAccuracyFallback: _lowAccuracySamples >= 1,
+      );
+      setState(() {
+        _locationReadiness = result;
+        _checkingLocation = false;
+        _locationError = null;
+        _lowAccuracySamples =
+            result.status == LocationReadinessStatus.retryAccuracy ? 1 : 0;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _checkingLocation = false;
+        _locationError = LocationErrorMessage.from(error);
+      });
+    }
+  }
+
+  String _formatMeters(double meters) {
+    if (meters < 1000) return '${meters.round()} m';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
   void _showDevelopmentMessage(BuildContext context) {

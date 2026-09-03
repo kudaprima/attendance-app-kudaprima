@@ -4,7 +4,12 @@
 
 - Firebase Auth memakai Google; Sign in with Apple ditambahkan untuk iOS.
 - App Check memakai Play Integrity pada Android serta App Attest/DeviceCheck pada iOS.
-- Device dengan developer options atau sinyal mock location diblokir sejauh platform mengizinkan. Kontrol aplikasi bukan pengganti MDM dan tidak dapat menjamin perangkat tidak di-root/jailbreak.
+- Developer Options saja diperbolehkan. Login dan dashboard tetap dapat digunakan, tetapi semua
+  aksi presensi harus diblokir ketika sampel lokasi ditandai mock. Tidak tersedia bypass pengguna;
+  aksi baru boleh aktif kembali setelah perangkat memberikan sampel baru yang tidak ditandai mock.
+  Deteksi ini harus dilapis dengan App Check, Play Integrity/App Attest, validasi server, timestamp,
+  dan audit. Kontrol aplikasi bukan pengganti MDM dan tidak dapat menjamin perangkat tidak
+  di-root/jailbreak.
 - Foto hanya berasal dari kamera aplikasi; izin photo library tidak diminta.
 - Offline queue maksimum 12 jam dan payload sensitif dienkripsi memakai kunci dari secure storage.
 - Custom claims menentukan role; Security Rules bersifat deny-by-default.
