@@ -8,3 +8,6 @@ Source saat ini transparan dan berukuran 120 x 79 px. Ukuran tersebut cukup untu
 pada tampilan konservatif, tetapi harus diganti dengan PNG transparan minimal 512 px atau SVG
 resmi sebelum pembuatan aset store. Jangan melakukan AI redraw atau upscale sebagai pengganti
 source merek yang benar.
+
+Run `pnpm check:brand` setelah mengubah asset branding atau theme client. Gate tersebut
+memastikan source logo kanonis dan salinan Flutter tetap byte-identical.

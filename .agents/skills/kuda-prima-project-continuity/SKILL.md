@@ -18,13 +18,16 @@ are supporting hints only.
    update the document in the same change that establishes the corrected state.
 4. Update the snapshot date, baseline, completed evidence, remaining risks, and ordered next
    steps whenever a pull request changes a milestone or approved product decision.
-5. Keep stable domain/security decisions in their dedicated documents instead of duplicating
+5. For branches created before a UI/branding pull request merged, bring current `origin/main`
+   into the topic branch before device testing. Run `pnpm check:brand` and verify the canonical
+   login logo/theme so an older feature branch cannot silently restore default styling.
+6. Keep stable domain/security decisions in their dedicated documents instead of duplicating
    them in the status snapshot. Add an architecture decision record when a durable technical
    tradeoff needs rationale.
-6. Never record credentials, employee data, attendance photos, signing material, or physical
+7. Never record credentials, employee data, attendance photos, signing material, or physical
    device serials in shared handoff documents. Use synthetic identifiers and the physical-device
    testing skill for local hardware operations.
-7. Apply the GitHub governance skill for any branch, commit, push, pull request, or merge. A
+8. Apply the GitHub governance skill for any branch, commit, push, pull request, or merge. A
    handoff does not imply authorization for external changes, deployment, billing, or release.
 
 Before ending a milestone, ensure another capable contributor can identify what works, what was

@@ -7,11 +7,10 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 3 September 2026
-- Baseline `main`: `1ad29f1` (`fix(mobile): stabilize physical emulator routing (#7)`)
-- Pekerjaan aktif: brand system diajukan melalui PR #8; job CI `mobile` dan
-  `web-and-functions` telah lulus
-- Tahap produk: fondasi development serta autentikasi/profil development; belum siap produksi
+- Tanggal: 4 September 2026
+- Baseline `main`: `7e21ede` (`feat: apply shared brand system (#8)`)
+- Pekerjaan aktif: kesiapan lokasi presensi (`feat/attendance-location-readiness`) dan tata kelola brand check gate
+- Tahap produk: kesiapan lokasi presensi dan fondasi brand/governance; persiapan vertical slice presensi
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
 ## Ruang Lingkup yang Disepakati
@@ -36,21 +35,21 @@ serta self-approval dilarang.
 
 ## Progres Terverifikasi
 
-| Area            | Kondisi saat ini                                                                                                                                     |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, dan script Windows berbasis drive D tersedia.                   |
-| Mobile          | Shell Android/iOS, Riverpod, login email/password khusus emulator, pemulihan sesi, logout, dan gate profil karyawan tersedia.                        |
-| Backend         | Health endpoint dan provisioning profil melalui callable Function tersedia; Employee ID `KP-000001` dibuat berurutan dan audit provisioning dicatat. |
-| Firebase lokal  | Auth, Firestore, Functions, seeder tiga role, dan integration test profil tersedia. Build contracts dijalankan sebelum Functions.                    |
-| Perangkat fisik | Login dan pembacaan profil berhasil pada Samsung SM-M156B melalui `adb reverse`; Auth/Firestore memakai `127.0.0.1`.                                 |
-| Admin           | Shell responsif dan komponen shadcn/ui tersedia, tetapi KPI/tabel masih data kosong dan belum terhubung ke backend.                                  |
-| Kualitas        | Pada PR #7: Prettier, lint/typecheck/test/build pnpm, Dart format, `flutter analyze`, 16 Flutter tests, dan simulasi login perangkat fisik lulus.    |
+| Area            | Kondisi saat ini                                                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.  |
+| Mobile          | Shell Android/iOS, Riverpod, login email/password berlogo, pemulihan sesi, gate profil, dan evaluasi kesiapan lokasi (kantor/lapangan/mock) tersedia. |
+| Backend         | Health endpoint, provisioning profil berurutan `KP-000001`, seeder konfigurasi kantor `officeLocations/main`, dan audit provisioning dicatat.         |
+| Firebase lokal  | Auth, Firestore, Functions, seeder tiga role + kantor, dan integration test profil tersedia. Build contracts dijalankan sebelum Functions.            |
+| Perangkat fisik | Login, pembacaan profil, dan smoke check visual tema/logo berhasil pada Samsung SM-M156B melalui `adb reverse`.                                       |
+| Admin           | Shell responsif, brand tokens Tailwind, dan komponen shadcn/ui tersedia, siap dihubungkan ke koleksi event presensi.                                  |
+| Kualitas        | `pnpm check:brand`, lint/typecheck/test/build pnpm, Prettier, Dart format, `flutter analyze`, dan 26 Flutter tests lulus.                             |
 
-PR #7 telah di-squash merge pada 3 September 2026. PR #8 menambahkan source logo kanonis,
-login mobile berlogo, dan design token bersama untuk mobile/admin. Prettier, seluruh
-check/build pnpm, `flutter analyze`, 18 test Flutter, serta APK debug telah lulus secara lokal;
-visual smoke test halaman login pada Samsung SM-M156B juga lulus. Source logo 120 x 79 px
-masih menjadi risiko ketajaman yang harus diselesaikan sebelum rilis store.
+PR #8 telah di-squash merge pada 3 September 2026. Milestone kesiapan lokasi (`feat/attendance-location-readiness`)
+menambahkan verifikasi GPS satu kali, klasifikasi geofence kantor vs lapangan, penanganan akurasi rendah (retry lalu
+fallback ke lapangan dengan flag lowAccuracy), pemblokiran mock location tanpa bypass, Firestore security rules untuk
+konfigurasi kantor, otomatisasi gate brand check (`pnpm check:brand`), serta runbook pengujian terminal. Seluruh 26
+test Flutter dan 16 test JavaScript/TypeScript lulus.
 
 ## Belum Diimplementasikan
 

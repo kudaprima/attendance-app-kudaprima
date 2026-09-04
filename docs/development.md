@@ -18,6 +18,9 @@ Java memakai mode ringan dan Gradle auto-import dinonaktifkan untuk workspace in
 
 ## Perintah rutin
 
+Untuk langkah terminal siap salin bagi Auth Emulator, Android AVD, dan perangkat fisik, gunakan
+**docs/testing/development-runbook.md**.
+
 ```powershell
 pnpm install --frozen-lockfile
 pnpm dev:admin
