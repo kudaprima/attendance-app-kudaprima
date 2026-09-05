@@ -66,6 +66,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /officeLocations/{officeId} {
+      allow read: if activeUser() && resource.data.active == true;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

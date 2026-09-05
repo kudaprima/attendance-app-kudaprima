@@ -10,7 +10,7 @@ On Windows, first run **. .\scripts\use-dev-env.ps1** so caches and Android tool
 
 ## Coding Style & Naming Conventions
 
-Use two-space indentation and UTF-8/LF files. Format JavaScript/TypeScript with Prettier and Dart with **dart format**. Name React components and Dart types in PascalCase, functions/variables in camelCase, and files in kebab-case for TypeScript or snake_case for Dart. Reuse shadcn/ui components from **apps/admin/src/components/ui**. Keep mobile code feature-first with presentation, application, domain, and data boundaries.
+Use two-space indentation and UTF-8/LF files. Format JavaScript/TypeScript with Prettier and Dart with **dart format**. Name React components and Dart types in PascalCase, functions/variables in camelCase, and files in kebab-case for TypeScript or snake_case for Dart. Reuse shadcn/ui components from **apps/admin/src/components/ui**. Keep mobile code feature-first with presentation, application, domain, and data boundaries. For any UI change, apply **.agents/skills/kuda-prima-ui-governance** and run **pnpm check:brand**.
 
 ## Testing Guidelines
 
@@ -21,6 +21,10 @@ Vitest covers admin, contracts, and Functions; Flutter Test covers mobile. Name 
 Read **CONTRIBUTING.md** before Git operations. Use imperative Conventional Commits such as **feat(mobile): add field attendance note** and short-lived branches such as **feat/mobile-attendance-note**. Keep commits focused. Pull requests must explain behavior, tests, security/data impact, linked issue, and screenshots for UI changes. Never commit credentials or generated Firebase app configuration. For branch, commit, push, pull request, or recovery work, apply **.agents/skills/kuda-prima-github-governance**.
 
 For Samsung or other physical Android device setup and diagnosis, apply **.agents/skills/kuda-prima-android-device-testing**.
+
+## Change-Coupled Governance
+
+Every change must review affected instructions, domain/security rules, ADRs, skills, and testing runbooks. Update the related files in the same change when behavior or workflow changes; do not edit unrelated governance files merely to create churn.
 
 ## Domain and Safety Guardrails
 

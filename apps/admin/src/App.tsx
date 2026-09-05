@@ -27,28 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-const summaryCards = [
-  {
-    label: "Hadir hari ini",
-    value: "0",
-    icon: CheckCircle2,
-    tone: "text-emerald-600",
-  },
-  { label: "Terlambat", value: "0", icon: Clock3, tone: "text-amber-600" },
-  {
-    label: "Presensi lapangan",
-    value: "0",
-    icon: MapPin,
-    tone: "text-blue-600",
-  },
-  {
-    label: "Menunggu persetujuan",
-    value: "0",
-    icon: FileCheck2,
-    tone: "text-violet-600",
-  },
-];
+import { useAttendanceLiveFeed } from "@/hooks/use-attendance-live";
 
 const navigation = [
   { label: "Ringkasan", icon: BriefcaseBusiness },
@@ -60,6 +39,35 @@ const navigation = [
 ];
 
 function App() {
+  const { events, kpis, loading } = useAttendanceLiveFeed();
+
+  const summaryCards = [
+    {
+      label: "Hadir hari ini",
+      value: kpis.presentToday.toString(),
+      icon: CheckCircle2,
+      tone: "text-emerald-600",
+    },
+    {
+      label: "Terlambat",
+      value: kpis.late.toString(),
+      icon: Clock3,
+      tone: "text-amber-600",
+    },
+    {
+      label: "Presensi lapangan",
+      value: kpis.field.toString(),
+      icon: MapPin,
+      tone: "text-blue-600",
+    },
+    {
+      label: "Menunggu persetujuan",
+      value: kpis.pendingApproval.toString(),
+      icon: FileCheck2,
+      tone: "text-violet-600",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-muted/30 text-foreground">
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
@@ -124,7 +132,7 @@ function App() {
                 <CardContent>
                   <p className="text-3xl font-semibold">{value}</p>
                   <p className="text-xs text-muted-foreground">
-                    Data emulator belum tersedia
+                    {loading ? "Memuat data..." : "Sinkronisasi real-time"}
                   </p>
                 </CardContent>
               </Card>
@@ -151,14 +159,85 @@ function App() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      Belum ada data presensi.
-                    </TableCell>
-                  </TableRow>
+                  {events.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        {loading
+                          ? "Memuat data presensi..."
+                          : "Belum ada data presensi hari ini."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    events.map((event) => (
+                      <TableRow key={event.id}>
+                        <TableCell className="font-mono text-xs font-medium">
+                          {event.employeeId}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {event.fullName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              event.eventType === "check_in"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {event.eventType === "check_in"
+                              ? "Masuk"
+                              : "Pulang"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-xs">
+                              {event.locationType === "office"
+                                ? "Kantor PT Kuda Prima"
+                                : `Lapangan (${event.distanceMeters} m)`}
+                            </span>
+                            {event.note && (
+                              <span className="text-xs text-muted-foreground italic">
+                                &ldquo;{event.note}&rdquo;
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{event.timeWib}</span>
+                            {event.status === "late" && (
+                              <Badge
+                                variant="destructive"
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                Terlambat
+                              </Badge>
+                            )}
+                            {event.status === "early_departure" && (
+                              <Badge
+                                variant="destructive"
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                Pulang Awal
+                              </Badge>
+                            )}
+                            {event.status === "non_working_day" && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-900 border border-amber-300"
+                              >
+                                Luar Hari Kerja
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

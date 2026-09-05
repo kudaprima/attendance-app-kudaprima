@@ -41,4 +41,5 @@ Add screenshots or recordings for UI changes, using synthetic data only.
 - [ ] Domain rules and self-approval restrictions remain intact
 - [ ] No credentials, personal data, generated Firebase app configuration, or signing material is committed
 - [ ] Documentation and tests match the behavior
+- [ ] Related AGENTS, rules, ADRs, skills, and runbooks were updated or are not applicable
 - [ ] Review conversations are resolved before squash merge

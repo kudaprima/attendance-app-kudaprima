@@ -7,11 +7,10 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 3 September 2026
-- Baseline `main`: `1ad29f1` (`fix(mobile): stabilize physical emulator routing (#7)`)
-- Pekerjaan aktif: brand system diajukan melalui PR #8; job CI `mobile` dan
-  `web-and-functions` telah lulus
-- Tahap produk: fondasi development serta autentikasi/profil development; belum siap produksi
+- Tanggal: 5 September 2026
+- Baseline `main`: `7e21ede` (`feat: apply shared brand system (#8)`)
+- Pekerjaan aktif: vertical slice presensi (`feat/attendance-submission-slice`)
+- Tahap produk: implementasi vertical slice presensi selesai dan terverifikasi end-to-end (kamera langsung, GPS satu kali, catatan lapangan, Cloud Functions, Storage selfie, Firestore immutable events, rules penolakan write client, realtime live monitoring admin)
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
 ## Ruang Lingkup yang Disepakati
@@ -36,48 +35,40 @@ serta self-approval dilarang.
 
 ## Progres Terverifikasi
 
-| Area            | Kondisi saat ini                                                                                                                                     |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, dan script Windows berbasis drive D tersedia.                   |
-| Mobile          | Shell Android/iOS, Riverpod, login email/password khusus emulator, pemulihan sesi, logout, dan gate profil karyawan tersedia.                        |
-| Backend         | Health endpoint dan provisioning profil melalui callable Function tersedia; Employee ID `KP-000001` dibuat berurutan dan audit provisioning dicatat. |
-| Firebase lokal  | Auth, Firestore, Functions, seeder tiga role, dan integration test profil tersedia. Build contracts dijalankan sebelum Functions.                    |
-| Perangkat fisik | Login dan pembacaan profil berhasil pada Samsung SM-M156B melalui `adb reverse`; Auth/Firestore memakai `127.0.0.1`.                                 |
-| Admin           | Shell responsif dan komponen shadcn/ui tersedia, tetapi KPI/tabel masih data kosong dan belum terhubung ke backend.                                  |
-| Kualitas        | Pada PR #7: Prettier, lint/typecheck/test/build pnpm, Dart format, `flutter analyze`, 16 Flutter tests, dan simulasi login perangkat fisik lulus.    |
+| Area            | Kondisi saat ini                                                                                                                                                                                                           |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                       |
+| Mobile          | Shell Android/iOS, Riverpod, login berlogo, gate profil, evaluasi lokasi kantor/lapangan, alur submit presensi masuk/pulang, dialog catatan lapangan, camera selfie dialog, upload Storage, dan integrasi Cloud Functions. |
+| Backend         | Health endpoint, provisioning profil, seeder kantor/profil, Cloud Function `recordAttendanceEvent` (idempotensi, validasi geofence, validasi selfie Storage, catatan lapangan), dan audit event immutable.                 |
+| Firebase lokal  | Auth, Firestore, Functions, Storage emulator (`pnpm emulators:profile`), seeder 3 role + kantor, 16 test emulator Firestore/rules lulus (termasuk penolakan client write pada `attendanceEvents`), policy unit test lulus. |
+| Perangkat & AVD | Smoke check visual pada Samsung SM-M156B (`adb reverse`); simulasi interaktif end-to-end berhasil pada Android AVD API 29 (`KudaPrima_API_29`) mencatat presensi masuk lapangan dengan foto selfie dan catatan teknisi.    |
+| Admin           | Shell responsif, brand tokens Tailwind, shadcn/ui, hook realtime `useAttendanceLive`, dan tabel live monitoring event presensi (nama, role, tipe, geofence, catatan, timestamp WIB).                                       |
+| Kualitas        | `pnpm check:brand`, lint/typecheck/test/build pnpm (28 Vitest tests lulus), `flutter analyze` (0 issue), dan 31 Flutter tests lulus.                                                                                       |
 
-PR #7 telah di-squash merge pada 3 September 2026. PR #8 menambahkan source logo kanonis,
-login mobile berlogo, dan design token bersama untuk mobile/admin. Prettier, seluruh
-check/build pnpm, `flutter analyze`, 18 test Flutter, serta APK debug telah lulus secara lokal;
-visual smoke test halaman login pada Samsung SM-M156B juga lulus. Source logo 120 x 79 px
-masih menjadi risiko ketajaman yang harus diselesaikan sebelum rilis store.
+Milestone vertical slice presensi (`feat/attendance-submission-slice`) mengimplementasikan alur lengkap pengajuan presensi:
+
+1. Validasi kontrak Zod pada package `@kuda-prima/contracts` (`AttendanceSubmissionCommandSchema`).
+2. Cloud Function `recordAttendanceEvent` dengan verifikasi token pengguna, validasi jarak kantor vs lapangan, kewajiban catatan lapangan jika di luar radius 100m kantor, verifikasi keberadaan selfie di Firebase Storage, serta pembuatan dokumen immutable di `attendanceEvents` dengan status on-time/late.
+3. Firestore security rules yang secara tegas menolak penulisan langsung dari client (`allow create, update, delete: if false;`) dan mengizinkan pembacaan hanya untuk pemilik data atau manajer/admin.
+4. Mobile UI & State: `AttendanceSubmissionRepository`, Riverpod providers, modal catatan lapangan mandiri, dialog kamera viewfinder langsung (`camera: ^0.11.0+2`), serta evaluasi status presensi adaptif ("Tepat Waktu", "Terlambat", "Pulang Awal", dan "Luar Hari Kerja" pada akhir pekan/di luar jam operasional).
+5. Admin Web Portal: Integrasi Firebase Auth dev mode (`admin.dev@kudaprima.test`), realtime Firestore listener via `useAttendanceLive`, menampilkan tabel presensi karyawan terkini dengan badge geofence, status kehadiran ("Tepat Waktu", "Terlambat", "Pulang Awal", "Luar Hari Kerja"), dan format waktu WIB.
 
 ## Belum Diimplementasikan
 
 - Sign-in Google untuk Android/web, Sign in with Apple, dan konfigurasi autentikasi produksi.
-- Check-in/check-out end-to-end: kamera, GPS, klasifikasi geofence, Function command,
-  penyimpanan event immutable, selfie Storage, serta idempotensi.
-- Antrean offline terenkripsi 12 jam dan sinkronisasi konflik.
-- Pencegahan kecurangan: App Check, Play Integrity/App Attest, deteksi developer options,
-  mock location, root/jailbreak signal, rate limit, dan observability.
+- Antrean offline terenkripsi 12 jam dan sinkronisasi konflik dengan idempotensi.
+- Pencegahan kecurangan lanjutan: App Check production provider, Play Integrity/App Attest, deteksi developer options, mock location hardening pada OS level, root/jailbreak signal, rate limit, dan observability.
 - Persetujuan terlambat/pulang awal, lembur, koreksi, izin, sakit, cuti, dan kalender libur.
-- Dashboard operasional, pengelolaan karyawan, audit, ekspor, notifikasi push, backup data,
-  retention job, serta siklus nonaktif/hapus akun.
-- Build dan pengujian iOS nyata, Codemagic signing, TestFlight, Play internal testing, dan
-  kesiapan store. Project iOS tersedia, tetapi Windows tidak dapat menggantikan validasi macOS.
+- Dashboard operasional analitik, pengelolaan master karyawan, ekspor laporan, notifikasi push, backup data otomatis, retention cleanup job 90 hari / 1 tahun.
+- Build dan pengujian iOS nyata, Codemagic signing, TestFlight, Play internal testing, dan kesiapan store.
 
 ## Urutan Pengembangan Berikutnya
 
-1. Bangun attendance vertical slice paling kecil: office config, izin kamera/lokasi, selfie,
-   GPS, check-in/out command, Functions, Rules, Storage, dan satu tabel monitoring admin.
-2. Tambahkan integration test emulator untuk authorization, urutan event, idempotensi,
-   geofence kantor/lapangan, serta penolakan write langsung dari client.
-3. Terapkan offline queue terenkripsi dan skenario jaringan nyata tanpa menggandakan event.
-4. Aktifkan login provider dan App Check development, lalu validasi Play Integrity pada build
-   internal sebelum enforcement.
-5. Implementasikan approval, lembur, koreksi, izin/sakit/cuti, kalender, dan cross-approval.
-6. Lengkapi laporan, audit, notifikasi, retention, backup, observability, aksesibilitas,
-   performa, serta hardening Android/iOS sebelum pilot terbatas.
+1. Terapkan offline queue terenkripsi 12 jam pada mobile app dengan local SQLite/secure storage dan pengiriman ulang ber-idempotensi saat koneksi pulih.
+2. Implementasikan alur presensi pulang (check-out) dan validasi urutan harian (tidak boleh check-out sebelum check-in).
+3. Implementasikan approval supervisor untuk presensi dengan catatan lapangan, keterlambatan, atau permohonan lembur.
+4. Aktifkan App Check production provider & integrasi Play Integrity pada internal testing build.
+5. Lengkapi portal admin untuk filter tanggal, pencarian karyawan, dan ekspor data presensi ke CSV/Excel.
 
 Setiap tahap harus memakai data sintetis di emulator, memiliki automated test pada boundary
 yang berubah, dan lulus quality gate sebelum PR di-squash. Kelayakan end user baru dapat

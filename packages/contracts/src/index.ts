@@ -14,6 +14,16 @@ export const attendanceEventTypeSchema = z.enum([
 ]);
 export const attendanceLocationTypeSchema = z.enum(["office", "field"]);
 
+export const officeLocationSchema = z.object({
+  active: z.boolean(),
+  accuracyThresholdMeters: z.number().positive().max(1000),
+  latitude: z.number().gte(-90).lte(90),
+  longitude: z.number().gte(-180).lte(180),
+  name: z.string().trim().min(2).max(120),
+  radiusMeters: z.number().positive().max(1000),
+  timeZone: z.literal("Asia/Jakarta"),
+});
+
 export const employeeIdSchema = z.string().regex(/^KP-\d{6}$/);
 
 const calendarDateSchema = z
@@ -45,6 +55,8 @@ export const attendanceCommandSchema = z
     locationType: attendanceLocationTypeSchema,
     note: z.string().trim().max(500).optional(),
     idempotencyKey: z.string().uuid(),
+    photoBase64: z.string().min(1).max(2_000_000),
+    isMocked: z.boolean().default(false),
   })
   .superRefine((command, context) => {
     if (command.locationType === "field" && !command.note) {
@@ -56,9 +68,49 @@ export const attendanceCommandSchema = z
     }
   });
 
+export const attendanceSubmissionResultSchema = z.object({
+  eventId: z.string(),
+  eventType: attendanceEventTypeSchema,
+  status: z.enum(["normal", "late", "early_departure", "non_working_day"]),
+  requiresApproval: z.boolean(),
+  locationType: attendanceLocationTypeSchema,
+  distanceMeters: z.number(),
+  capturedAt: z.string(),
+  message: z.string(),
+});
+
+export const attendanceEventRecordSchema = z.object({
+  eventId: z.string(),
+  userId: z.string(),
+  employeeId: employeeIdSchema,
+  fullName: z.string(),
+  role: userRoleSchema,
+  eventType: attendanceEventTypeSchema,
+  capturedAt: z.string().datetime({ offset: true }),
+  serverTimestamp: z.string().datetime({ offset: true }).optional(),
+  latitude: z.number(),
+  longitude: z.number(),
+  accuracyMeters: z.number(),
+  locationType: attendanceLocationTypeSchema,
+  distanceMeters: z.number(),
+  officeId: z.string().nullable(),
+  note: z.string().nullable(),
+  lowAccuracy: z.boolean(),
+  isMocked: z.boolean(),
+  status: z.enum(["normal", "late", "early_departure", "non_working_day"]),
+  requiresApproval: z.boolean(),
+  photoStoragePath: z.string(),
+  idempotencyKey: z.string().uuid(),
+});
+
 export type AttendanceCommand = z.infer<typeof attendanceCommandSchema>;
+export type AttendanceEventRecord = z.infer<typeof attendanceEventRecordSchema>;
 export type AttendanceEventType = z.infer<typeof attendanceEventTypeSchema>;
+export type AttendanceSubmissionResult = z.infer<
+  typeof attendanceSubmissionResultSchema
+>;
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
+export type OfficeLocation = z.infer<typeof officeLocationSchema>;
 export type ProvisionEmployeeProfileCommand = z.infer<
   typeof provisionEmployeeProfileCommandSchema
 >;

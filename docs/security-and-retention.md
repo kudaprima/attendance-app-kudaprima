@@ -4,9 +4,10 @@
 
 - Firebase Auth memakai Google; Sign in with Apple ditambahkan untuk iOS.
 - App Check memakai Play Integrity pada Android serta App Attest/DeviceCheck pada iOS.
-- Developer Options saja diperbolehkan. Target build live Android adalah memblokir konten
-  terproteksi ketika platform menyediakan bukti bahwa mock-location aktif; lokasi yang ditandai
-  mock harus selalu ditolak tanpa bypass pengguna. Android hanya menyediakan sinyal publik yang
+- Developer Options saja diperbolehkan. Login dan dashboard tetap dapat digunakan, tetapi semua
+  aksi presensi harus diblokir ketika sampel lokasi ditandai mock. Tidak tersedia bypass pengguna;
+  aksi baru boleh aktif kembali setelah perangkat memberikan sampel baru yang tidak ditandai mock.
+  Android hanya menyediakan sinyal publik yang
   andal setelah sampel lokasi diterima melalui
   [`Location.isMock()`](<https://developer.android.com/reference/android/location/Location#isMock()>);
   pengaturan lama

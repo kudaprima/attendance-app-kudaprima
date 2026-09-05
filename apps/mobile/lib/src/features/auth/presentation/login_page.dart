@@ -114,7 +114,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: OutlinedButton(
               onPressed: _isSubmitting
                   ? null
-                  : () => _emailController.text = identity.email,
+                  : () {
+                      _emailController.text = identity.email;
+                      _passwordController.text = 'KudaPrimaDev2026#';
+                    },
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('${identity.label} — ${identity.email}'),

@@ -20,6 +20,14 @@ Use this workflow for every product or code change in this repository.
 5. Add or update tests at the same layer as the change. Use Firebase Emulator Suite for backend authorization or persistence behavior.
 6. Run the narrow checks first, then the full relevant quality gate from **AGENTS.md**.
 
+For screen, layout, color, logo, theme, or shadcn changes, also apply
+**.agents/skills/kuda-prima-ui-governance**. Preserve the shared brand gate when adding product
+features; do not replace the root Flutter theme or admin semantic tokens with feature-local styles.
+
+When a product rule, workflow, or accepted invariant changes, review and update the related
+domain/security docs, ADR, repository skill, test runbook, and automated guardrail in the same
+change. Leave unrelated governance files untouched when they remain accurate.
+
 Use **. .\scripts\use-dev-env.ps1** before commands on Windows so caches and AVD remain on drive D.
 
 For any Git or GitHub mutation, also apply **.agents/skills/kuda-prima-github-governance**.

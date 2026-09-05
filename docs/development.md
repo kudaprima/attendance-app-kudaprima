@@ -18,6 +18,9 @@ Java memakai mode ringan dan Gradle auto-import dinonaktifkan untuk workspace in
 
 ## Perintah rutin
 
+Untuk langkah terminal siap salin bagi Auth Emulator, Android AVD, dan perangkat fisik, gunakan
+**docs/testing/development-runbook.md**.
+
 ```powershell
 pnpm install --frozen-lockfile
 pnpm dev:admin
@@ -83,7 +86,7 @@ Seeder hanya terhubung ke Auth **127.0.0.1:9099** dan Firestore **127.0.0.1:8080
 | Supervisor | **supervisor.dev@kudaprima.test** |
 | Admin      | **admin.dev@kudaprima.test**      |
 
-Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Seeder juga membuat profil **users**, counter Employee ID, dan audit provisioning melalui service backend yang sama secara idempotent. Jalankan ulang seeder setiap kali Emulator Suite dimulai ulang karena data emulator bersifat sementara. Gunakan **pnpm emulators:auth:seed** hanya untuk test Auth yang sengaja tidak membutuhkan profil.
+Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Seeder juga membuat profil **users**, counter Employee ID, audit provisioning, dan konfigurasi **officeLocations/main** secara idempotent. Jalankan ulang seeder setiap kali Emulator Suite dimulai ulang karena data emulator bersifat sementara. Gunakan **pnpm emulators:auth:seed** hanya untuk test Auth yang sengaja tidak membutuhkan profil.
 
 Kemudian jalankan aplikasi dengan konfigurasi Run yang sesuai perangkat, atau:
 

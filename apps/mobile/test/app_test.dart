@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:attendance/src/app.dart';
+import 'package:attendance/src/features/attendance/application/location_providers.dart';
+import 'package:attendance/src/features/attendance/domain/office_location.dart';
+import 'package:attendance/src/features/attendance/domain/office_location_repository.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/domain/auth_repository.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
@@ -29,6 +32,9 @@ void main() {
           employeeProfileRepositoryProvider.overrideWithValue(
             profileRepository,
           ),
+          officeLocationRepositoryProvider.overrideWithValue(
+            const _FakeOfficeLocationRepository(),
+          ),
         ],
         child: const AttendanceApp(),
       ),
@@ -53,6 +59,9 @@ void main() {
           authRepositoryProvider.overrideWithValue(repository),
           employeeProfileRepositoryProvider.overrideWithValue(
             profileRepository,
+          ),
+          officeLocationRepositoryProvider.overrideWithValue(
+            const _FakeOfficeLocationRepository(),
           ),
         ],
         child: const AttendanceApp(),
@@ -153,6 +162,21 @@ class _FakeEmployeeProfileRepository implements EmployeeProfileRepository {
 
   @override
   Stream<EmployeeProfile?> watchProfile(String uid) => Stream.value(profile);
+}
+
+class _FakeOfficeLocationRepository implements OfficeLocationRepository {
+  const _FakeOfficeLocationRepository();
+
+  @override
+  Future<OfficeLocation> fetchPrimaryOffice() async => const OfficeLocation(
+    id: 'main',
+    name: 'Kantor PT Kuda Prima',
+    latitude: -6.214737033753623,
+    longitude: 106.76089760397757,
+    radiusMeters: 100,
+    accuracyThresholdMeters: 50,
+    timeZone: 'Asia/Jakarta',
+  );
 }
 
 class _FakeAuthRepository implements AuthRepository {

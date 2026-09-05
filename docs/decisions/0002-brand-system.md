@@ -22,6 +22,8 @@ coupling feature code to raw color values. The approved visual balance is 40% ne
 - Keep success, warning, error, and information colors semantic; do not replace them with a
   brand color when that would obscure status meaning.
 - Preserve the official logo source without recoloring, redrawing, or changing its ratio.
+- Keep `pnpm check:brand` in the repository quality gate so feature branches cannot remove the
+  root Flutter theme, canonical login logo, matching mobile asset, or approved admin tokens.
 
 ## Consequences
 

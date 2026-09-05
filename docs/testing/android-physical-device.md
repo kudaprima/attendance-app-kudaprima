@@ -2,6 +2,8 @@
 
 This workflow runs the Flutter development build on a physical Android phone while Firebase Auth, Firestore, and Functions remain local on the Windows development computer. It is intended for the Samsung Galaxy M15 5G and other supported Android devices.
 
+For copy-ready terminal commands, also use **docs/testing/development-runbook.md**.
+
 ## Safety Boundary
 
 - Use only synthetic development accounts and the Firebase project `kuda-prima-attandance-dev`.
@@ -80,8 +82,12 @@ Record pass/fail and any device log for each scenario:
 5. Disconnect USB while the app is open; confirm the app reports backend failure without corrupting state.
 6. Reconnect USB, rerun the preparation helper, and confirm login recovers.
 7. Check the Emulator Suite UI to confirm that only synthetic Auth and Firestore records were used.
+8. Verify the PT Kuda Prima logo appears on login and the approved neutral, orange, blue, and
+   purple semantic palette remains visible after feature changes.
+9. Run the location-readiness scenarios in **docs/testing/attendance-location-readiness.md**.
 
-Camera, location accuracy, geofence, offline attendance, and anti-mock-location scenarios should be added when those features exist. Do not simulate them as completed based only on the login foundation.
+Camera capture, offline attendance, and end-to-end attendance submission remain future scenarios.
+Do not mark them complete based on login or location-readiness testing.
 
 ## Troubleshooting and Cleanup
 
