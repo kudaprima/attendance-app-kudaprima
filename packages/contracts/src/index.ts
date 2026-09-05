@@ -71,7 +71,7 @@ export const attendanceCommandSchema = z
 export const attendanceSubmissionResultSchema = z.object({
   eventId: z.string(),
   eventType: attendanceEventTypeSchema,
-  status: z.enum(["normal", "late", "early_departure"]),
+  status: z.enum(["normal", "late", "early_departure", "non_working_day"]),
   requiresApproval: z.boolean(),
   locationType: attendanceLocationTypeSchema,
   distanceMeters: z.number(),
@@ -97,7 +97,7 @@ export const attendanceEventRecordSchema = z.object({
   note: z.string().nullable(),
   lowAccuracy: z.boolean(),
   isMocked: z.boolean(),
-  status: z.enum(["normal", "late", "early_departure"]),
+  status: z.enum(["normal", "late", "early_departure", "non_working_day"]),
   requiresApproval: z.boolean(),
   photoStoragePath: z.string(),
   idempotencyKey: z.string().uuid(),

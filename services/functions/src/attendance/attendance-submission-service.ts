@@ -197,6 +197,8 @@ export async function submitAttendanceCommand(
         ? "Presensi masuk tercatat (terlambat, memerlukan persetujuan supervisor)."
         : schedule.status === "early_departure"
           ? "Presensi pulang tercatat (pulang awal, memerlukan persetujuan supervisor)."
-          : "Presensi berhasil dicatat.",
+          : schedule.status === "non_working_day"
+            ? "Presensi tercatat di luar hari kerja (memerlukan persetujuan supervisor)."
+            : "Presensi berhasil dicatat.",
   };
 }

@@ -1,4 +1,4 @@
-enum AttendanceSubmissionStatus { normal, late, earlyDeparture }
+enum AttendanceSubmissionStatus { normal, late, earlyDeparture, nonWorkingDay }
 
 class AttendanceSubmissionCommand {
   const AttendanceSubmissionCommand({
@@ -56,6 +56,7 @@ class AttendanceSubmissionResult {
     final status = switch (statusStr) {
       'late' => AttendanceSubmissionStatus.late,
       'early_departure' => AttendanceSubmissionStatus.earlyDeparture,
+      'non_working_day' => AttendanceSubmissionStatus.nonWorkingDay,
       _ => AttendanceSubmissionStatus.normal,
     };
 

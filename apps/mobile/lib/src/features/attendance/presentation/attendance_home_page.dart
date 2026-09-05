@@ -369,11 +369,12 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
     final badgeColor = submission.requiresApproval
         ? Colors.amber.shade800
         : Colors.green.shade700;
-    final badgeLabel = submission.requiresApproval
-        ? (submission.status == AttendanceSubmissionStatus.late
-              ? 'Terlambat'
-              : 'Pulang Awal')
-        : 'Tepat Waktu';
+    final badgeLabel = switch (submission.status) {
+      AttendanceSubmissionStatus.late => 'Terlambat',
+      AttendanceSubmissionStatus.earlyDeparture => 'Pulang Awal',
+      AttendanceSubmissionStatus.nonWorkingDay => 'Luar Hari Kerja',
+      AttendanceSubmissionStatus.normal => 'Tepat Waktu',
+    };
 
     return Wrap(
       alignment: WrapAlignment.center,

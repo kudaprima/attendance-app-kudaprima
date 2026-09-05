@@ -50,8 +50,8 @@ Milestone vertical slice presensi (`feat/attendance-submission-slice`) mengimple
 1. Validasi kontrak Zod pada package `@kuda-prima/contracts` (`AttendanceSubmissionCommandSchema`).
 2. Cloud Function `recordAttendanceEvent` dengan verifikasi token pengguna, validasi jarak kantor vs lapangan, kewajiban catatan lapangan jika di luar radius 100m kantor, verifikasi keberadaan selfie di Firebase Storage, serta pembuatan dokumen immutable di `attendanceEvents` dengan status on-time/late.
 3. Firestore security rules yang secara tegas menolak penulisan langsung dari client (`allow create, update, delete: if false;`) dan mengizinkan pembacaan hanya untuk pemilik data atau manajer/admin.
-4. Mobile UI & State: `AttendanceSubmissionRepository`, Riverpod providers, modal catatan lapangan mandiri, dialog kamera viewfinder langsung (`camera: ^0.11.0+2`), dan pembaruan badge status "Presensi masuk tercatat [Tepat Waktu]".
-5. Admin Web Portal: Realtime Firestore listener via `useAttendanceLive`, menampilkan tabel presensi karyawan terkini dengan badge geofence, status kehadiran, dan format waktu WIB.
+4. Mobile UI & State: `AttendanceSubmissionRepository`, Riverpod providers, modal catatan lapangan mandiri, dialog kamera viewfinder langsung (`camera: ^0.11.0+2`), serta evaluasi status presensi adaptif ("Tepat Waktu", "Terlambat", "Pulang Awal", dan "Luar Hari Kerja" pada akhir pekan/di luar jam operasional).
+5. Admin Web Portal: Integrasi Firebase Auth dev mode (`admin.dev@kudaprima.test`), realtime Firestore listener via `useAttendanceLive`, menampilkan tabel presensi karyawan terkini dengan badge geofence, status kehadiran ("Tepat Waktu", "Terlambat", "Pulang Awal", "Luar Hari Kerja"), dan format waktu WIB.
 
 ## Belum Diimplementasikan
 

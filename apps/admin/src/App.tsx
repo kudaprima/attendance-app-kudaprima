@@ -225,6 +225,14 @@ function App() {
                                 Pulang Awal
                               </Badge>
                             )}
+                            {event.status === "non_working_day" && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-900 border border-amber-300"
+                              >
+                                Luar Hari Kerja
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

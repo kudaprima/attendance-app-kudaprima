@@ -73,6 +73,27 @@ describe("evaluateAttendanceSchedule", () => {
     expect(result.status).toBe("normal");
     expect(result.requiresApproval).toBe(false);
   });
+
+  it("marks check_in on weekend (Saturday) as non_working_day and requires approval", () => {
+    // 2026-09-05 (Saturday) 18:42 WIB -> 11:42 UTC
+    const weekendDate = new Date("2026-09-05T11:42:00.000Z");
+    const result = evaluateAttendanceSchedule("check_in", weekendDate);
+
+    expect(result.isAllowed).toBe(true);
+    expect(result.status).toBe("non_working_day");
+    expect(result.requiresApproval).toBe(true);
+    expect(result.reason).toContain("di luar hari kerja");
+  });
+
+  it("marks check_out on weekend (Sunday) as non_working_day and requires approval", () => {
+    // 2026-09-06 (Sunday) 14:00 WIB -> 07:00 UTC
+    const sundayDate = new Date("2026-09-06T07:00:00.000Z");
+    const result = evaluateAttendanceSchedule("check_out", sundayDate);
+
+    expect(result.isAllowed).toBe(true);
+    expect(result.status).toBe("non_working_day");
+    expect(result.requiresApproval).toBe(true);
+  });
 });
 
 describe("geofence-service", () => {

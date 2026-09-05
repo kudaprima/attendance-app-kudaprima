@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import {
   collection,
   limit,
@@ -6,7 +7,7 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import { firestore } from "@/lib/firebase";
+import { auth, firestore } from "@/lib/firebase";
 
 export interface AttendanceEventItem {
   id: string;
@@ -17,7 +18,7 @@ export interface AttendanceEventItem {
   locationType: "office" | "field";
   distanceMeters: number;
   note: string | null;
-  status: "normal" | "late" | "early_departure";
+  status: "normal" | "late" | "early_departure" | "non_working_day";
   requiresApproval: boolean;
   capturedAt: string;
   timeWib: string;
@@ -57,70 +58,105 @@ export function useAttendanceLiveFeed() {
   });
 
   useEffect(() => {
-    try {
-      const eventsRef = collection(firestore, "attendanceEvents");
-      const q = query(eventsRef, orderBy("createdAt", "desc"), limit(50));
+    let unsubscribeSnapshot: (() => void) | null = null;
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const items: AttendanceEventItem[] = [];
-          const uniqueUsers = new Set<string>();
-          let lateCount = 0;
-          let fieldCount = 0;
-          let pendingApprovalCount = 0;
+    const setupListener = () => {
+      try {
+        const eventsRef = collection(firestore, "attendanceEvents");
+        const q = query(eventsRef, orderBy("createdAt", "desc"), limit(50));
 
-          for (const doc of snapshot.docs) {
-            const data = doc.data();
-            const item: AttendanceEventItem = {
-              id: doc.id,
-              eventId: data.eventId || doc.id,
-              employeeId: data.employeeId || "KP-000000",
-              fullName: data.fullName || "Karyawan",
-              eventType: data.eventType || "check_in",
-              locationType: data.locationType || "office",
-              distanceMeters: data.distanceMeters ?? 0,
-              note: data.note ?? null,
-              status: data.status || "normal",
-              requiresApproval: data.requiresApproval ?? false,
-              capturedAt: data.capturedAt || "",
-              timeWib: formatWibTime(data.capturedAt || ""),
-            };
-            items.push(item);
+        unsubscribeSnapshot = onSnapshot(
+          q,
+          (snapshot) => {
+            const items: AttendanceEventItem[] = [];
+            const uniqueUsers = new Set<string>();
+            let lateCount = 0;
+            let fieldCount = 0;
+            let pendingApprovalCount = 0;
 
-            if (item.eventType === "check_in") {
-              uniqueUsers.add(item.employeeId);
+            for (const doc of snapshot.docs) {
+              const data = doc.data();
+              const item: AttendanceEventItem = {
+                id: doc.id,
+                eventId: data.eventId || doc.id,
+                employeeId: data.employeeId || "KP-000000",
+                fullName: data.fullName || "Karyawan",
+                eventType: data.eventType || "check_in",
+                locationType: data.locationType || "office",
+                distanceMeters: data.distanceMeters ?? 0,
+                note: data.note ?? null,
+                status: data.status || "normal",
+                requiresApproval: data.requiresApproval ?? false,
+                capturedAt: data.capturedAt || "",
+                timeWib: formatWibTime(data.capturedAt || ""),
+              };
+              items.push(item);
+
+              if (item.eventType === "check_in") {
+                uniqueUsers.add(item.employeeId);
+              }
+              if (item.status === "late") {
+                lateCount += 1;
+              }
+              if (item.locationType === "field") {
+                fieldCount += 1;
+              }
+              if (item.requiresApproval) {
+                pendingApprovalCount += 1;
+              }
             }
-            if (item.status === "late") {
-              lateCount += 1;
-            }
-            if (item.locationType === "field") {
-              fieldCount += 1;
-            }
-            if (item.requiresApproval) {
-              pendingApprovalCount += 1;
-            }
-          }
 
-          setEvents(items);
-          setKpis({
-            presentToday: uniqueUsers.size,
-            late: lateCount,
-            field: fieldCount,
-            pendingApproval: pendingApprovalCount,
-          });
-          setLoading(false);
-        },
-        (_error) => {
-          // In isolated test/offline environment without emulator
-          setLoading(false);
-        },
-      );
+            setEvents(items);
+            setKpis({
+              presentToday: uniqueUsers.size,
+              late: lateCount,
+              field: fieldCount,
+              pendingApproval: pendingApprovalCount,
+            });
+            setLoading(false);
+          },
+          (error) => {
+            console.warn("Firestore attendanceEvents listener error:", error);
+            setLoading(false);
+          },
+        );
+      } catch (err) {
+        console.warn("Firestore attendanceEvents setup error:", err);
+        setLoading(false);
+      }
+    };
 
-      return () => unsubscribe();
-    } catch {
-      queueMicrotask(() => setLoading(false));
-    }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (
+        !user &&
+        (import.meta.env.DEV ||
+          import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true")
+      ) {
+        signInWithEmailAndPassword(
+          auth,
+          "admin.dev@kudaprima.test",
+          "KudaPrimaDev2026#",
+        ).catch((err) => {
+          console.warn("Auto-signin dev admin error:", err);
+          setupListener();
+        });
+        return;
+      }
+
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+
+      setupListener();
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   }, []);
 
   return { events, kpis, loading };

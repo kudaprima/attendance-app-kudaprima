@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { attendanceCommandSchema, officeLocationSchema } from "../src/index.js";
+import {
+  attendanceCommandSchema,
+  attendanceSubmissionResultSchema,
+  officeLocationSchema,
+} from "../src/index.js";
 
 describe("attendanceCommandSchema", () => {
   it("requires a field note outside the office at application level", () => {
@@ -44,6 +48,21 @@ describe("attendanceCommandSchema", () => {
       note: "Instalasi perangkat di lokasi klien",
       idempotencyKey: "7dfb5918-bf11-4706-8824-b3fc03f924db",
       photoBase64: "dGVzdC1waG90bw==",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("validates attendanceSubmissionResult with non_working_day status", () => {
+    const result = attendanceSubmissionResultSchema.safeParse({
+      eventId: "evt-123",
+      eventType: "check_in",
+      status: "non_working_day",
+      requiresApproval: true,
+      locationType: "field",
+      distanceMeters: 520,
+      capturedAt: "2026-09-05T18:42:00+07:00",
+      message: "Presensi tercatat di luar hari kerja.",
     });
 
     expect(result.success).toBe(true);

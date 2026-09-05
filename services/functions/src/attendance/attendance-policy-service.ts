@@ -1,7 +1,7 @@
 import type { AttendanceEventType } from "@kuda-prima/contracts";
 
 export interface AttendanceScheduleEvaluation {
-  readonly status: "normal" | "late" | "early_departure";
+  readonly status: "normal" | "late" | "early_departure" | "non_working_day";
   readonly requiresApproval: boolean;
   readonly isAllowed: boolean;
   readonly reason?: string;
@@ -40,6 +40,17 @@ export function evaluateAttendanceSchedule(
   const time = toJakartaTime(capturedAt);
   const isWeekday = time.weekday >= 1 && time.weekday <= 5; // Monday to Friday
 
+  // If performed on weekends (Saturday / Sunday), it is outside standard working days
+  if (!isWeekday) {
+    return {
+      status: "non_working_day",
+      requiresApproval: true,
+      isAllowed: true,
+      reason:
+        "Presensi dilakukan di luar hari kerja operasional (akhir pekan). Memerlukan persetujuan supervisor.",
+    };
+  }
+
   if (eventType === "check_in") {
     // Check-in opens at 07:00 WIB
     if (time.hour < 7) {
@@ -51,14 +62,15 @@ export function evaluateAttendanceSchedule(
       };
     }
 
-    // Late if after 08:15 WIB on weekdays
-    const isLate =
-      isWeekday && (time.hour > 8 || (time.hour === 8 && time.minute > 15));
+    // Late if after 08:15 WIB on weekdays (or after regular work hours like 18:42)
+    const isLate = time.hour > 8 || (time.hour === 8 && time.minute > 15);
     if (isLate) {
       return {
         status: "late",
         requiresApproval: true,
         isAllowed: true,
+        reason:
+          "Presensi masuk melebihi batas toleransi 08:15 WIB. Memerlukan persetujuan.",
       };
     }
 
