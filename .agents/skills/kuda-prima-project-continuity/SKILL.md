@@ -29,6 +29,10 @@ are supporting hints only.
    testing skill for local hardware operations.
 8. Apply the GitHub governance skill for any branch, commit, push, pull request, or merge. A
    handoff does not imply authorization for external changes, deployment, billing, or release.
+9. For emulator verification (e.g. when physical Android hardware is disconnected), start the AVD
+   via `.\scripts\start-android-emulator.ps1`, launch the Firebase suite including storage via
+   `pnpm emulators:profile`, build mobile with `--dart-define=USE_FIREBASE_EMULATORS=true`, and verify
+   flows using synthetic test accounts (`technician.dev@kudaprima.test`).
 
 Before ending a milestone, ensure another capable contributor can identify what works, what was
 actually tested, what remains, and the safest next action without reading prior chat messages.
