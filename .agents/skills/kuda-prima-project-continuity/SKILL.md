@@ -30,9 +30,17 @@ are supporting hints only.
 8. Apply the GitHub governance skill for any branch, commit, push, pull request, or merge. A
    handoff does not imply authorization for external changes, deployment, billing, or release.
 9. For emulator verification (e.g. when physical Android hardware is disconnected), start the AVD
-   via `.\scripts\start-android-emulator.ps1`, launch the Firebase suite including storage via
+   via `.\scripts\start-android-emulator.ps1` (supports host webcam via `-Camera webcam0`), seed
+   data via `pnpm emulators:profile:seed`, launch Firebase suite including storage via
    `pnpm emulators:profile`, build mobile with `--dart-define=USE_FIREBASE_EMULATORS=true`, and verify
    flows using synthetic test accounts (`technician.dev@kudaprima.test`).
+10. Respect company schedule policies strictly: Standard workdays are Monday-Friday 08:00-17:00 WIB.
+    Check-in opens 07:00 WIB; check-in after 08:15 WIB is `late` (requires approval); check-out before
+    17:00 WIB is `early_departure` (requires approval); attendance on weekends (Saturday/Sunday) or
+    holidays is classified as `non_working_day` and requires supervisor approval.
+11. Preserved security rules require an authenticated manager (`admin` or `supervisor`) to read the
+    `attendanceEvents` collection. In local development, the admin portal auto-authenticates against
+    the local Auth emulator using `admin.dev@kudaprima.test`.
 
 Before ending a milestone, ensure another capable contributor can identify what works, what was
 actually tested, what remains, and the safest next action without reading prior chat messages.
