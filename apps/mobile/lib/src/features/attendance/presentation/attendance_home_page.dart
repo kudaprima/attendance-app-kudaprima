@@ -1,7 +1,11 @@
 import 'package:attendance/src/core/config/app_config.dart';
+import 'package:attendance/src/features/attendance/application/attendance_submission_providers.dart';
 import 'package:attendance/src/features/attendance/application/location_error_message.dart';
 import 'package:attendance/src/features/attendance/application/location_providers.dart';
+import 'package:attendance/src/features/attendance/domain/attendance_submission.dart';
 import 'package:attendance/src/features/attendance/domain/office_location.dart';
+import 'package:attendance/src/features/attendance/presentation/camera_selfie_dialog.dart';
+import 'package:attendance/src/features/attendance/presentation/field_attendance_note_dialog.dart';
 import 'package:attendance/src/features/auth/application/auth_error_message.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
@@ -9,6 +13,7 @@ import 'package:attendance/src/features/profile/domain/employee_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class AttendanceHomePage extends ConsumerStatefulWidget {
   const AttendanceHomePage({
@@ -29,6 +34,8 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
   String? _locationError;
   bool _checkingLocation = false;
   int _lowAccuracySamples = 0;
+  AttendanceSubmissionResult? _lastSubmission;
+  bool _isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -81,15 +88,25 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
                       style: Theme.of(context).textTheme.displaySmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const Text('Belum ada presensi hari ini'),
+                    const SizedBox(height: 6),
+                    _buildAttendanceStatusLabel(context),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: _locationReadiness?.canAttend == true
-                            ? () => _showDevelopmentMessage(context)
+                        key: const Key('check-in-button'),
+                        onPressed: _canCheckIn
+                            ? () => _handleAttendanceAction('check_in')
                             : null,
-                        icon: const Icon(Icons.login),
+                        icon: _isSubmitting
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.login),
                         label: const Text('Presensi masuk'),
                       ),
                     ),
@@ -97,7 +114,10 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: null,
+                        key: const Key('check-out-button'),
+                        onPressed: _canCheckOut
+                            ? () => _handleAttendanceAction('check_out')
+                            : null,
                         icon: const Icon(Icons.logout),
                         label: const Text('Presensi pulang'),
                       ),
@@ -320,13 +340,138 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
     return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
+  bool get _canCheckIn {
+    if (_isSubmitting) return false;
+    if (_lastSubmission != null && _lastSubmission!.eventType == 'check_in') {
+      return false;
+    }
+    return _locationReadiness?.canAttend == true;
+  }
+
+  bool get _canCheckOut {
+    if (_isSubmitting) return false;
+    if (_lastSubmission == null || _lastSubmission!.eventType != 'check_in') {
+      return false;
+    }
+    return _locationReadiness?.canAttend == true;
+  }
+
+  Widget _buildAttendanceStatusLabel(BuildContext context) {
+    final submission = _lastSubmission;
+    if (submission == null) {
+      return const Text('Belum ada presensi hari ini');
+    }
+
+    final isCheckIn = submission.eventType == 'check_in';
+    final statusText = isCheckIn
+        ? 'Presensi masuk tercatat'
+        : 'Presensi pulang tercatat';
+    final badgeColor = submission.requiresApproval
+        ? Colors.amber.shade800
+        : Colors.green.shade700;
+    final badgeLabel = submission.requiresApproval
+        ? (submission.status == AttendanceSubmissionStatus.late
+              ? 'Terlambat'
+              : 'Pulang Awal')
+        : 'Tepat Waktu';
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      children: [
+        Text(statusText, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: badgeColor.withAlpha(30),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: badgeColor),
+          ),
+          child: Text(
+            badgeLabel,
+            style: TextStyle(
+              color: badgeColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleAttendanceAction(String eventType) async {
+    final readiness = _locationReadiness;
+    if (readiness == null || !readiness.canAttend) return;
+    if (_isSubmitting) return;
+
+    String? note;
+    if (readiness.status == LocationReadinessStatus.field ||
+        readiness.lowAccuracy) {
+      note = await FieldAttendanceNoteDialog.show(context);
+      if (!mounted) return;
+      if (note == null) return;
+    }
+
+    final photoBase64 = await CameraSelfieDialog.show(context);
+    if (!mounted) return;
+    if (photoBase64 == null) return;
+
+    setState(() => _isSubmitting = true);
+    try {
+      final command = AttendanceSubmissionCommand(
+        eventType: eventType,
+        capturedAt: DateTime.now(),
+        latitude: readiness.sample.latitude,
+        longitude: readiness.sample.longitude,
+        accuracyMeters: readiness.sample.accuracyMeters,
+        locationType: readiness.status == LocationReadinessStatus.office
+            ? 'office'
+            : 'field',
+        idempotencyKey: const Uuid().v4(),
+        photoBase64: photoBase64,
+        note: note,
+        isMocked: readiness.sample.isMocked,
+      );
+
+      final result = await ref
+          .read(attendanceSubmissionRepositoryProvider)
+          .submitAttendance(command);
+
+      if (!mounted) return;
+      setState(() {
+        _lastSubmission = result;
+        _isSubmitting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.requiresApproval
+              ? Colors.amber.shade900
+              : Colors.green.shade800,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengirim presensi: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   void _showDevelopmentMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           AppConfig.useFirebaseEmulators
               ? 'Auth dan Firestore Emulator dikonfigurasi untuk development.'
-              : 'Firebase siap. Login Google tersedia pada tahap berikutnya.',
+              : 'Pengaturan profil tersedia pada tahap berikutnya.',
         ),
       ),
     );

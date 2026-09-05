@@ -11,6 +11,8 @@ abstract final class AppConfig {
   );
   static const authEmulatorPort = 9099;
   static const firestoreEmulatorPort = 8080;
+  static const functionsEmulatorPort = 5001;
+  static const storageEmulatorPort = 9199;
   static const officeGeofenceRadiusMeters = 100.0;
   static const offlineQueueLimit = Duration(hours: 12);
   static const photoRetention = Duration(days: 90);

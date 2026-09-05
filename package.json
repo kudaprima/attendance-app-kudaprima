@@ -18,7 +18,7 @@
     "emulators": "pnpm build:functions && firebase emulators:start --project kuda-prima-attandance-dev",
     "emulators:auth": "firebase emulators:start --only auth --project kuda-prima-attandance-dev",
     "emulators:auth:seed": "pnpm build:contracts && pnpm --filter @kuda-prima/functions seed:auth-emulator",
-    "emulators:profile": "pnpm build:functions && firebase emulators:start --only auth,firestore,functions --project kuda-prima-attandance-dev",
+    "emulators:profile": "pnpm build:functions && firebase emulators:start --only auth,firestore,functions,storage --project kuda-prima-attandance-dev",
     "emulators:profile:seed": "pnpm build:contracts && pnpm --filter @kuda-prima/functions seed:profile-emulator",
     "test:emulator:profile": "firebase emulators:exec --only firestore --project kuda-prima-attandance-dev \"pnpm --filter @kuda-prima/functions test:emulator\"",
     "firebase": "firebase",

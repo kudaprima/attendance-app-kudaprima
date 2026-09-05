@@ -78,6 +78,15 @@ async function seedRuleProfiles(): Promise<void> {
       radiusMeters: 100,
       timeZone: "Asia/Jakarta",
     });
+    await setDoc(doc(database, "attendanceEvents/event-technician"), {
+      eventId: "event-technician",
+      userId: "rules-technician",
+      employeeId: "KP-900001",
+      eventType: "check_in",
+      locationType: "office",
+      status: "normal",
+      requiresApproval: false,
+    });
   });
 }
 
@@ -286,5 +295,75 @@ describe("employee profile Firestore rules", () => {
       .firestore();
 
     await assertFails(getDoc(doc(inactiveDatabase, "officeLocations/main")));
+  });
+
+  it("allows active employee to read own attendanceEvents", async () => {
+    const employeeDatabase = testEnvironment
+      .authenticatedContext("rules-technician", { role: "technician" })
+      .firestore();
+
+    await assertSucceeds(
+      getDoc(doc(employeeDatabase, "attendanceEvents/event-technician")),
+    );
+  });
+
+  it("denies active employee from reading another employee's attendanceEvents", async () => {
+    const otherEmployeeDatabase = testEnvironment
+      .authenticatedContext("rules-technician-2", { role: "technician" })
+      .firestore();
+
+    // First seed another technician's active profile
+    await testEnvironment.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "users/rules-technician-2"), {
+        ...baseProfile,
+        authUid: "rules-technician-2",
+        email: "rules-technician-2@kudaprima.test",
+        employeeId: "KP-900004",
+      });
+    });
+
+    await assertFails(
+      getDoc(doc(otherEmployeeDatabase, "attendanceEvents/event-technician")),
+    );
+  });
+
+  it("allows manager to read any employee's attendanceEvents", async () => {
+    const managerDatabase = testEnvironment
+      .authenticatedContext("rules-manager", { role: "supervisor" })
+      .firestore();
+
+    await assertSucceeds(
+      getDoc(doc(managerDatabase, "attendanceEvents/event-technician")),
+    );
+  });
+
+  it("denies client-side write, creation, or update to attendanceEvents", async () => {
+    const employeeDatabase = testEnvironment
+      .authenticatedContext("rules-technician", { role: "technician" })
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(employeeDatabase, "attendanceEvents/client-spoofed-event"), {
+        eventId: "client-spoofed-event",
+        userId: "rules-technician",
+        eventType: "check_in",
+      }),
+    );
+
+    await assertFails(
+      updateDoc(doc(employeeDatabase, "attendanceEvents/event-technician"), {
+        status: "normal",
+      }),
+    );
+  });
+
+  it("denies unauthenticated read to attendanceEvents", async () => {
+    const unauthenticatedDatabase = testEnvironment
+      .unauthenticatedContext()
+      .firestore();
+
+    await assertFails(
+      getDoc(doc(unauthenticatedDatabase, "attendanceEvents/event-technician")),
+    );
   });
 });
