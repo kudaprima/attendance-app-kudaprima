@@ -20,7 +20,7 @@ Vitest covers admin, contracts, and Functions; Flutter Test covers mobile. Name 
 
 Read **CONTRIBUTING.md** before Git operations. Use imperative Conventional Commits such as **feat(mobile): add field attendance note** and short-lived branches such as **feat/mobile-attendance-note**. Keep commits focused. Pull requests must explain behavior, tests, security/data impact, linked issue, and screenshots for UI changes. Never commit credentials or generated Firebase app configuration. For branch, commit, push, pull request, or recovery work, apply **.agents/skills/kuda-prima-github-governance**.
 
-For Samsung or other physical Android device setup and diagnosis, apply **.agents/skills/kuda-prima-android-device-testing**.
+For Samsung or other physical Android device setup and diagnosis, apply **.agents/skills/kuda-prima-android-device-testing**. For manual end-to-end terminal simulation across emulator, mobile, Firebase, and web admin, follow **docs/testing/manual-simulation-runbook.md**.
 
 ## Change-Coupled Governance
 
