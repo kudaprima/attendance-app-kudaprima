@@ -30,6 +30,8 @@ class EmployeeProfile {
     required this.active,
     required this.createdAt,
     required this.updatedAt,
+    this.phone,
+    this.homeAddress,
   });
 
   final String uid;
@@ -42,6 +44,28 @@ class EmployeeProfile {
   final bool active;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? phone;
+  final String? homeAddress;
+
+  EmployeeProfile copyWith({
+    String? phone,
+    String? homeAddress,
+  }) {
+    return EmployeeProfile(
+      uid: uid,
+      employeeId: employeeId,
+      email: email,
+      fullName: fullName,
+      role: role,
+      employmentStatus: employmentStatus,
+      employmentStartDate: employmentStartDate,
+      active: active,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      phone: phone ?? this.phone,
+      homeAddress: homeAddress ?? this.homeAddress,
+    );
+  }
 }
 
 class InvalidEmployeeProfileException implements Exception {

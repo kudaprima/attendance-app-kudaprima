@@ -4,12 +4,15 @@ import 'package:attendance/src/features/attendance/application/location_error_me
 import 'package:attendance/src/features/attendance/application/location_providers.dart';
 import 'package:attendance/src/features/attendance/domain/attendance_submission.dart';
 import 'package:attendance/src/features/attendance/domain/office_location.dart';
+import 'package:attendance/src/features/attendance/presentation/attendance_history_tab_view.dart';
 import 'package:attendance/src/features/attendance/presentation/camera_selfie_dialog.dart';
 import 'package:attendance/src/features/attendance/presentation/field_attendance_note_dialog.dart';
 import 'package:attendance/src/features/auth/application/auth_error_message.dart';
 import 'package:attendance/src/features/auth/application/auth_providers.dart';
 import 'package:attendance/src/features/auth/domain/auth_session.dart';
 import 'package:attendance/src/features/profile/domain/employee_profile.dart';
+import 'package:attendance/src/features/profile/presentation/profile_tab_view.dart';
+import 'package:attendance/src/features/services/presentation/services_tab_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +39,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
   int _lowAccuracySamples = 0;
   AttendanceSubmissionResult? _lastSubmission;
   bool _isSubmitting = false;
+  int _selectedTabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +49,19 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PT Kuda Prima'),
+        title: Text(
+          _selectedTabIndex == 0
+              ? 'PT Kuda Prima'
+              : _selectedTabIndex == 1
+                  ? 'Layanan Karyawan'
+                  : _selectedTabIndex == 2
+                      ? 'Riwayat Presensi'
+                      : 'Profil Karyawan',
+        ),
         actions: [
           IconButton(
             tooltip: 'Pengaturan profil',
-            onPressed: () => _showDevelopmentMessage(context),
+            onPressed: () => setState(() => _selectedTabIndex = 3),
             icon: const Icon(Icons.settings_outlined),
           ),
           IconButton(
@@ -60,98 +72,155 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        child: IndexedStack(
+          index: _selectedTabIndex,
           children: [
-            Text(
-              'Selamat datang, ${widget.profile.fullName}',
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 4),
-            Text(date, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 4),
-            Text(
-              '${widget.profile.employeeId} • ${widget.session.role.label}',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 20),
-            _buildLocationCard(context, officeLocation),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Text(
-                      DateFormat('HH:mm').format(now),
-                      style: Theme.of(context).textTheme.displaySmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 6),
-                    _buildAttendanceStatusLabel(context),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        key: const Key('check-in-button'),
-                        onPressed: _canCheckIn
-                            ? () => _handleAttendanceAction('check_in')
-                            : null,
-                        icon: _isSubmitting
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.login),
-                        label: const Text('Presensi masuk'),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        key: const Key('check-out-button'),
-                        onPressed: _canCheckOut
-                            ? () => _handleAttendanceAction('check_out')
-                            : null,
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Presensi pulang'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const _StatusTile(
-              icon: Icons.cloud_off_outlined,
-              title: 'Antrean offline',
-              subtitle: '0 event menunggu sinkronisasi',
-            ),
-            if (AppConfig.useFirebaseEmulators)
-              _StatusTile(
-                icon: Icons.developer_mode_outlined,
-                title: 'Firebase development',
-                subtitle:
-                    'Auth ${AppConfig.firebaseEmulatorHost}:'
-                    '${AppConfig.authEmulatorPort} • Firestore '
-                    '${AppConfig.firebaseEmulatorHost}:'
-                    '${AppConfig.firestoreEmulatorPort}',
-              ),
-            _StatusTile(
-              icon: Icons.badge_outlined,
-              title: 'Profil karyawan',
-              subtitle:
-                  '${widget.profile.employmentStatus.label} • Mulai '
-                  '${widget.profile.employmentStartDate}',
-            ),
+            _buildAttendanceTab(context, now, date, officeLocation),
+            ServicesTabView(profile: widget.profile),
+            AttendanceHistoryTabView(profile: widget.profile),
+            ProfileTabView(session: widget.session, profile: widget.profile),
           ],
         ),
       ),
+      bottomNavigationBar: NavigationBar(
+        key: const Key('main-navigation-bar'),
+        selectedIndex: _selectedTabIndex,
+        onDestinationSelected: (index) =>
+            setState(() => _selectedTabIndex = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.alarm_outlined),
+            selectedIcon: Icon(Icons.alarm),
+            label: 'Presensi',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.work_history_outlined),
+            selectedIcon: Icon(Icons.work_history),
+            label: 'Layanan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: 'Riwayat',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceTab(
+    BuildContext context,
+    DateTime now,
+    String date,
+    AsyncValue<OfficeLocation> officeLocation,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text(
+          'Selamat datang, ${widget.profile.fullName}',
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(date, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 4),
+        Text(
+          '${widget.profile.employeeId} • ${widget.session.role.label}',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: 20),
+        _buildLocationCard(context, officeLocation),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(now),
+                  style: Theme.of(context).textTheme.displaySmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                _buildAttendanceStatusLabel(context),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const Key('check-in-button'),
+                    onPressed: _canCheckIn
+                        ? () => _handleAttendanceAction('check_in')
+                        : null,
+                    icon: _isSubmitting
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.login),
+                    label: const Text('Presensi masuk'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: const Key('check-out-button'),
+                    onPressed: _canCheckOut
+                        ? () => _handleAttendanceAction('check_out')
+                        : null,
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Presensi pulang'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Informasi Sistem',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 8),
+        const _StatusTile(
+          icon: Icons.cloud_off_outlined,
+          title: 'Antrean offline',
+          subtitle: '0 event menunggu sinkronisasi',
+        ),
+        if (AppConfig.useFirebaseEmulators) ...[
+          const SizedBox(height: 12),
+          _StatusTile(
+            icon: Icons.developer_mode_outlined,
+            title: 'Firebase development',
+            subtitle:
+                'Auth ${AppConfig.firebaseEmulatorHost}:'
+                '${AppConfig.authEmulatorPort} • Firestore '
+                '${AppConfig.firebaseEmulatorHost}:'
+                '${AppConfig.firestoreEmulatorPort}',
+          ),
+        ],
+        const SizedBox(height: 12),
+        _StatusTile(
+          icon: Icons.badge_outlined,
+          title: 'Profil karyawan',
+          subtitle:
+              '${widget.profile.employmentStatus.label} • Mulai '
+              '${widget.profile.employmentStartDate}',
+          onTap: () => setState(() => _selectedTabIndex = 3),
+        ),
+      ],
     );
   }
 
@@ -466,18 +535,6 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
     }
   }
 
-  void _showDevelopmentMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AppConfig.useFirebaseEmulators
-              ? 'Auth dan Firestore Emulator dikonfigurasi untuk development.'
-              : 'Pengaturan profil tersedia pada tahap berikutnya.',
-        ),
-      ),
-    );
-  }
-
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(authRepositoryProvider).signOut();
@@ -494,20 +551,24 @@ class _StatusTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: EdgeInsets.zero,
       child: ListTile(
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

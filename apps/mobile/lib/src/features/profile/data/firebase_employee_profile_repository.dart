@@ -31,6 +31,8 @@ final class FirebaseEmployeeProfileRepository
     final active = data['active'];
     final createdAt = data['createdAt'];
     final updatedAt = data['updatedAt'];
+    final phone = data['phone'] as String?;
+    final homeAddress = data['homeAddress'] as String?;
 
     if (authUid != uid ||
         employeeId is! String ||
@@ -59,6 +61,25 @@ final class FirebaseEmployeeProfileRepository
       active: active,
       createdAt: createdAt.toDate().toUtc(),
       updatedAt: updatedAt.toDate().toUtc(),
+      phone: phone,
+      homeAddress: homeAddress,
     );
+  }
+
+  @override
+  Future<void> updateContactInfo({
+    required String uid,
+    String? phone,
+    String? homeAddress,
+  }) async {
+    final updates = <String, dynamic>{
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': uid,
+    };
+    if (phone != null) updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+    if (homeAddress != null) {
+      updates['homeAddress'] = homeAddress.trim().isEmpty ? null : homeAddress.trim();
+    }
+    await _firestore.collection('users').doc(uid).update(updates);
   }
 }

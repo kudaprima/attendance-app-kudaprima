@@ -162,6 +162,13 @@ class _FakeEmployeeProfileRepository implements EmployeeProfileRepository {
 
   @override
   Stream<EmployeeProfile?> watchProfile(String uid) => Stream.value(profile);
+
+  @override
+  Future<void> updateContactInfo({
+    required String uid,
+    String? phone,
+    String? homeAddress,
+  }) async {}
 }
 
 class _FakeOfficeLocationRepository implements OfficeLocationRepository {
