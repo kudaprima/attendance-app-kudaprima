@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   limit,
@@ -127,28 +127,16 @@ export function useAttendanceLiveFeed() {
     };
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (
-        !user &&
-        (import.meta.env.DEV ||
-          import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true")
-      ) {
-        signInWithEmailAndPassword(
-          auth,
-          "admin.dev@kudaprima.test",
-          "KudaPrimaDev2026#",
-        ).catch((err) => {
-          console.warn("Auto-signin dev admin error:", err);
-          setupListener();
-        });
-        return;
-      }
-
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
         unsubscribeSnapshot = null;
       }
 
-      setupListener();
+      if (user) {
+        setupListener();
+      } else {
+        setLoading(false);
+      }
     });
 
     return () => {

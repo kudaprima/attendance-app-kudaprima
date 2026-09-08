@@ -103,6 +103,47 @@ export const attendanceEventRecordSchema = z.object({
   idempotencyKey: z.string().uuid(),
 });
 
+export const approvalStatusSchema = z.enum([
+  "pending",
+  "approved",
+  "rejected",
+]);
+
+export const leaveRequestTypeSchema = z.enum([
+  "annual_leave",
+  "sick_leave",
+  "special_permission",
+]);
+
+export const leaveRequestCommandSchema = z.object({
+  employeeId: employeeIdSchema,
+  type: leaveRequestTypeSchema,
+  startDate: calendarDateSchema,
+  endDate: calendarDateSchema,
+  reason: z.string().trim().min(3).max(500),
+  attachmentUrl: z.string().url().optional().nullable(),
+});
+
+export const overtimeRequestCommandSchema = z.object({
+  employeeId: employeeIdSchema,
+  date: calendarDateSchema,
+  startedAt: z.string().datetime({ offset: true }),
+  endedAt: z.string().datetime({ offset: true }),
+  taskDescription: z.string().trim().min(3).max(500),
+});
+
+export const updateContactProfileCommandSchema = z.object({
+  phone: z.string().trim().max(30).optional().nullable(),
+  homeAddress: z.string().trim().max(500).optional().nullable(),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable(),
+  gender: z.enum(["male", "female"]).optional().nullable(),
+});
+
+export type ApprovalStatus = z.infer<typeof approvalStatusSchema>;
 export type AttendanceCommand = z.infer<typeof attendanceCommandSchema>;
 export type AttendanceEventRecord = z.infer<typeof attendanceEventRecordSchema>;
 export type AttendanceEventType = z.infer<typeof attendanceEventTypeSchema>;
@@ -110,8 +151,16 @@ export type AttendanceSubmissionResult = z.infer<
   typeof attendanceSubmissionResultSchema
 >;
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
+export type LeaveRequestCommand = z.infer<typeof leaveRequestCommandSchema>;
+export type LeaveRequestType = z.infer<typeof leaveRequestTypeSchema>;
 export type OfficeLocation = z.infer<typeof officeLocationSchema>;
+export type OvertimeRequestCommand = z.infer<
+  typeof overtimeRequestCommandSchema
+>;
 export type ProvisionEmployeeProfileCommand = z.infer<
   typeof provisionEmployeeProfileCommandSchema
+>;
+export type UpdateContactProfileCommand = z.infer<
+  typeof updateContactProfileCommandSchema
 >;
 export type UserRole = z.infer<typeof userRoleSchema>;
