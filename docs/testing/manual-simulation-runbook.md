@@ -115,7 +115,7 @@ flutter run --dart-define=USE_FIREBASE_EMULATORS=true -d emulator-5554
 1. **Layar Login**:
    - Tekan tombol pengisian cepat dev mode atau ketik:
      - Email: `technician.dev@kudaprima.test`
-     - Password: `Password123!`
+     - Password: `KudaPrimaDev2026#`
    - Tekan **Masuk**.
 2. **Tab 1: Presensi**:
    - Perhatikan bahwa tampilan kini rapi dan tidak berdempetan (spacing 16dp).
@@ -155,7 +155,7 @@ Buka browser di laptop Anda dan akses: [http://localhost:5173](http://localhost:
 #### Skenario Uji 1: Uji Pemblokiran Role Teknisi (RBAC Gate)
 1. Di layar login admin, klik tombol quick-fill **Teknisi (Ditolak)** atau ketik:
    - Email: `technician.dev@kudaprima.test`
-   - Password: `Password123!`
+   - Password: `KudaPrimaDev2026#`
 2. Tekan **Masuk ke Portal**.
 3. **Hasil yang diharapkan**:
    - Muncul layar merah **Akses Ditolak (Khusus Supervisor & Admin)**.
