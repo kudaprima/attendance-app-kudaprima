@@ -1,10 +1,6 @@
 import { initializeApp } from "firebase-admin/app";
 import { onCall, onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
-
-import { handleSubmitAttendance } from "./attendance/submit-attendance.js";
-import { handleProvisionEmployeeProfile } from "./profile/provision-employee-profile.js";
-
 initializeApp();
 
 setGlobalOptions({
@@ -31,10 +27,20 @@ const enforceAppCheck = process.env.FUNCTIONS_EMULATOR !== "true";
 
 export const provisionEmployeeProfile = onCall(
   { enforceAppCheck },
-  handleProvisionEmployeeProfile,
+  async (request) => {
+    const { handleProvisionEmployeeProfile } = await import(
+      "./profile/provision-employee-profile.js"
+    );
+    return handleProvisionEmployeeProfile(request);
+  },
 );
 
 export const submitAttendance = onCall(
   { enforceAppCheck },
-  handleSubmitAttendance,
+  async (request) => {
+    const { handleSubmitAttendance } = await import(
+      "./attendance/submit-attendance.js"
+    );
+    return handleSubmitAttendance(request);
+  },
 );

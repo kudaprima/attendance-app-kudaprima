@@ -21,13 +21,13 @@ Panduan ini memuat langkah-langkah detail, perintah terminal, akun uji sintetis,
 
 ## 2. Kredensial Akun Uji Sintetis (Local Development)
 
-Semua akun telah disediakan otomatis saat seed data emulator dijalankan:
+Semua akun disediakan melalui skrip seeder (`pnpm emulators:profile:seed`):
 
 | Akun / Email | Password | Role | Hak Akses |
 | :--- | :--- | :--- | :--- |
-| `technician.dev@kudaprima.test` | `Password123!` | `technician` | Mobile App Presensi & Layanan. **Ditolak total dari Web Admin**. |
-| `supervisor.dev@kudaprima.test` | `Password123!` | `supervisor` | Web Admin: Live Presensi, Persetujuan, Ekspor Laporan. |
-| `admin.dev@kudaprima.test` | `Password123!` | `admin` | Web Admin Akses Penuh: Master Karyawan, Distribusi APK QR, Persetujuan. |
+| `technician.dev@kudaprima.test` | `KudaPrimaDev2026#` | `technician` | Mobile App Presensi & Layanan. **Ditolak total dari Web Admin**. |
+| `supervisor.dev@kudaprima.test` | `KudaPrimaDev2026#` | `supervisor` | Web Admin: Live Presensi, Persetujuan, Ekspor Laporan. |
+| `admin.dev@kudaprima.test` | `KudaPrimaDev2026#` | `admin` | Web Admin Akses Penuh: Master Karyawan, Distribusi APK QR, Persetujuan. |
 
 ---
 
@@ -44,8 +44,8 @@ cd "D:\KudaPrima\Project Management\daily_attandance"
 
 ---
 
-### Langkah 2: Jalankan Firebase Emulator Suite & Seeder
-Di **PowerShell 1**, jalankan perintah:
+### Langkah 2: Jalankan Firebase Emulator Suite & Seeding Database
+Di **PowerShell 1**, jalankan emulator:
 
 ```powershell
 pnpm emulators:profile
@@ -54,10 +54,19 @@ pnpm emulators:profile
 **Hasil yang diharapkan**:
 - Emulator Auth aktif di port `9099`
 - Emulator Firestore aktif di port `8080`
-- Emulator Functions aktif di port `5001`
+- Emulator Functions aktif di port `5001` (diinisialisasi cepat dalam <1 detik berkat lazy loading)
 - Emulator Storage aktif di port `9199`
-- **Firebase Emulator UI** aktif dan dapat diakses melalui browser: [http://127.0.0.1:4000](http://127.0.0.1:4000)
-- Profil akun uji dan konfigurasi kantor otomatis ter-seed.
+- **Firebase Emulator UI** aktif di browser: [http://127.0.0.1:4000](http://127.0.0.1:4000)
+
+> [!IMPORTANT]
+> **Wajib Mengisi Data Awal (Seeding)**:
+> Saat pertama kali emulator menyala, database Auth dan Firestore masih kosong.
+> Buka tab/jendela terminal baru dan jalankan perintah:
+> ```powershell
+> pnpm emulators:profile:seed
+> ```
+> Perintah ini akan langsung mendaftarkan akun `technician.dev`, `supervisor.dev`, `admin.dev`, membuat profil karyawan di Firestore (`KP-000001`, `KP-000002`, `KP-000003`), serta menyetel lokasi kantor utama `officeLocations/main`.
+> Setelah itu, cek [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth) dan [http://127.0.0.1:4000/firestore](http://127.0.0.1:4000/firestore) untuk memastikan data sudah masuk.
 
 > [!NOTE]
 > Biarkan **PowerShell 1** tetap berjalan di latar belakang selama Anda melakukan simulasi.

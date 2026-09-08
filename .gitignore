@@ -40,3 +40,4 @@ Thumbs.db
 # Local emulator and temporary data
 .emulator-data/
 .tmp/
+firebase-export-*/
