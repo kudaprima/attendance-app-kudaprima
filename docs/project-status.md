@@ -7,10 +7,10 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 7 September 2026
+- Tanggal: 8 September 2026
 - Baseline `main`: `ba95d27` (`feat: vertical slice presensi (#9)`)
 - Pekerjaan aktif: Sideloaded APK distribution, UI/UX mobile overhaul, & admin authentication/RBAC (`feat/mobile-navigation-and-services`)
-- Tahap produk: Navigasi 4-tab mobile, hub layanan karyawan (Cuti, Izin Sakit, Lembur, Profil), perbaikan spacing layout, form login & RBAC Web Admin (pemblokiran teknisi, cross-approval enforcement, QR Code distribusi APK) selesai diimplementasikan dan diverifikasi (41 Vitest tests, 31 Flutter tests, 0 lint/analyzer issues).
+- Tahap produk: Navigasi 4-tab mobile, hub layanan karyawan (Cuti, Izin Sakit, Lembur, Profil), perbaikan spacing layout, form login & RBAC Web Admin (pemblokiran teknisi, cross-approval enforcement, QR Code distribusi APK), optimasi modul Cloud Functions (lazy loading eliminasi timeout emulator), dan runbook simulasi terminal selesai diimplementasikan dan diverifikasi (41 Vitest tests, 31 Flutter tests, 0 lint/analyzer issues).
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
 ## Ruang Lingkup yang Disepakati
@@ -42,9 +42,9 @@ serta self-approval dilarang.
 | Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                       |
 | Mobile          | Shell Android 4-tab (`Presensi`, `Layanan`, `Riwayat`, `Profil`), perbaikan spacing layout seimbang (16dp vertical spacing), hub kuota cuti tahunan (12 hari/tahun, validasi masa kerja >= 1 thn), pengajuan izin sakit (H+3), lembur (>8 jam warning), edit kontak profil (`phone`, `homeAddress`), dialog QR Code APK, evaluasi lokasi kantor/lapangan, alur submit presensi masuk/pulang, dialog catatan lapangan, camera selfie dialog, upload Storage, dan integrasi Cloud Functions. |
 | Admin Web       | Form Login resmi berlogo Kuda Prima, Role-Based Access Control (RBAC) & Gate (`technician` diblokir ke portal web), penanganan akun nonaktif, sesi token claim refresh, Pusat Persetujuan (*Approval Center*) dengan penolakan *Self-approval* (cross-approval wajib), Halaman Distribusi APK & generator QR Code vektor, Master Karyawan, dan Laporan Presensi dengan ekspor CSV. |
-| Backend & Rules | Health endpoint, provisioning profil, seeder kantor/profil, Cloud Function `recordAttendanceEvent` (idempotensi, validasi geofence, validasi selfie Storage, catatan lapangan), audit event immutable, dan rule pembatasan write client. |
+| Backend & Rules | Health endpoint, provisioning profil, seeder kantor/profil, Cloud Function `recordAttendanceEvent` (idempotensi, validasi geofence, validasi selfie Storage, catatan lapangan), audit event immutable, rule pembatasan write client, dan optimasi pemuatan modul lazy loading (waktu inisialisasi turun dari 47s ke 842ms, mencegah emulator discovery timeout). |
 | Contracts       | Zod schemas untuk `attendanceSubmissionCommandSchema`, `leaveRequestCommandSchema`, `overtimeRequestCommandSchema`, `updateContactProfileCommandSchema`, dan inferred TypeScript types dengan unit tests lengkap.            |
-| Kualitas        | `pnpm check:brand`, lint/typecheck/test/build pnpm (41 Vitest tests lulus: 17 contracts, 7 admin, 17 functions), `flutter analyze` (0 issue), dan 31 Flutter tests lulus.                                                 |
+| Kualitas        | `pnpm check:brand`, lint/typecheck/test/build pnpm (41 Vitest tests lulus: 17 contracts, 7 admin, 17 functions), `flutter analyze` (0 issue), dan 31 Flutter tests lulus. Panduan pengujian terminal terdokumentasi di `docs/testing/manual-simulation-runbook.md`. |
 
 ## Belum Diimplementasikan
 
