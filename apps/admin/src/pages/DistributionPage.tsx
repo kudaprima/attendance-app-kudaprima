@@ -1,9 +1,4 @@
-import {
-  Download,
-  FileCheck,
-  Printer,
-  Smartphone,
-} from "lucide-react";
+import { Download, FileCheck, Printer, Smartphone } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +28,8 @@ export function DistributionPage() {
             Distribusi APK Android
           </h1>
           <p className="text-sm text-muted-foreground">
-            Distribusi aplikasi mandiri (sideloaded) tanpa melalui Google Play Store.
+            Distribusi aplikasi mandiri (sideloaded) tanpa melalui Google Play
+            Store.
           </p>
         </div>
         <div className="flex gap-2">
@@ -113,7 +109,9 @@ export function DistributionPage() {
                   1
                 </div>
                 <p>
-                  Pindai QR code menggunakan kamera ponsel atau buka browser Chrome lalu unduh file <strong>kudaprima-attendance.apk</strong>.
+                  Pindai QR code menggunakan kamera ponsel atau buka browser
+                  Chrome lalu unduh file{" "}
+                  <strong>kudaprima-attendance.apk</strong>.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -121,7 +119,9 @@ export function DistributionPage() {
                   2
                 </div>
                 <p>
-                  Jika muncul peringatan <em>"File ini mungkin berbahaya"</em>, pilih <strong>Tetap Download</strong> karena ini adalah aplikasi internal resmi PT Kuda Prima.
+                  Jika muncul peringatan <em>"File ini mungkin berbahaya"</em>,
+                  pilih <strong>Tetap Download</strong> karena ini adalah
+                  aplikasi internal resmi PT Kuda Prima.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -129,7 +129,9 @@ export function DistributionPage() {
                   3
                 </div>
                 <p>
-                  Buka file yang diunduh. Jika diminta izin sistem, aktifkan opsi <strong>"Izinkan dari sumber ini"</strong> (Install unknown apps) pada pengaturan ponsel.
+                  Buka file yang diunduh. Jika diminta izin sistem, aktifkan
+                  opsi <strong>"Izinkan dari sumber ini"</strong> (Install
+                  unknown apps) pada pengaturan ponsel.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -137,7 +139,9 @@ export function DistributionPage() {
                   4
                 </div>
                 <p>
-                  Tekan <strong>Pasang / Install</strong>, kemudian buka aplikasi dan izinkan akses <strong>Kamera</strong> dan <strong>Lokasi</strong> saat presensi.
+                  Tekan <strong>Pasang / Install</strong>, kemudian buka
+                  aplikasi dan izinkan akses <strong>Kamera</strong> dan{" "}
+                  <strong>Lokasi</strong> saat presensi.
                 </p>
               </div>
             </CardContent>
@@ -160,12 +164,16 @@ export function DistributionPage() {
                 <span>Android 10.0+ (API 29 hingga 34)</span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-muted-foreground">Tipe Penandatanganan:</span>
+                <span className="text-muted-foreground">
+                  Tipe Penandatanganan:
+                </span>
                 <span>Kuda Prima Enterprise Keystore</span>
               </div>
               <div className="flex justify-between pt-1">
                 <span className="text-muted-foreground">Self-Update OTA:</span>
-                <span className="text-emerald-600 font-semibold">Tersinkronisasi dengan Firestore</span>
+                <span className="text-emerald-600 font-semibold">
+                  Tersinkronisasi dengan Firestore
+                </span>
               </div>
             </CardContent>
           </Card>

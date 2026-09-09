@@ -28,19 +28,14 @@ const enforceAppCheck = process.env.FUNCTIONS_EMULATOR !== "true";
 export const provisionEmployeeProfile = onCall(
   { enforceAppCheck },
   async (request) => {
-    const { handleProvisionEmployeeProfile } = await import(
-      "./profile/provision-employee-profile.js"
-    );
+    const { handleProvisionEmployeeProfile } =
+      await import("./profile/provision-employee-profile.js");
     return handleProvisionEmployeeProfile(request);
   },
 );
 
-export const submitAttendance = onCall(
-  { enforceAppCheck },
-  async (request) => {
-    const { handleSubmitAttendance } = await import(
-      "./attendance/submit-attendance.js"
-    );
-    return handleSubmitAttendance(request);
-  },
-);
+export const submitAttendance = onCall({ enforceAppCheck }, async (request) => {
+  const { handleSubmitAttendance } =
+    await import("./attendance/submit-attendance.js");
+  return handleSubmitAttendance(request);
+});

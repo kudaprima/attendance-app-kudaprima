@@ -75,7 +75,8 @@ export function EmployeesPage() {
             Master Data Karyawan
           </h1>
           <p className="text-sm text-muted-foreground">
-            Direktori profil dan status kepegawaian PT Kuda Prima (~60 staf/teknisi).
+            Direktori profil dan status kepegawaian PT Kuda Prima (~60
+            staf/teknisi).
           </p>
         </div>
         {isAdmin && (
@@ -90,7 +91,8 @@ export function EmployeesPage() {
         <CardHeader>
           <CardTitle>Daftar Karyawan Aktif</CardTitle>
           <CardDescription>
-            Karyawan dinonaktifkan akan memasuki masa retensi data 3 bulan sebelum kontak/profil dibersihkan.
+            Karyawan dinonaktifkan akan memasuki masa retensi data 3 bulan
+            sebelum kontak/profil dibersihkan.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,7 +120,9 @@ export function EmployeesPage() {
                     {emp.email}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={emp.role === "admin" ? "default" : "secondary"}>
+                    <Badge
+                      variant={emp.role === "admin" ? "default" : "secondary"}
+                    >
                       {emp.role === "admin"
                         ? "Admin"
                         : emp.role === "supervisor"
@@ -141,7 +145,11 @@ export function EmployeesPage() {
                   </TableCell>
                   {isAdmin && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive hover:bg-destructive/10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                      >
                         <Ban className="size-3.5 mr-1" />
                         Nonaktifkan
                       </Button>

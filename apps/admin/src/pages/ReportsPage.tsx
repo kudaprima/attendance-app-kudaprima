@@ -91,7 +91,10 @@ export function ReportsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `laporan_presensi_kuda_prima_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `laporan_presensi_kuda_prima_${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -106,7 +109,8 @@ export function ReportsPage() {
             Laporan Presensi & Payroll
           </h1>
           <p className="text-sm text-muted-foreground">
-            Rekapitulasi kehadiran, keterlambatan, lembur, dan izin untuk penggajian.
+            Rekapitulasi kehadiran, keterlambatan, lembur, dan izin untuk
+            penggajian.
           </p>
         </div>
         <Button className="gap-2" onClick={exportCSV} disabled={downloading}>
@@ -122,7 +126,8 @@ export function ReportsPage() {
             Rekap Periode Berjalan (September 2026)
           </CardTitle>
           <CardDescription>
-            Data terhitung otomatis dari event presensi immutable yang tercatat di sistem.
+            Data terhitung otomatis dari event presensi immutable yang tercatat
+            di sistem.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,7 +152,9 @@ export function ReportsPage() {
                     {s.employeeId}
                   </TableCell>
                   <TableCell className="font-medium">{s.fullName}</TableCell>
-                  <TableCell className="text-center">{s.presentDays} hari</TableCell>
+                  <TableCell className="text-center">
+                    {s.presentDays} hari
+                  </TableCell>
                   <TableCell className="text-center text-emerald-600 font-medium">
                     {s.onTimeDays}
                   </TableCell>
