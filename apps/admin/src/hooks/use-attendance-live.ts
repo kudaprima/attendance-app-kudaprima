@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
-  limit,
+  where,
   onSnapshot,
   orderBy,
   query,
@@ -63,7 +63,13 @@ export function useAttendanceLiveFeed() {
     const setupListener = () => {
       try {
         const eventsRef = collection(firestore, "attendanceEvents");
-        const q = query(eventsRef, orderBy("createdAt", "desc"), limit(50));
+        const { start, end } = wibDayBounds(new Date());
+        const q = query(
+          eventsRef,
+          where("capturedAt", ">=", start),
+          where("capturedAt", "<", end),
+          orderBy("capturedAt", "desc"),
+        );
 
         unsubscribeSnapshot = onSnapshot(
           q,
@@ -139,7 +145,17 @@ export function useAttendanceLiveFeed() {
       }
     });
 
+    let day = wibDayBounds(new Date()).start;
+    const dayTimer = setInterval(() => {
+      const nextDay = wibDayBounds(new Date()).start;
+      if (nextDay !== day && auth.currentUser) {
+        day = nextDay;
+        unsubscribeSnapshot?.();
+        setupListener();
+      }
+    }, 30000);
     return () => {
+      clearInterval(dayTimer);
       unsubscribeAuth();
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
@@ -148,4 +164,13 @@ export function useAttendanceLiveFeed() {
   }, []);
 
   return { events, kpis, loading };
+}
+
+export function wibDayBounds(now: Date) {
+  const day = new Date(now.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+  const start = new Date(`${day}T00:00:00+07:00`);
+  return {
+    start: start.toISOString(),
+    end: new Date(start.getTime() + 86400000).toISOString(),
+  };
 }

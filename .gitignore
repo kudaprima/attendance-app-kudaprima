@@ -38,6 +38,7 @@ ui-debug.log
 Thumbs.db
 
 # Local emulator and temporary data
+.local/
 .emulator-data/
 .tmp/
 firebase-export-*/

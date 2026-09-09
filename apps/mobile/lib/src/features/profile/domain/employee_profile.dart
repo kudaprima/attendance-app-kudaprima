@@ -47,10 +47,7 @@ class EmployeeProfile {
   final String? phone;
   final String? homeAddress;
 
-  EmployeeProfile copyWith({
-    String? phone,
-    String? homeAddress,
-  }) {
+  EmployeeProfile copyWith({String? phone, String? homeAddress}) {
     return EmployeeProfile(
       uid: uid,
       employeeId: employeeId,

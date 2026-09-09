@@ -15,14 +15,23 @@ import { Label } from "@/components/ui/label";
 
 interface LoginPageProps {
   onLogin: (email: string, pass: string) => Promise<void>;
+  onGoogleLogin?: () => Promise<void>;
+  onResetPassword?: (email: string) => Promise<void>;
   loading: boolean;
   errorMessage: string | null;
 }
 
-export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
+export function LoginPage({
+  onLogin,
+  onGoogleLogin,
+  onResetPassword,
+  loading,
+  errorMessage,
+}: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,24 +52,21 @@ export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
     }
   };
 
-  const handleDevQuickLogin = async (devEmail: string) => {
-    setEmail(devEmail);
-    setPassword("KudaPrimaDev2026#");
-    setLocalError(null);
+  const runAction = async (action: () => Promise<void>) => {
+    if (submitting || loading) return;
     setSubmitting(true);
+    setLocalError(null);
+    setNotice(null);
     try {
-      await onLogin(devEmail, "KudaPrimaDev2026#");
-    } catch (err: any) {
-      setLocalError(err.message || "Gagal masuk dev akun.");
+      await action();
+    } catch (error) {
+      setLocalError(
+        error instanceof Error ? error.message : "Permintaan gagal.",
+      );
     } finally {
       setSubmitting(false);
     }
   };
-
-  const isDev =
-    import.meta.env.DEV ||
-    import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-md space-y-6">
@@ -98,7 +104,7 @@ export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="nama@kudaprima.com"
+                    placeholder="Email"
                     className="pl-9"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -115,7 +121,7 @@ export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Kata Sandi"
                     className="pl-9"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -126,6 +132,32 @@ export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
               </div>
             </CardContent>
 
+            {notice && (
+              <p role="status" className="px-6 pb-3 text-sm">
+                {notice}
+              </p>
+            )}
+            {onResetPassword && (
+              <div className="px-6 text-right">
+                <Button
+                  type="button"
+                  variant="link"
+                  disabled={submitting || loading}
+                  onClick={() =>
+                    runAction(async () => {
+                      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+                        throw new Error("Masukkan Email terlebih dahulu.");
+                      await onResetPassword(email.trim());
+                      setNotice(
+                        "Jika email terdaftar, petunjuk reset akan dikirim. Pada simulator, tautan tersedia di Auth Emulator.",
+                      );
+                    })
+                  }
+                >
+                  Lupa Kata Sandi
+                </Button>
+              </div>
+            )}
             <CardFooter className="flex flex-col space-y-3">
               <Button
                 type="submit"
@@ -136,55 +168,20 @@ export function LoginPage({ onLogin, loading, errorMessage }: LoginPageProps) {
                 <LogIn className="size-4" />
                 {submitting || loading ? "Memverifikasi..." : "Masuk"}
               </Button>
+              {onGoogleLogin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={submitting || loading}
+                  onClick={() => runAction(onGoogleLogin)}
+                >
+                  Masuk dengan Google
+                </Button>
+              )}
             </CardFooter>
           </form>
         </Card>
-
-        {isDev && (
-          <Card className="border-dashed bg-muted/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Pengujian Development (Emulator)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="justify-start text-xs"
-                onClick={() => handleDevQuickLogin("admin.dev@kudaprima.test")}
-                disabled={submitting || loading}
-              >
-                👑 Login sebagai Admin Dev
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="justify-start text-xs"
-                onClick={() =>
-                  handleDevQuickLogin("supervisor.dev@kudaprima.test")
-                }
-                disabled={submitting || loading}
-              >
-                📋 Login sebagai Supervisor Dev
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="justify-start text-xs text-destructive hover:bg-destructive/10"
-                onClick={() =>
-                  handleDevQuickLogin("technician.dev@kudaprima.test")
-                }
-                disabled={submitting || loading}
-              >
-                ⛔ Uji Blokir Role Teknisi
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

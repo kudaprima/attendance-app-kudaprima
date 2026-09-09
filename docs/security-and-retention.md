@@ -2,8 +2,8 @@
 
 ## Kontrol utama
 
-- Firebase Auth memakai Google; Sign in with Apple ditambahkan untuk iOS.
-- App Check memakai Play Integrity pada Android serta App Attest/DeviceCheck pada iOS.
+- Firebase Auth mendukung Google serta Email/Kata Sandi dan reset kata sandi. Semua akun tetap memerlukan profil dan custom claims dari backend; login tidak memberi role otomatis.
+- Android online mengaktifkan App Check: debug provider hanya pada debug build dan Play Integrity pada release. Konfigurasi outside-Google-Play wajib diverifikasi untuk APK sideloaded (ADR 0004). Auth ID token bukan pengganti App Check. iOS di luar scope aktif.
 - Developer Options saja diperbolehkan. Login dan dashboard tetap dapat digunakan, tetapi semua
   aksi presensi harus diblokir ketika sampel lokasi ditandai mock. Tidak tersedia bypass pengguna;
   aksi baru boleh aktif kembali setelah perangkat memberikan sampel baru yang tidak ditandai mock.
@@ -32,3 +32,9 @@ Karyawan keluar dinonaktifkan segera. Auth/contact/profile dihapus setelah tiga 
 ## Rahasia
 
 Jangan commit file environment, service account, google-services.json, GoogleService-Info.plist, signing key, atau token CI. Gunakan Firebase environment/secrets dan secret manager Codemagic. Nilai konfigurasi Firebase web bukan service-account secret, tetapi tetap dikelola melalui environment per deployment.
+
+## Development persistence
+
+Snapshot emulator hanya untuk data sintetis lokal dan dikecualikan dari Git. Integration
+test memakai project, port dan direktori temporary terpisah. Backup emulator yang
+menyertakan selfie sintetis tidak mengubah larangan backup foto produksi.

@@ -1,3 +1,4 @@
+import 'package:attendance/src/features/attendance/data/attendance_history_provider.dart';
 import 'package:attendance/src/features/attendance/application/location_providers.dart';
 import 'package:attendance/src/features/attendance/domain/device_location_service.dart';
 import 'package:attendance/src/features/attendance/domain/office_location.dart';
@@ -29,7 +30,7 @@ void main() {
       findsOneWidget,
     );
     final attendanceButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Presensi masuk'),
+      find.widgetWithText(FilledButton, 'Absen Masuk'),
     );
     expect(attendanceButton.onPressed, isNull);
   });
@@ -45,7 +46,7 @@ void main() {
 
     expect(find.text('Lokasi kantor terverifikasi'), findsOneWidget);
     final attendanceButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Presensi masuk'),
+      find.widgetWithText(FilledButton, 'Absen Masuk'),
     );
     expect(attendanceButton.onPressed, isNotNull);
   });
@@ -74,6 +75,7 @@ void main() {
 Widget _testApp({required DeviceLocationService locationService}) {
   return ProviderScope(
     overrides: [
+      attendanceHistoryProvider.overrideWith((ref, uid) => Stream.value([])),
       officeLocationRepositoryProvider.overrideWithValue(
         const _FakeOfficeLocationRepository(),
       ),

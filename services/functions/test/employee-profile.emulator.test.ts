@@ -23,9 +23,9 @@ import {
   ensureEmployeeProfile,
 } from "../src/profile/employee-profile-service.js";
 
-const projectId = "kuda-prima-attandance-dev";
+const projectId = "demo-kuda-prima-tests";
 const firestoreHost = "127.0.0.1";
-const firestorePort = 8080;
+const firestorePort = 18180;
 
 let adminApp: App;
 let adminDatabase: Firestore;
@@ -243,13 +243,21 @@ describe("employee profile Firestore rules", () => {
 
     await assertSucceeds(
       updateDoc(reference, {
-        fullName: "Teknisi Rules Updated",
         phone: "+628123456789",
         updatedAt: serverTimestamp(),
         updatedBy: "rules-technician",
       }),
     );
     await assertFails(updateDoc(reference, { role: "admin" }));
+    for (const field of ["fullName", "birthDate", "gender"]) {
+      await assertFails(
+        updateDoc(reference, {
+          [field]: "changed",
+          updatedAt: serverTimestamp(),
+          updatedBy: "rules-technician",
+        }),
+      );
+    }
   });
 
   it("denies profile updates from an inactive employee", async () => {

@@ -30,6 +30,13 @@ export async function handleSubmitAttendance(
     throw new HttpsError("unauthenticated", "Autentikasi diperlukan.");
   }
 
+  if (
+    !["technician", "supervisor", "admin"].includes(
+      String(request.auth.token.role),
+    )
+  ) {
+    throw new HttpsError("permission-denied", "Peran karyawan tidak valid.");
+  }
   const parseResult = attendanceCommandSchema.safeParse(request.data);
   if (!parseResult.success) {
     throw new HttpsError(
@@ -47,6 +54,8 @@ export async function handleSubmitAttendance(
       storage,
       parseResult.data,
       request.auth.uid,
+      new Date(),
+      String(request.auth.token.role),
     );
   } catch (error) {
     if (error instanceof AttendanceMockLocationError) {

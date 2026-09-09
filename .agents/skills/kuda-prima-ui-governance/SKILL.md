@@ -28,3 +28,7 @@ branding assets, Flutter themes, or shadcn/Tailwind styling.
 
 Never trade legibility, contrast, touch-target size, error clarity, or platform accessibility
 for literal palette percentages.
+
+Current approved attendance UI (ADR 0004): Kehadiran navigation/title, Absen Masuk,
+Absen Keluar, Catatan, fullscreen selfie, and standard Email/Kata Sandi/Google/reset
+login without synthetic account shortcuts. Never expose photo simulation bypasses.

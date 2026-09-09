@@ -7,10 +7,10 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 8 September 2026
-- Baseline `main`: `ba95d27` (`feat: vertical slice presensi (#9)`)
-- Pekerjaan aktif: Sideloaded APK distribution, UI/UX mobile overhaul, & admin authentication/RBAC (`feat/mobile-navigation-and-services`)
-- Tahap produk: Navigasi 4-tab mobile, hub layanan karyawan (Cuti, Izin Sakit, Lembur, Profil), perbaikan spacing layout, form login & RBAC Web Admin (pemblokiran teknisi, cross-approval enforcement, QR Code distribusi APK), optimasi modul Cloud Functions (lazy loading eliminasi timeout emulator), dan runbook simulasi terminal selesai diimplementasikan dan diverifikasi (41 Vitest tests, 31 Flutter tests, 0 lint/analyzer issues).
+- Tanggal: 9 September 2026
+- Baseline `main`: `bcb18e4` (`Feat/mobile navigation and services (#10)`)
+- Pekerjaan aktif: penguatan presensi online, login standar, riwayat nyata, UI mobile, dan lingkungan development persisten (`feat/reliable-attendance-and-persistent-dev`)
+- Tahap produk: presensi online masuk/keluar sudah memakai transaksi idempotent, validasi urutan/waktu/selfie, audit immutable, serta riwayat Firestore. Mobile menyediakan login Email/Kata Sandi, reset kata sandi, Google OAuth untuk Firebase online, UI Kehadiran, Catatan lapangan, dan kamera selfie fullscreen. Emulator development memulihkan akun, profil, riwayat, dan foto tanpa seed manual. Diverifikasi dengan 44 unit/component Vitest tests, 25 Emulator Suite integration tests, 36 Flutter tests, analyzer/lint/typecheck tanpa issue, build web/Functions, dan APK debug.
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
 ## Ruang Lingkup yang Disepakati
@@ -37,20 +37,39 @@ serta self-approval dilarang.
 
 ## Progres Terverifikasi
 
-| Area            | Kondisi saat ini                                                                                                                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                       |
-| Mobile          | Shell Android 4-tab (`Presensi`, `Layanan`, `Riwayat`, `Profil`), perbaikan spacing layout seimbang (16dp vertical spacing), hub kuota cuti tahunan (12 hari/tahun, validasi masa kerja >= 1 thn), pengajuan izin sakit (H+3), lembur (>8 jam warning), edit kontak profil (`phone`, `homeAddress`), dialog QR Code APK, evaluasi lokasi kantor/lapangan, alur submit presensi masuk/pulang, dialog catatan lapangan, camera selfie dialog, upload Storage, dan integrasi Cloud Functions. |
-| Admin Web       | Form Login resmi berlogo Kuda Prima, Role-Based Access Control (RBAC) & Gate (`technician` diblokir ke portal web), penanganan akun nonaktif, sesi token claim refresh, Pusat Persetujuan (*Approval Center*) dengan penolakan *Self-approval* (cross-approval wajib), Halaman Distribusi APK & generator QR Code vektor, Master Karyawan, dan Laporan Presensi dengan ekspor CSV. |
-| Backend & Rules | Health endpoint, provisioning profil, seeder kantor/profil, Cloud Function `recordAttendanceEvent` (idempotensi, validasi geofence, validasi selfie Storage, catatan lapangan), audit event immutable, rule pembatasan write client, dan optimasi pemuatan modul lazy loading (waktu inisialisasi turun dari 47s ke 842ms, mencegah emulator discovery timeout). |
-| Contracts       | Zod schemas untuk `attendanceSubmissionCommandSchema`, `leaveRequestCommandSchema`, `overtimeRequestCommandSchema`, `updateContactProfileCommandSchema`, dan inferred TypeScript types dengan unit tests lengkap.            |
-| Kualitas        | `pnpm check:brand`, lint/typecheck/test/build pnpm (41 Vitest tests lulus: 17 contracts, 7 admin, 17 functions), `flutter analyze` (0 issue), dan 31 Flutter tests lulus. Panduan pengujian terminal terdokumentasi di `docs/testing/manual-simulation-runbook.md`. |
+| Area            | Kondisi saat ini                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                                                                                                                                                                                                     |
+| Mobile          | Shell Android 4-tab (`Kehadiran`, `Layanan`, `Riwayat`, `Profil`), login Email/Kata Sandi, reset kata sandi, Google OAuth online, evaluasi lokasi, Absen Masuk/Keluar, Catatan lapangan, selfie fullscreen, upload Storage, retry command idempotent dalam sesi, dan riwayat nyata dari Firestore. Form cuti/sakit/izin/lembur dan QR masih UI prototipe tanpa persistence/unduhan nyata.                |
+| Admin Web       | Login Email/Kata Sandi, Google OAuth online, reset kata sandi, fail-closed RBAC untuk akun manajer, dan dashboard presensi hari ini berdasarkan batas tanggal WIB tersedia. Approval Center, Master Karyawan, laporan CSV, dan QR distribusi masih memakai data/aksi demonstrasi dan belum menjadi alur backend operasional.                                                                             |
+| Backend & Rules | Health/provisioning, `submitAttendance` dengan event ID deterministik, transaksi event-audit-daily-state, replay idempotent, urutan harian, batas umur 12 jam, toleransi waktu masa depan lima menit, geofence server, validasi struktur JPEG, cleanup upload tak terpakai, serta pembatasan akun aktif/role. Emulator development persisten terpisah dari integration test.                             |
+| Contracts       | Zod schemas untuk `attendanceCommandSchema`, `leaveRequestCommandSchema`, `overtimeRequestCommandSchema`, `updateContactProfileCommandSchema`, dan inferred TypeScript types dengan unit tests lengkap.                                                                                                                                                                                                  |
+| Kualitas        | Pada 9 September 2026: `pnpm check` lulus (17 contracts, 10 admin, 17 Functions), 25 Emulator Suite integration tests lulus, `flutter analyze` tanpa issue, 36 Flutter tests lulus, `pnpm build` lulus, dan APK debug emulator berhasil dibangun. Uji manual tersedia di `docs/testing/manual-simulation-runbook.md`; Google OAuth/App Check online dan kamera/GPS fisik belum dinyatakan terverifikasi. |
+
+## Verifikasi Ulang untuk PR
+
+Pada 9 September 2026, dependency mobile dipulihkan dengan `flutter pub get` dan
+dependency JavaScript dengan `pnpm install --frozen-lockfile`. Format Prettier/Dart,
+brand gate, lint/typecheck, 44 tes Vitest, 25 tes integrasi emulator terisolasi, 36 tes
+Flutter, dan build web/Functions lulus. Peringatan bundle admin sekitar 926 KB
+sebelum gzip masih ada; pemisahan bundle dapat dioptimalkan terpisah.
+Build `flutter build apk --debug --dart-define=USE_FIREBASE_EMULATORS=true` juga
+lulus. Toolchain masih memberi peringatan migrasi Kotlin plugin dan versi SDK XML;
+artefak ini APK debug untuk emulator, bukan APK rilis bertandatangan perusahaan.
+
+`adb devices -l` tidak menemukan perangkat pada sesi ini. Screenshot UI dan smoke
+test fisik kamera/GPS belum tersedia, sehingga PR tetap draft sampai bukti manual
+tersebut dilengkapi. Pemulihan data lintas restart dan Google OAuth/App Check online
+tetap memerlukan uji manual sesuai runbook; kelulusan tes otomatis tidak menggantikan
+penerimaan perangkat nyata.
 
 ## Belum Diimplementasikan
 
 - Antrean offline terenkripsi 12 jam pada SQLite lokal dan sinkronisasi otomatis saat koneksi pulih.
 - Otomasi Cloud Functions untuk proses persetujuan (mutasi saldo cuti di Firestore saat permohonan cuti disetujui).
-- Cloud Functions untuk background cleanup retensi (foto selfie 90 hari, event presensi 1 tahun).
+- Persistence backend untuk form cuti, sakit, izin, lembur; Master Karyawan; laporan/CSV; dan Approval Center yang saat ini masih demonstrasi UI.
+- Cloud Functions untuk background cleanup retensi (foto selfie tiga bulan, event presensi 1 tahun).
+- Verifikasi Google OAuth dan App Check pada Firebase online yang telah dikonfigurasi; login Google sengaja tidak mengirim kredensial nyata ke Auth Emulator.
 - In-app OTA self-updater via intent package manager Android ketika ada versi APK baru di Firestore `systemConfig/mobileApp`.
 - Build rilis pipeline CI/CD untuk otomatisasi kompilasi APK dan deployment ke Firebase Hosting.
 
@@ -59,13 +78,13 @@ serta self-approval dilarang.
 1. Terapkan offline queue terenkripsi 12 jam pada mobile app dengan local SQLite/secure storage dan pengiriman ulang ber-idempotensi saat koneksi pulih.
 2. Implementasikan Cloud Functions handler untuk persetujuan permohonan Cuti (pemotongan kuota cuti tahunan), Lembur, dan Izin Sakit.
 3. Hubungkan form pengajuan cuti, izin sakit, dan lembur di mobile ke Cloud Functions / Firestore.
-4. Bangun background worker atau scheduled function untuk retensi data (penghapusan selfie setelah 90 hari).
-5. Siapkan script CI/CD untuk otomatisasi build APK bertandatangan dan publikasi link unduhan ke Firestore.
+4. Bangun background worker atau scheduled function untuk retensi data (penghapusan selfie setelah tiga bulan).
+5. Verifikasi login online/App Check, lalu siapkan script CI/CD untuk build APK bertandatangan dan publikasi link unduhan/QR nyata ke Firestore.
 
 Setiap tahap harus memakai data sintetis di emulator, memiliki automated test pada boundary
 yang berubah, dan lulus quality gate sebelum PR di-squash. Kelayakan end user baru dapat
 dinyatakan setelah alur inti, kegagalan jaringan, keamanan perangkat, akses admin, retensi,
-dan build store diuji pada perangkat nyata.
+dan build APK bertandatangan diuji pada perangkat nyata.
 
 ## Perubahan Konsep dan Handoff
 

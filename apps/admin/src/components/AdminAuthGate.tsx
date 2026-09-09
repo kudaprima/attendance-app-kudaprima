@@ -26,7 +26,13 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
 
   if (!user) {
     return (
-      <LoginPage onLogin={login} loading={loading} errorMessage={error} />
+      <LoginPage
+        onLogin={login}
+        onGoogleLogin={authState.loginGoogle}
+        onResetPassword={authState.resetPassword}
+        loading={loading}
+        errorMessage={error}
+      />
     );
   }
 

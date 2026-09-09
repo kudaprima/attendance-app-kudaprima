@@ -1,19 +1,32 @@
 # External Accounts Checklist
 
-## Sekarang
+The active release target is Android 10+ sideloaded APK and the React web admin.
+Firebase development project ID remains `kuda-prima-attandance-dev`.
 
-1. Firebase/Google Cloud project development sudah menggunakan ID **kuda-prima-attandance-dev**.
-2. Jalankan **pnpm firebase login** sendiri di browser; agent tidak membutuhkan password atau OTP.
-3. Tambahkan Android app **com.kudaprima.attendance**, iOS app dengan bundle ID yang sama, dan web app admin melalui Firebase Console.
-4. Aktifkan Auth providers, Firestore, Storage, App Check, dan Cloud Messaging setelah app registration.
-5. Upgrade Blaze hanya ketika emulator selesai dan deployment dev pertama memang diperlukan.
+## Online login prerequisites
 
-## Sebelum publikasi
+- Register Android `com.kudaprima.attendance` and the web admin in Firebase.
+- Enable Google and Email/Password providers in Firebase Authentication.
+- Register the signing certificate SHA-1/SHA-256 for the actual Android build.
+- Keep generated google-services.json local; it must contain the associated OAuth web
+  client. Never commit generated config or signing material.
+- Configure the web authDomain and authorized domains for the deployed admin origin.
+- Provision employee profiles and custom role claims through the authorized backend;
+  Google sign-in alone does not grant access or create an employee profile.
+- Verify password reset delivery/templates against an authorized online test account.
+- Register App Check and test sideloaded Play Integrity settings. Debug provider tokens
+  are only for authorized debug testing and must not be committed.
 
-- Cari atau ajukan D-U-N-S gratis melalui Apple D-U-N-S lookup. Aman disiapkan belakangan; gunakan nama badan hukum, alamat, dan telepon yang persis sama di dokumen perusahaan.
-- Daftar Apple Developer Organization setelah D-U-N-S tersinkron. Build/sign iOS akan menggunakan Codemagic karena Windows tidak dapat melakukan signing iOS.
-- Hubungkan repository ke Codemagic dan jalankan workflow **mobile-quality** secara manual. Workflow signing/publishing baru ditambahkan setelah Apple Developer Organization dan App Store Connect API key tersedia.
-- Daftar Google Play Console sebagai organisasi memakai data legal yang sama.
-- Buat environment production sebagai Firebase project terpisah; jangan mengubah project dev menjadi production.
+Emulator Google login intentionally does not obtain or forward real Google credentials.
+Email login and password-reset OOB links are available for synthetic local simulation.
 
-Jangan mengirim password, recovery code, service-account key, atau signing certificate melalui chat.
+## Before distribution
+
+Keep a consistent corporate signing key and verify package version upgrades. Implement
+real QR/download metadata before distributing an APK. App stores/iOS are outside the
+active plan. Deployment, billing/provider settings and production resources require
+explicit approval. Never request passwords, OTPs, service-account keys or signing keys
+through chat.
+
+References: https://firebase.google.com/docs/auth/flutter/federated-auth and
+https://firebase.google.com/docs/app-check/android/play-integrity-provider.

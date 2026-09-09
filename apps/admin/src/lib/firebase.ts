@@ -16,10 +16,10 @@ export const firebaseApp = getApps()[0] ?? initializeApp(firebaseConfig);
 export const firestore = getFirestore(firebaseApp);
 export const auth = getAuth(firebaseApp);
 
-if (
-  import.meta.env.DEV ||
-  import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true"
-) {
+export const useFirebaseEmulators =
+  import.meta.env.DEV || import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true";
+
+if (useFirebaseEmulators) {
   try {
     // Only connect if not already connected
     connectFirestoreEmulator(firestore, "127.0.0.1", 8080);

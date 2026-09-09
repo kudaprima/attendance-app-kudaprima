@@ -76,9 +76,13 @@ final class FirebaseEmployeeProfileRepository
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': uid,
     };
-    if (phone != null) updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+    if (phone != null) {
+      updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+    }
     if (homeAddress != null) {
-      updates['homeAddress'] = homeAddress.trim().isEmpty ? null : homeAddress.trim();
+      updates['homeAddress'] = homeAddress.trim().isEmpty
+          ? null
+          : homeAddress.trim();
     }
     await _firestore.collection('users').doc(uid).update(updates);
   }

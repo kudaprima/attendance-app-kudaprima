@@ -16,7 +16,7 @@ description: Prepare, run, and diagnose the PT Kuda Prima Flutter app on a physi
 1. Diagnose read-only first with `adb devices -l`, `flutter devices`, and `adb -s <serial> reverse --list`.
 2. Distinguish network targets: an Android AVD uses `10.0.2.2`; USB hardware uses `127.0.0.1` after `adb reverse`.
 3. Run `scripts/prepare-android-device.ps1`. If multiple physical devices are present, pass `-Serial <device-id>`.
-4. Start Firebase through the repository commands and use only seeded synthetic data.
+4. Start persistent Firebase through the repository commands; saved data is restored automatically. Use only synthetic accounts and do not reseed/reset the manual dataset.
 5. Run Flutter with both `USE_FIREBASE_EMULATORS=true` and `FIREBASE_EMULATOR_HOST=127.0.0.1`.
 6. Preserve the release-mode emulator guard. Never bind local Firebase services to the LAN merely to reach a phone.
 7. Rerun the preparation script after disconnecting or rebooting the device or restarting ADB.

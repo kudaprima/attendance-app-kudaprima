@@ -24,3 +24,10 @@ Koreksi hanya untuk event yang terlupa, wajib alasan dan cross-approval. Event a
 Izin, sakit, dan cuti memerlukan persetujuan. Sakit dapat diajukan maksimal H+3, cuti minimal H-1, lampiran opsional. Cuti 12 hari/tahun hanya untuk karyawan kontrak/tetap setelah tepat satu tahun kerja, tanpa carry-over atau setengah hari. Hari libur dan akhir pekan tidak mengurangi saldo. Pending request menahan saldo; approved request menguranginya. Magang atau masa kerja di bawah satu tahun memakai izin.
 
 Supervisor dan admin memiliki fungsi operasional setara, tetapi tidak boleh menyetujui pengajuan sendiri.
+
+## Konsistensi transaksi presensi
+
+Satu pasangan masuk/pulang per karyawan per tanggal WIB. Pulang harus sesudah masuk.
+Command baru maksimal berumur 12 jam; toleransi jam perangkat di masa depan maksimal
+lima menit. Pengiriman ulang command yang telah tersimpan mengembalikan event yang
+sama; penggunaan key sama dengan payload berbeda ditolak. Lihat ADR 0004.

@@ -103,11 +103,7 @@ export const attendanceEventRecordSchema = z.object({
   idempotencyKey: z.string().uuid(),
 });
 
-export const approvalStatusSchema = z.enum([
-  "pending",
-  "approved",
-  "rejected",
-]);
+export const approvalStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 export const leaveRequestTypeSchema = z.enum([
   "annual_leave",
@@ -135,12 +131,6 @@ export const overtimeRequestCommandSchema = z.object({
 export const updateContactProfileCommandSchema = z.object({
   phone: z.string().trim().max(30).optional().nullable(),
   homeAddress: z.string().trim().max(500).optional().nullable(),
-  birthDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional()
-    .nullable(),
-  gender: z.enum(["male", "female"]).optional().nullable(),
 });
 
 export type ApprovalStatus = z.infer<typeof approvalStatusSchema>;

@@ -54,7 +54,7 @@ if ($targetDevice.State -ne 'device') {
   throw "Perangkat '$($targetDevice.Serial)' berstatus '$($targetDevice.State)'. Sambungkan ulang sebelum melanjutkan."
 }
 
-$emulatorPorts = @(9099, 8080, 5001)
+$emulatorPorts = @(9099, 8080, 5001, 9199)
 foreach ($port in $emulatorPorts) {
   & $adbCommand.Source -s $targetDevice.Serial reverse "tcp:$port" "tcp:$port"
   if ($LASTEXITCODE -ne 0) {

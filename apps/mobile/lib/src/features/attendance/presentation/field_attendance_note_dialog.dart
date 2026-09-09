@@ -33,7 +33,7 @@ class _FieldAttendanceNoteDialogState extends State<FieldAttendanceNoteDialog> {
         children: [
           Icon(Icons.edit_note, size: 28),
           SizedBox(width: 8),
-          Text('Catatan Lapangan'),
+          Text('Catatan'),
         ],
       ),
       content: Form(

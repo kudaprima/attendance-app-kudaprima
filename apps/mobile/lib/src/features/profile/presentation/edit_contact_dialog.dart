@@ -46,7 +46,9 @@ class _EditContactDialogState extends ConsumerState<EditContactDialog> {
 
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(employeeProfileRepositoryProvider).updateContactInfo(
+      await ref
+          .read(employeeProfileRepositoryProvider)
+          .updateContactInfo(
             uid: widget.profile.uid,
             phone: _phoneController.text.trim(),
             homeAddress: _addressController.text.trim(),
@@ -126,7 +128,10 @@ class _EditContactDialogState extends ConsumerState<EditContactDialog> {
           child: _isSubmitting
               ? const SizedBox.square(
                   dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Text('Simpan'),
         ),

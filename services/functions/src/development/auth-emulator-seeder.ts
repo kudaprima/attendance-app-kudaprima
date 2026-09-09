@@ -42,12 +42,7 @@ async function upsertAccount(
 
   try {
     user = await auth.getUserByEmail(account.email);
-    user = await auth.updateUser(user.uid, {
-      displayName: account.displayName,
-      password: authEmulatorPassword,
-      disabled: false,
-      emailVerified: true,
-    });
+    return user; // Preserve password, disabled state and claims on existing accounts.
   } catch (error) {
     if (!hasErrorCode(error, "auth/user-not-found")) throw error;
 

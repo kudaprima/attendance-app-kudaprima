@@ -5,7 +5,6 @@ import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { ensureEmployeeProfile } from "../profile/employee-profile-service.js";
 import {
   authEmulatorHost,
-  authEmulatorPassword,
   authEmulatorProjectId,
   developmentAuthAccounts,
   firestoreEmulatorHost,
@@ -62,20 +61,24 @@ async function main(): Promise<void> {
     );
   }
 
-  await database.doc("officeLocations/main").set({
-    active: true,
-    accuracyThresholdMeters: 50,
-    latitude: -6.214737033753623,
-    longitude: 106.76089760397757,
-    name: "Kantor PT Kuda Prima",
-    radiusMeters: 100,
-    timeZone: "Asia/Jakarta",
-    updatedAt: FieldValue.serverTimestamp(),
-    updatedBy: "development-seeder",
-  });
+  const officeRef = database.doc("officeLocations/main");
+  if (!(await officeRef.get()).exists)
+    await officeRef.create({
+      active: true,
+      accuracyThresholdMeters: 50,
+      latitude: -6.214737033753623,
+      longitude: 106.76089760397757,
+      name: "Kantor PT Kuda Prima",
+      radiusMeters: 100,
+      timeZone: "Asia/Jakarta",
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: "development-seeder",
+    });
   console.info("Seeded primary office location (officeLocations/main)");
 
-  console.info(`Development password: ${authEmulatorPassword}`);
+  console.info(
+    "Existing accounts, passwords and attendance history are preserved.",
+  );
   console.info(
     "Auth and profile seed completed. No online project was modified.",
   );

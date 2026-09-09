@@ -1,27 +1,42 @@
 # Delivery Roadmap
 
-## Completed foundation
+## Current scope
 
-- Enterprise monorepo, pnpm lockfile, Flutter Android/iOS shell, React shadcn/ui admin shell, Cloud Functions, shared contracts, Firebase rules, and Emulator Suite.
-- Android 10 AVD on drive D, Android debug APK build, iOS 15 project, Windows environment scripts, GitHub CI, and manual Codemagic quality workflow.
-- Domain/security/retention documentation, project AGENTS guide, and validated repository skill.
+Internal attendance for approximately 60 employees. Android 10+ APK distribution;
+React admin; Firebase project `kuda-prima-attandance-dev`. iOS and store publication
+are outside the active delivery plan (ADR 0003).
 
-## Phase 2: Firebase application registration
+## M0/M1: Reliable online attendance and development baseline
 
-Register Android, iOS, and web apps in the existing development project. Configure Google/Apple sign-in, App Check, FCM/APNs, Firestore, and Storage. Generate per-platform Firebase options only after interactive Firebase login. No production project or billing change is part of this phase.
+Implemented: atomic event/audit/daily-state writes, idempotent retries, event ordering,
+12-hour capture age and five-minute future tolerance, bounded JPEG validation,
+inactive-account/profile restrictions, real mobile history, WIB daily admin query,
+Email/Google/reset UI, fullscreen camera and persistent local emulator sessions.
+See project-status.md for the exact verified gates and remaining limitations.
 
-## Phase 3: Attendance vertical slice
+## M2: Encrypted offline queue
 
-Implement profile completion, office configuration, camera-only selfie, one-shot GPS, geofence classification, device integrity signals, encrypted 12-hour offline queue, idempotent check-in/check-out commands, immutable event persistence, and the first admin monitoring table.
+Durable encrypted payload/selfie storage with secure-storage keys, account isolation,
+12-hour expiry, ordered retry, restart recovery, visible pending/rejected states and
+cleanup. Test response loss, app termination, token refresh and network recovery.
 
-## Phase 4: Workforce workflows
+## M3: Workforce workflows
 
-Implement late/early approvals, overtime sequence and minute calculation, correction events, permission/sick/leave requests, one-year eligibility, holiday calendar, push notifications, and cross-approval.
+Implement backend cross-approval for late/early events and immutable corrections;
+then leave/sickness/permission with calendar and reserved balances; then overtime
+start/end and minute calculation across midnight. Replace UI fixtures with real
+requests/results. Pending leave reserves quota; approval consumes it exactly once.
 
-## Phase 5: Reporting and operations
+## M4: Operations
 
-Add dashboard KPIs, exports, audit viewer, monthly data backup, retention jobs, account deactivation/deletion, observability, rate limits, and operational runbooks.
+Employee administration/deactivation, real reports/CSV, audit access, holiday calendar,
+retention of photos for three months and records for one year, monthly data-only
+backup/restore, departed-employee cleanup, observability and rate limits.
 
-## Phase 6: Release hardening
+## M5: Release and acceptance
 
-Perform physical-device testing, accessibility/performance/security review, Play Integrity/App Attest validation, store privacy forms, signing, TestFlight/Play internal testing, and phased production rollout.
+Verify online Google/Email login and App Check with authorized development setup.
+Build a consistently signed Android APK, real download QR and version metadata.
+Perform Android 10 and physical-device tests, accessibility/security checks and a
+limited pilot. Add OTA after manual signed APK upgrades are verified. Deployment,
+billing and production changes require explicit authorization.
