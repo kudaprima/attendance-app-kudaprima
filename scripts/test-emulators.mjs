@@ -11,7 +11,7 @@ const child = spawn(
     "--config",
     "firebase.test.json",
     "--only",
-    "firestore,storage",
+    "auth,firestore,storage",
     "--project",
     "demo-kuda-prima-tests",
     "pnpm --filter @kuda-prima/functions test:emulator",

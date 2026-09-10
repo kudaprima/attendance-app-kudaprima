@@ -46,3 +46,16 @@ are validated JPEGs with per-attempt paths and cleanup for unreferenced uploads.
 Mobile history reads owned events; the admin daily query uses UTC bounds for a WIB day.
 Profile contact changes are the explicit direct-Firestore exception: only phone and
 homeAddress plus update metadata are permitted by rules. See ADR 0004.
+
+## Admin employee lifecycle
+
+The employee directory subscribes to actual `users` profiles. `createEmployee`,
+`updateEmployee`, and `deleteEmployee` callables perform Auth and profile mutations
+under an active-admin authorization check. New accounts receive a technician claim
+and a sequential Employee ID. Corporate fields stay backend-owned.
+
+Auth and Firestore are separate systems: a private per-UID lease serializes requests,
+profiles remain inactive while a mutation is incomplete, and profile revisions reject
+stale forms. A request ID and atomic completion audit support lost-response retries.
+Deletion removes the login and profile while preserving immutable attendance/audit.
+See ADR 0005 for recovery behavior and Gmail provider linking.

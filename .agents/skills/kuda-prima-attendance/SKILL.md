@@ -41,3 +41,10 @@ Never request passwords, OTPs, recovery codes, service-account keys, or signing 
 Apply ADR 0004 for atomic/idempotent online attendance, private daily state, JPEG
 validation, standard login and persistent local development. Durable offline queue
 and backend approval workflows remain subsequent milestones.
+
+For web employee CRUD, apply ADR 0005: active-admin callables only, primary Gmail,
+trusted admin email provisioning, password values only in Auth/request memory,
+technician role on creation, immutable UID/Employee ID/role/start date on edit,
+and explicit confirmed deletion of Auth/profile while preserving attendance/audit.
+Preserve mutation leases, revisions and retry handling; integration tests use the
+isolated Auth Emulator on 19099 along with Firestore/Storage test ports.

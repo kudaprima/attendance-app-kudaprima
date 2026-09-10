@@ -27,7 +27,32 @@
 
 Foto selfie disimpan tiga bulan lalu dihapus oleh scheduled function, tanpa backup foto. Data presensi, approval, correction, dan audit disimpan satu tahun. Backup bulanan hanya berisi data, bukan foto.
 
-Karyawan keluar dinonaktifkan segera. Auth/contact/profile dihapus setelah tiga bulan, sedangkan nama dan Employee ID dipertahankan pada histori presensi sampai masa retensinya berakhir.
+Karyawan keluar dinonaktifkan segera. Pada alur retensi biasa, Auth/contact/profile
+dihapus setelah tiga bulan. Sebagai aksi eksplisit terpisah, admin dapat memakai
+Hapus Karyawan dengan konfirmasi untuk langsung menghapus Auth/contact/profile.
+Nama dan Employee ID pada histori presensi tetap dipertahankan sampai masa
+retensinya berakhir; aksi ini tidak menghapus histori maupun audit.
+
+## Keamanan pengelolaan akun
+
+CRUD karyawan memakai callable Functions dengan App Check online serta verifikasi
+akun Auth, profil, klaim admin, email sesi, dan waktu pencabutan sesi. Client tetap
+dilarang menulis field perusahaan atau menghapus profil langsung melalui Firestore.
+Kata sandi hanya dikirim ke Firebase Auth melalui backend; tidak disimpan pada
+profil, log, audit, atau penyimpanan browser.
+
+Pendaftaran Gmail oleh admin adalah provisioning tepercaya: admin memastikan alamat
+utama tersebut milik karyawan. Backend menandai email hasil provisioning sebagai
+terverifikasi agar login Google pertama mempertahankan provider kata sandi.
+Penanda ini merupakan pernyataan admin, bukan bukti verifikasi email otomatis.
+Saat email diubah, provider federasi lama dilepas dan refresh token dicabut; kata
+sandi aplikasi tetap kecuali admin menggantinya. Satu akun per email harus aktif
+pada konfigurasi Firebase Auth. Akun Google tanpa profil/role tidak mendapat akses.
+
+Selama mutasi Auth/Firestore, profil ditahan nonaktif. Kegagalan parsial ditampilkan
+sebagai proses belum selesai dan dapat diulang. Lease privat mencegah operasi yang
+bertumpuk; revisi profil menolak form lama. Audit hanya berisi identitas pelaku/subjek,
+aksi, waktu, serta indikator perubahan kata sandi tanpa nilainya. Lihat ADR 0005.
 
 ## Rahasia
 

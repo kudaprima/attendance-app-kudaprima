@@ -39,3 +39,18 @@ export const submitAttendance = onCall({ enforceAppCheck }, async (request) => {
     await import("./attendance/submit-attendance.js");
   return handleSubmitAttendance(request);
 });
+
+function employeeCallable(action: "create" | "update" | "delete") {
+  return onCall({ enforceAppCheck, timeoutSeconds: 60 }, async (request) => {
+    const [{ getAuth }, { getFirestore }, { manageEmployee }] =
+      await Promise.all([
+        import("firebase-admin/auth"),
+        import("firebase-admin/firestore"),
+        import("./employees/employee-management-service.js"),
+      ]);
+    return manageEmployee(getFirestore(), getAuth(), action, request);
+  });
+}
+export const createEmployee = employeeCallable("create");
+export const updateEmployee = employeeCallable("update");
+export const deleteEmployee = employeeCallable("delete");

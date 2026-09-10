@@ -29,7 +29,9 @@ requests/results. Pending leave reserves quota; approval consumes it exactly onc
 
 ## M4: Operations
 
-Employee administration/deactivation, real reports/CSV, audit access, holiday calendar,
+Implemented for the requested admin scope: employee creation, editing, deactivation,
+reactivation and confirmed Auth/profile deletion, with Gmail/password provisioning.
+See ADR 0005 and the employee CRUD runbook. Remaining: real reports/CSV, audit access, holiday calendar,
 retention of photos for three months and records for one year, monthly data-only
 backup/restore, departed-employee cleanup, observability and rate limits.
 

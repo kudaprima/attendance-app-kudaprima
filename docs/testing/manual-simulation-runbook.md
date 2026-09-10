@@ -118,8 +118,9 @@ Enter credentials manually; account shortcuts have been removed.
    Verify the same data and photo downloads. Run automated tests and check again;
    the test suite must not modify the development dataset.
 
-Approval Center, employee directory and CSV reports still contain demonstration
-fixtures. Their UI does not demonstrate backend approval, payroll or administration.
+Approval Center and CSV reports still contain demonstration fixtures. Their UI does
+not demonstrate backend approval or payroll. The employee directory uses actual
+profiles and the admin CRUD flow below.
 Distribution QR/OTA are placeholders and are not acceptance criteria for this build.
 
 ## Isolated automated checks
@@ -133,6 +134,47 @@ flutter analyze
 flutter test
 ```
 
-Integration tests start a separate demo project on Firestore 18180 and Storage 19299,
+Integration tests start a separate demo project on Auth 19099, Firestore 18180 and Storage 19299,
 with hub 14400, logging 14500, and `.tmp/emulator-tests` as temporary directory. Keep
 these ports free. Never point cleanup tests at the manual-development suite.
+
+## Employee CRUD in the admin portal
+
+1. Run the local suite and admin as above; sign in as `admin.dev@kudaprima.test`.
+   Open Karyawan and verify the directory shows the current Firestore profiles,
+   including inactive accounts. Supervisor can read but cannot mutate the directory.
+2. Click Tambah Karyawan. Use a new synthetic primary Gmail, name, application
+   password of at least eight characters, account state, employment status and valid
+   start date. Non-Gmail addresses and duplicate emails must fail without changing
+   another account. The form contains no role selector.
+3. Save and verify one Auth user, one `users/{uid}` profile and a generated Employee
+   ID. The role is technician. Reload the page and verify the saved row remains.
+   The employee can sign in using the assigned application password. No password
+   value may appear in the Firestore profile or audit record.
+4. Edit the row: change name, email, account state, employment status and optionally
+   password. Start date/role/Employee ID are not editable. With password left blank,
+   the existing password still works. With a new password, the old password fails.
+   Disable the account and verify sign-in is denied; enable it and verify recovery.
+5. Click Hapus, then Batal: the row and account remain. Repeat and confirm Hapus
+   permanen: Auth and profile are removed; prior attendance/audit remain unchanged.
+   Do not delete the baseline synthetic admin/supervisor or prior manual dataset.
+6. Interrupt connectivity while saving. The UI must show failure/pending state,
+   preserve the form for retry and prevent repeated clicks while submitting. A
+   partially created row can be completed with Edit or removed with Delete. A row
+   with an interrupted deletion can only finish deletion. Open two editors and
+   verify an outdated revision is rejected rather than overwriting a newer save.
+
+For Google provider linking, `pnpm test:emulator:profile` exercises synthetic IdP
+tokens exclusively on Auth 19099 and verifies the same UID plus password after Google
+sign-in, and removal of the previous provider when email changes. It never contacts
+Google or changes the manual dataset. Real Google OAuth requires an authorized online
+test separately: enable Google/Password and one-account-per-email, configure web
+App Check, then verify both login methods for the admin-provisioned primary Gmail.
+
+### Latest recorded manual result
+
+On 10 September 2026, the user reported that a new employee account was created,
+the new account logged in, and its check-in/check-out records were stored. The login
+method was not specified, so this result does not verify online Google OAuth. Manual
+edit, deactivate/reactivate, password/email replacement, and confirmed deletion
+remain unchecked in this recorded session.

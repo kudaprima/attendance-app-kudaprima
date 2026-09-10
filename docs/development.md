@@ -81,7 +81,7 @@ Read **docs/testing/manual-simulation-runbook.md** for accounts and exact scenar
 Client Firestore disk cache remains disabled in emulator mode; persistence is provided
 by server-side exports, so stale client cache is not confused with restored data.
 
-`pnpm test:emulator:profile` uses a separate demo project, ports 18180/19299 and
+`pnpm test:emulator:profile` uses a separate demo project, ports 19099/18180/19299 and
 `.tmp/emulator-tests`. Its cleanup never targets the manual-development dataset.
 Do not run the test package directly against the development ports.
 

@@ -31,3 +31,20 @@ Satu pasangan masuk/pulang per karyawan per tanggal WIB. Pulang harus sesudah ma
 Command baru maksimal berumur 12 jam; toleransi jam perangkat di masa depan maksimal
 lima menit. Pengiriman ulang command yang telah tersimpan mengembalikan event yang
 sama; penggunaan key sama dengan payload berbeda ditolak. Lihat ADR 0004.
+
+## Pengelolaan karyawan melalui portal admin
+
+- Hanya admin aktif dengan profil dan klaim yang sesuai dapat menambah, mengedit,
+  atau menghapus akun. Supervisor tetap dapat membaca daftar karyawan.
+- Tambah karyawan memerlukan nama lengkap, alamat utama Gmail (`gmail.com`), kata
+  sandi aplikasi minimal delapan karakter, status akun, status kerja (magang,
+  kontrak, tetap), dan tanggal mulai bekerja yang valid. Backend menetapkan role
+  teknisi dan Employee ID berurutan; form tidak memberikan pilihan role.
+- Edit hanya mengubah nama lengkap, email Gmail, kata sandi, status akun, dan status
+  kerja. Kata sandi kosong berarti tidak diubah. UID, Employee ID, role, dan tanggal
+  mulai bekerja tetap. Kata sandi aplikasi berbeda dari kata sandi Google.
+- Hapus memerlukan konfirmasi dan langsung menghapus Firebase Auth serta profil
+  `users/{uid}`. Presensi dan audit terdahulu tetap immutable sampai retensinya
+  berakhir. Penonaktifan tanpa penghapusan tetap tersedia melalui status akun.
+- Admin tidak dapat menonaktifkan atau menghapus akun yang sedang digunakannya.
+- Lihat ADR 0005 untuk sinkronisasi Auth/Firestore, pengaitan Google, serta retry.

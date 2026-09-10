@@ -7,10 +7,10 @@ produk. Jangan mengandalkan riwayat percakapan sebagai sumber status proyek.
 
 ## Snapshot
 
-- Tanggal: 9 September 2026
-- Baseline `main`: `bcb18e4` (`Feat/mobile navigation and services (#10)`)
-- Pekerjaan aktif: penguatan presensi online, login standar, riwayat nyata, UI mobile, dan lingkungan development persisten (`feat/reliable-attendance-and-persistent-dev`)
-- Tahap produk: presensi online masuk/keluar sudah memakai transaksi idempotent, validasi urutan/waktu/selfie, audit immutable, serta riwayat Firestore. Mobile menyediakan login Email/Kata Sandi, reset kata sandi, Google OAuth untuk Firebase online, UI Kehadiran, Catatan lapangan, dan kamera selfie fullscreen. Emulator development memulihkan akun, profil, riwayat, dan foto tanpa seed manual. Diverifikasi dengan 44 unit/component Vitest tests, 25 Emulator Suite integration tests, 36 Flutter tests, analyzer/lint/typecheck tanpa issue, build web/Functions, dan APK debug.
+- Tanggal: 10 September 2026
+- Baseline `main` terakhir yang diverifikasi: `bcb18e4` (`Feat/mobile navigation and services (#10)`). Pengembangan aktif berada di branch `feat/reliable-attendance-and-persistent-dev` untuk PR #11.
+- Pekerjaan aktif: tambah, edit, dan hapus karyawan di portal admin melalui Firebase Auth/Firestore (ADR 0005), di atas implementasi presensi online sebelumnya.
+- Tahap produk: presensi online masuk/keluar sudah memakai transaksi idempotent, validasi urutan/waktu/selfie, audit immutable, serta riwayat Firestore. Portal admin menyediakan master karyawan berbasis Auth/Firestore untuk tambah, edit, nonaktifkan, dan hapus akun. Mobile menyediakan login Email/Kata Sandi, reset kata sandi, Google OAuth untuk Firebase online, UI Kehadiran, Catatan lapangan, dan kamera selfie fullscreen. Emulator development memulihkan akun, profil, riwayat, dan foto tanpa seed manual. Perubahan admin terbaru diverifikasi dengan 55 unit/component tests, 40 Emulator Suite integration tests, lint/typecheck/brand gate, dan build web/Functions.
 - Firebase development: `kuda-prima-attandance-dev` (ejaan teknis disengaja)
 
 ## Ruang Lingkup yang Disepakati
@@ -37,16 +37,53 @@ serta self-approval dilarang.
 
 ## Progres Terverifikasi
 
-| Area            | Kondisi saat ini                                                                                                                                                                                                                                                                                                                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                                                                                                                                                                                                     |
-| Mobile          | Shell Android 4-tab (`Kehadiran`, `Layanan`, `Riwayat`, `Profil`), login Email/Kata Sandi, reset kata sandi, Google OAuth online, evaluasi lokasi, Absen Masuk/Keluar, Catatan lapangan, selfie fullscreen, upload Storage, retry command idempotent dalam sesi, dan riwayat nyata dari Firestore. Form cuti/sakit/izin/lembur dan QR masih UI prototipe tanpa persistence/unduhan nyata.                |
-| Admin Web       | Login Email/Kata Sandi, Google OAuth online, reset kata sandi, fail-closed RBAC untuk akun manajer, dan dashboard presensi hari ini berdasarkan batas tanggal WIB tersedia. Approval Center, Master Karyawan, laporan CSV, dan QR distribusi masih memakai data/aksi demonstrasi dan belum menjadi alur backend operasional.                                                                             |
-| Backend & Rules | Health/provisioning, `submitAttendance` dengan event ID deterministik, transaksi event-audit-daily-state, replay idempotent, urutan harian, batas umur 12 jam, toleransi waktu masa depan lima menit, geofence server, validasi struktur JPEG, cleanup upload tak terpakai, serta pembatasan akun aktif/role. Emulator development persisten terpisah dari integration test.                             |
-| Contracts       | Zod schemas untuk `attendanceCommandSchema`, `leaveRequestCommandSchema`, `overtimeRequestCommandSchema`, `updateContactProfileCommandSchema`, dan inferred TypeScript types dengan unit tests lengkap.                                                                                                                                                                                                  |
-| Kualitas        | Pada 9 September 2026: `pnpm check` lulus (17 contracts, 10 admin, 17 Functions), 25 Emulator Suite integration tests lulus, `flutter analyze` tanpa issue, 36 Flutter tests lulus, `pnpm build` lulus, dan APK debug emulator berhasil dibangun. Uji manual tersedia di `docs/testing/manual-simulation-runbook.md`; Google OAuth/App Check online dan kamera/GPS fisik belum dinyatakan terverifikasi. |
+| Area            | Kondisi saat ini                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repository      | Monorepo pnpm, Flutter, React, Functions, contracts, Firebase rules, CI, governance, brand check gate, dan script Windows berbasis drive D tersedia.                                                                                                                                                                                                                                                                          |
+| Mobile          | Shell Android 4-tab (`Kehadiran`, `Layanan`, `Riwayat`, `Profil`), login Email/Kata Sandi, reset kata sandi, Google OAuth online, evaluasi lokasi, Absen Masuk/Keluar, Catatan lapangan, selfie fullscreen, upload Storage, retry command idempotent dalam sesi, dan riwayat nyata dari Firestore. Form cuti/sakit/izin/lembur dan QR masih UI prototipe tanpa persistence/unduhan nyata.                                     |
+| Admin Web       | Login Email/Kata Sandi, Google OAuth online, reset kata sandi, fail-closed RBAC untuk akun manajer, dan dashboard presensi hari ini berdasarkan batas tanggal WIB tersedia. Master Karyawan memakai Firestore dan callable tambah/edit/hapus akun Gmail (ADR 0005). Approval Center, laporan CSV, dan QR distribusi masih memakai data/aksi demonstrasi dan belum menjadi alur backend operasional.                           |
+| Backend & Rules | Health/provisioning, callable tambah/edit/hapus karyawan dengan otorisasi admin dan pemulihan kegagalan parsial, serta `submitAttendance` dengan event ID deterministik, transaksi event-audit-daily-state, replay idempotent, urutan harian, batas umur 12 jam, toleransi waktu masa depan lima menit, geofence server, validasi JPEG, dan cleanup upload. Emulator development persisten terpisah dari integration test.    |
+| Contracts       | Zod schemas untuk perintah presensi, tambah/edit/hapus karyawan, pengajuan cuti/lembur, dan pembaruan kontak, beserta inferred TypeScript types dan unit tests.                                                                                                                                                                                                                                                               |
+| Kualitas        | Pada 10 September 2026: `pnpm check` lulus (21 contracts, 17 admin, 17 Functions), 40 Emulator Suite integration tests lulus, dan `pnpm build` lulus. Baseline mobile sebelumnya lulus dengan 36 Flutter tests, analyzer tanpa issue, dan APK debug. Pengguna melaporkan tambah akun, login akun baru, serta Absen Masuk/Keluar berhasil dalam simulasi manual. Google OAuth/App Check online belum dinyatakan terverifikasi. |
 
-## Verifikasi Ulang untuk PR
+## Pengelolaan Karyawan — 10 September 2026
+
+Portal Karyawan membaca daftar Firestore dan menyediakan form tambah, edit, serta
+konfirmasi hapus melalui callable Functions. Tambah mencakup nama, Gmail, kata sandi,
+status akun/kerja dan tanggal mulai. Edit menjaga UID, Employee ID, role dan tanggal
+mulai, dengan kata sandi baru opsional. Hapus menghilangkan Auth/profil, sementara
+presensi dan audit tetap mengikuti retensi. Akun baru mendapat role teknisi.
+
+Verifikasi lokal: `pnpm check` lulus dengan 55 tes (21 contracts, 17 admin, 17
+Functions), brand/lint/typecheck lulus, dan `pnpm test:emulator:profile` lulus dengan
+40 tes integrasi. Login Google sintetis memakai UID yang sama dan mempertahankan
+password; pergantian email melepas provider Google lama. Tes mencakup otorisasi,
+duplikasi email, status aktif, penghapusan, konkurensi/revisi, kegagalan parsial dan
+retry. Form yang diubah setelah kegagalan memakai ID permintaan baru; retry tanpa
+perubahan tetap memakai ID yang sama.
+
+Build web/Functions lulus; bundle admin sekitar 1,12 MB sebelum gzip masih memberi
+peringatan ukuran. OAuth Google dan App Check online belum diuji. Pengembangan ini
+tidak mencakup perubahan mobile atau deployment. Lihat bagian Employee CRUD di
+runbook simulasi untuk uji manual.
+
+### Hasil simulasi manual yang dilaporkan
+
+Pada 10 September 2026, pengguna melaporkan hasil berikut dari simulasi manual
+dengan data uji:
+
+1. Pendaftaran akun baru melalui portal admin berhasil.
+2. Akun baru berhasil digunakan untuk login. Metode login tidak dirinci dalam
+   laporan ini, sehingga hasil tersebut tidak dinyatakan sebagai verifikasi Google
+   OAuth online.
+3. Absen Masuk dan Absen Keluar dari akun baru berhasil tersimpan.
+
+Hasil ini memverifikasi alur tambah akun sampai pencatatan pasangan presensi pada
+lingkungan simulasi yang digunakan. Edit akun, status nonaktif/aktif, penggantian
+password/email, konfirmasi hapus, dan Google OAuth online masih mengandalkan tes
+otomatis atau memerlukan simulasi manual terpisah sebelum dinyatakan lolos manual.
+
+## Verifikasi Baseline Presensi — 9 September 2026
 
 Pada 9 September 2026, dependency mobile dipulihkan dengan `flutter pub get` dan
 dependency JavaScript dengan `pnpm install --frozen-lockfile`. Format Prettier/Dart,
@@ -67,7 +104,7 @@ penerimaan perangkat nyata.
 
 - Antrean offline terenkripsi 12 jam pada SQLite lokal dan sinkronisasi otomatis saat koneksi pulih.
 - Otomasi Cloud Functions untuk proses persetujuan (mutasi saldo cuti di Firestore saat permohonan cuti disetujui).
-- Persistence backend untuk form cuti, sakit, izin, lembur; Master Karyawan; laporan/CSV; dan Approval Center yang saat ini masih demonstrasi UI.
+- Persistence backend untuk form cuti, sakit, izin, lembur; laporan/CSV; dan Approval Center yang saat ini masih demonstrasi UI.
 - Cloud Functions untuk background cleanup retensi (foto selfie tiga bulan, event presensi 1 tahun).
 - Verifikasi Google OAuth dan App Check pada Firebase online yang telah dikonfigurasi; login Google sengaja tidak mengirim kredensial nyata ke Auth Emulator.
 - In-app OTA self-updater via intent package manager Android ketika ada versi APK baru di Firestore `systemConfig/mobileApp`.

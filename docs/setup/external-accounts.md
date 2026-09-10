@@ -7,6 +7,9 @@ Firebase development project ID remains `kuda-prima-attandance-dev`.
 
 - Register Android `com.kudaprima.attendance` and the web admin in Firebase.
 - Enable Google and Email/Password providers in Firebase Authentication.
+- Keep one account per email enabled. Employee CRUD provisions the primary Gmail as
+  trusted by the admin; verify online that Google and the assigned application password
+  resolve to the same UID (ADR 0005).
 - Register the signing certificate SHA-1/SHA-256 for the actual Android build.
 - Keep generated google-services.json local; it must contain the associated OAuth web
   client. Never commit generated config or signing material.
@@ -16,6 +19,8 @@ Firebase development project ID remains `kuda-prima-attandance-dev`.
 - Verify password reset delivery/templates against an authorized online test account.
 - Register App Check and test sideloaded Play Integrity settings. Debug provider tokens
   are only for authorized debug testing and must not be committed.
+- For online web employee CRUD, configure reCAPTCHA Enterprise and
+  `VITE_FIREBASE_APPCHECK_SITE_KEY`; the employee callables enforce App Check.
 
 Emulator Google login intentionally does not obtain or forward real Google credentials.
 Email login and password-reset OOB links are available for synthetic local simulation.
