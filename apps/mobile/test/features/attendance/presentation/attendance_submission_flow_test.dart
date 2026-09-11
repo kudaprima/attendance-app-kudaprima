@@ -1,3 +1,4 @@
+import 'package:attendance/src/features/attendance/data/attendance_history_provider.dart';
 import 'package:attendance/src/features/attendance/application/attendance_submission_providers.dart';
 import 'package:attendance/src/features/attendance/application/location_providers.dart';
 import 'package:attendance/src/features/attendance/domain/attendance_submission.dart';
@@ -35,6 +36,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            attendanceHistoryProvider.overrideWith(
+              (ref, uid) => Stream.value([]),
+            ),
             officeLocationRepositoryProvider.overrideWithValue(
               const _FakeOfficeLocationRepository(),
             ),

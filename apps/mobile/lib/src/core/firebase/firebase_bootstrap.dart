@@ -1,6 +1,7 @@
 import 'package:attendance/src/core/config/app_config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
@@ -14,7 +15,14 @@ abstract final class FirebaseBootstrap {
       await Firebase.initializeApp();
     }
 
-    if (!AppConfig.useFirebaseEmulators) return;
+    if (!AppConfig.useFirebaseEmulators) {
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+      );
+      return;
+    }
 
     await FirebaseAuth.instance.useAuthEmulator(
       AppConfig.firebaseEmulatorHost,

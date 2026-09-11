@@ -8,6 +8,7 @@
 PT Kuda Prima is an engineering and field service company with approximately 60 internal employees (field technicians, supervisors, and administrative personnel).
 
 The initial distribution plan assumed app store publication (Google Play Store and Apple App Store). However, for an internal corporate tool of this scale:
+
 1. Public app stores introduce recurring operational friction ($99/year Apple Developer fee, Google Play organizational identity verification with D-U-N-S, and 24–72 hour review delays for critical field bug fixes).
 2. Internal field tools do not benefit from public discoverability on consumer stores.
 3. The company requires rapid delivery of updates, direct internal QR code distribution, and strict security isolation between mobile technicians and the web management portal.

@@ -21,7 +21,7 @@ importers:
         version: 6.0.3
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0)
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
   apps/admin:
     dependencies:
@@ -31,6 +31,9 @@ importers:
       "@hookform/resolvers":
         specifier: 5.9.1
         version: 5.9.1(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(react-hook-form@7.87.0(react@19.2.8))(zod@4.5.4)
+      "@kuda-prima/contracts":
+        specifier: workspace:*
+        version: link:../../packages/contracts
       "@tanstack/react-query":
         specifier: 5.102.8
         version: 5.102.8(react@19.2.8)
@@ -97,7 +100,7 @@ importers:
         version: 10.4.1
       "@testing-library/jest-dom":
         specifier: 7.0.1
-        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0))
+        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0)))
       "@testing-library/react":
         specifier: 16.3.3
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -130,7 +133,7 @@ importers:
         version: 8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0)
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0)
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
   packages/contracts:
     dependencies:
@@ -146,7 +149,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0)
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
   services/functions:
     dependencies:
@@ -159,6 +162,9 @@ importers:
       firebase-functions:
         specifier: 7.3.2
         version: 7.3.2(firebase-admin@14.3.0(@firebase/app-compat@0.5.17)(@firebase/app@0.16.1))
+      jpeg-js:
+        specifier: ^0.4.4
+        version: 0.4.4
     devDependencies:
       "@firebase/rules-unit-testing":
         specifier: 5.0.2
@@ -174,7 +180,7 @@ importers:
         version: 7.0.2
       vitest:
         specifier: 4.1.11
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0)
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
   "@adobe/css-tools@4.5.0":
@@ -1414,6 +1420,7 @@ packages:
     engines: { node: ">=18" }
     peerDependencies:
       "@cfworker/json-schema": ^4.1.1
+      zod: ^3.25 || ^4.0
     peerDependenciesMeta:
       "@cfworker/json-schema":
         optional: true
@@ -6214,6 +6221,12 @@ packages:
         integrity: sha512-iiW7J9qRFlGxvCOIBDBDxFePQSn7ZMAnrYGhrrOo6siO/MIqwfyilLR27pkfDgUk+raLuzADS8A3S/KLBisc0g==,
       }
 
+  jpeg-js@0.4.4:
+    resolution:
+      {
+        integrity: sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg==,
+      }
+
   js-tokens@4.0.0:
     resolution:
       {
@@ -9140,6 +9153,7 @@ packages:
       "@vitest/ui": 4.1.11
       happy-dom: "*"
       jsdom: "*"
+      vite: ^6.0.0 || ^7.0.0 || ^8.0.0
     peerDependenciesMeta:
       "@edge-runtime/vm":
         optional: true
@@ -10421,7 +10435,29 @@ snapshots:
 
   "@jsdevtools/ono@7.1.3": {}
 
-  "@modelcontextprotocol/sdk@1.30.0":
+  "@modelcontextprotocol/sdk@1.30.0(zod@3.25.76)":
+    dependencies:
+      "@hono/node-server": 2.1.1(hono@4.13.5)
+      ajv: 8.20.0
+      ajv-formats: 3.0.1
+      content-type: 1.0.5
+      cors: 2.8.6
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.1.1
+      express: 5.2.1
+      express-rate-limit: 8.7.0(express@5.2.1)
+      hono: 4.13.5
+      jose: 6.2.10
+      json-schema-typed: 8.0.2
+      pkce-challenge: 5.0.1
+      raw-body: 3.0.2
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.2(zod@3.25.76)
+    transitivePeerDependencies:
+      - supports-color
+
+  "@modelcontextprotocol/sdk@1.30.0(zod@4.5.4)":
     dependencies:
       "@hono/node-server": 2.1.1(hono@4.13.5)
       ajv: 8.20.0
@@ -11491,7 +11527,7 @@ snapshots:
       picocolors: 1.1.1
       pretty-format: 27.5.1
 
-  "@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0))":
+  "@testing-library/jest-dom@7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0)))":
     dependencies:
       "@adobe/css-tools": 4.5.0
       "@testing-library/dom": 10.4.1
@@ -11501,7 +11537,7 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
     optionalDependencies:
-      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0)
+      vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
 
   "@testing-library/react@16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)":
     dependencies:
@@ -12831,7 +12867,7 @@ snapshots:
       "@google-cloud/cloud-sql-connector": 1.11.3
       "@google-cloud/pubsub": 5.3.1
       "@inquirer/prompts": 7.10.1(@types/node@24.13.3)
-      "@modelcontextprotocol/sdk": 1.30.0
+      "@modelcontextprotocol/sdk": 1.30.0(zod@4.5.4)
       abort-controller: 3.0.0
       ajv: 8.20.0
       ajv-formats: 3.0.1
@@ -13458,6 +13494,8 @@ snapshots:
       valid-url: 1.0.9
 
   jose@6.2.10: {}
+
+  jpeg-js@0.4.4: {}
 
   js-tokens@4.0.0: {}
 
@@ -14731,7 +14769,7 @@ snapshots:
       "@babel/plugin-transform-typescript": 7.29.7(@babel/core@7.29.7)
       "@babel/preset-typescript": 7.29.7(@babel/core@7.29.7)
       "@dotenvx/dotenvx": 1.75.1
-      "@modelcontextprotocol/sdk": 1.30.0
+      "@modelcontextprotocol/sdk": 1.30.0(zod@3.25.76)
       "@types/validate-npm-package-name": 4.0.2
       browserslist: 4.28.8
       commander: 14.0.3
@@ -15273,7 +15311,7 @@ snapshots:
       jiti: 2.7.0
       yaml: 2.9.0
 
-  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jiti@2.7.0)(jsdom@30.0.1)(yaml@2.9.0):
+  vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@30.0.1)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       "@vitest/expect": 4.1.11
       "@vitest/mocker": 4.1.11(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.0))
@@ -15300,18 +15338,7 @@ snapshots:
       "@types/node": 24.13.3
       jsdom: 30.0.1
     transitivePeerDependencies:
-      - "@vitejs/devtools"
-      - esbuild
-      - jiti
-      - less
       - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - yaml
 
   w3c-xmlserializer@5.0.0:
     dependencies:

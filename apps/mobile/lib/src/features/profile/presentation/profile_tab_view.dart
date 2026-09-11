@@ -261,7 +261,9 @@ class ProfileTabView extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.qr_code_outlined),
                 title: const Text('QR Code Download APK'),
-                subtitle: const Text('Bagikan aplikasi ke sesama rekan teknisi'),
+                subtitle: const Text(
+                  'Bagikan aplikasi ke sesama rekan teknisi',
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showQrCodeDialog(context),
               ),

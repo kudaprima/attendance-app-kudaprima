@@ -37,3 +37,14 @@ Use **. .\scripts\use-dev-env.ps1** before commands on Windows so caches and AVD
 For any Git or GitHub mutation, also apply **.agents/skills/kuda-prima-github-governance**.
 
 Never request passwords, OTPs, recovery codes, service-account keys, or signing certificates. Never deploy, enable billing, create production resources, or publish store builds without explicit user authorization.
+
+Apply ADR 0004 for atomic/idempotent online attendance, private daily state, JPEG
+validation, standard login and persistent local development. Durable offline queue
+and backend approval workflows remain subsequent milestones.
+
+For web employee CRUD, apply ADR 0005: active-admin callables only, primary Gmail,
+trusted admin email provisioning, password values only in Auth/request memory,
+technician role on creation, immutable UID/Employee ID/role/start date on edit,
+and explicit confirmed deletion of Auth/profile while preserving attendance/audit.
+Preserve mutation leases, revisions and retry handling; integration tests use the
+isolated Auth Emulator on 19099 along with Firestore/Storage test ports.

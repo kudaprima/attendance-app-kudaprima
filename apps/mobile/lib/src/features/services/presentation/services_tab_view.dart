@@ -55,7 +55,8 @@ class _ServicesTabViewState extends State<ServicesTabView> {
     _showApplicationForm(
       context: context,
       title: 'Pengajuan Cuti Tahunan',
-      subtitle: 'Ketentuan: Minimal diajukan H-1. Sabtu/Minggu tidak memotong saldo.',
+      subtitle:
+          'Ketentuan: Minimal diajukan H-1. Sabtu/Minggu tidak memotong saldo.',
       hint: 'Alasan cuti (misal: urusan keluarga)',
       isLeave: true,
     );
@@ -81,7 +82,8 @@ class _ServicesTabViewState extends State<ServicesTabView> {
 
   void _showOvertimeDialog(BuildContext context) {
     final now = DateTime.now();
-    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+    final isWeekend =
+        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
     final hour = now.hour;
     final minute = now.minute;
     final isAfterWork = (hour > 17) || (hour == 17 && minute >= 1);
@@ -99,15 +101,16 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                 isWeekend
                     ? 'Hari libur/akhir pekan: Lembur dapat dimulai langsung.'
                     : isAfterWork
-                        ? 'Hari kerja: Pastikan sudah check-out presensi harian sebelum memulai lembur (mulai 17:01 WIB).'
-                        : 'Catatan: Di hari kerja reguler, lembur dihitung setelah jam 17:01 WIB dan wajib check-out harian terlebih dahulu.',
+                    ? 'Hari kerja: Pastikan sudah check-out presensi harian sebelum memulai lembur (mulai 17:01 WIB).'
+                    : 'Catatan: Di hari kerja reguler, lembur dihitung setelah jam 17:01 WIB dan wajib check-out harian terlebih dahulu.',
                 style: Theme.of(ctx).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
               const TextField(
                 decoration: InputDecoration(
                   labelText: 'Deskripsi Tugas Lembur',
-                  hintText: 'Misal: Penanganan perbaikan server di kantor klien',
+                  hintText:
+                      'Misal: Penanganan perbaikan server di kantor klien',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 3,
@@ -131,7 +134,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
               Navigator.of(ctx).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Pengajuan lembur berhasil diajukan untuk persetujuan.'),
+                  content: Text(
+                    'Pengajuan lembur berhasil diajukan untuk persetujuan.',
+                  ),
                 ),
               );
             },
@@ -162,7 +167,10 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(subtitle, style: Theme.of(dialogCtx).textTheme.bodySmall),
+                  Text(
+                    subtitle,
+                    style: Theme.of(dialogCtx).textTheme.bodySmall,
+                  ),
                   const SizedBox(height: 16),
                   ListTile(
                     shape: RoundedRectangleBorder(
@@ -178,7 +186,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                       final picked = await showDatePicker(
                         context: dialogCtx,
                         initialDate: selectedDate,
-                        firstDate: DateTime.now().subtract(const Duration(days: 7)),
+                        firstDate: DateTime.now().subtract(
+                          const Duration(days: 7),
+                        ),
                         lastDate: DateTime.now().add(const Duration(days: 60)),
                       );
                       if (picked != null) {
@@ -208,7 +218,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                   Navigator.of(dialogCtx).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('$title berhasil diajukan ke supervisor/admin.'),
+                      content: Text(
+                        '$title berhasil diajukan ke supervisor/admin.',
+                      ),
                     ),
                   );
                 },
@@ -253,7 +265,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                           ? colors.primary
                           : Colors.grey.shade400,
                       labelStyle: TextStyle(
-                        color: _canApplyAnnualLeave ? colors.onPrimary : Colors.black87,
+                        color: _canApplyAnnualLeave
+                            ? colors.onPrimary
+                            : Colors.black87,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -262,10 +276,10 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                 const SizedBox(height: 8),
                 Text(
                   _canApplyAnnualLeave
-                    ? 'Hak cuti 12 hari/tahun aktif untuk periode kalender 2026. '
-                      'Akhir pekan dan libur nasional tidak memotong saldo.'
-                    : 'Masa kerja Anda belum mencapai 1 tahun (Mulai: ${widget.profile.employmentStartDate}). '
-                      'Sesuai aturan perusahaan, gunakan opsi Izin untuk ketidakhadiran.',
+                      ? 'Hak cuti 12 hari/tahun aktif untuk periode kalender 2026. '
+                            'Akhir pekan dan libur nasional tidak memotong saldo.'
+                      : 'Masa kerja Anda belum mencapai 1 tahun (Mulai: ${widget.profile.employmentStartDate}). '
+                            'Sesuai aturan perusahaan, gunakan opsi Izin untuk ketidakhadiran.',
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -342,7 +356,11 @@ class _ServicesTabViewState extends State<ServicesTabView> {
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             child: Column(
               children: [
-                Icon(Icons.inbox_outlined, size: 40, color: Colors.grey.shade400),
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 40,
+                  color: Colors.grey.shade400,
+                ),
                 const SizedBox(height: 8),
                 const Text(
                   'Belum ada permohonan aktif',
@@ -398,7 +416,10 @@ class _ServiceActionCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

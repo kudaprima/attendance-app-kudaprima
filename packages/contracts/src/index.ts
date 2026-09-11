@@ -45,6 +45,58 @@ export const provisionEmployeeProfileCommandSchema = z.object({
   employmentStartDate: calendarDateSchema,
 });
 
+export const employeeGmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email())
+  .refine((email) => email.endsWith("@gmail.com"), "Gunakan alamat gmail.com.");
+const employeePasswordSchema = z
+  .string()
+  .min(8, "Kata sandi minimal 8 karakter.")
+  .max(128);
+const managedEmployeeFields = {
+  fullName: z.string().trim().min(2).max(120),
+  email: employeeGmailSchema,
+  active: z.boolean(),
+  employmentStatus: employmentStatusSchema,
+};
+export const createEmployeeCommandSchema = z
+  .object({
+    ...managedEmployeeFields,
+    requestId: z.uuid(),
+    password: employeePasswordSchema,
+    employmentStartDate: calendarDateSchema,
+  })
+  .strict();
+export const updateEmployeeCommandSchema = z
+  .object({
+    ...managedEmployeeFields,
+    requestId: z.uuid(),
+    uid: z
+      .string()
+      .min(1)
+      .max(128)
+      .regex(/^[^/]+$/),
+    expectedRevision: z.number().int().nonnegative(),
+    password: employeePasswordSchema.optional(),
+  })
+  .strict();
+export const deleteEmployeeCommandSchema = z
+  .object({
+    requestId: z.uuid(),
+    uid: z
+      .string()
+      .min(1)
+      .max(128)
+      .regex(/^[^/]+$/),
+    expectedRevision: z.number().int().nonnegative(),
+  })
+  .strict();
+export type CreateEmployeeCommand = z.infer<typeof createEmployeeCommandSchema>;
+export type UpdateEmployeeCommand = z.infer<typeof updateEmployeeCommandSchema>;
+export type DeleteEmployeeCommand = z.infer<typeof deleteEmployeeCommandSchema>;
+
 export const attendanceCommandSchema = z
   .object({
     eventType: attendanceEventTypeSchema,
@@ -103,11 +155,7 @@ export const attendanceEventRecordSchema = z.object({
   idempotencyKey: z.string().uuid(),
 });
 
-export const approvalStatusSchema = z.enum([
-  "pending",
-  "approved",
-  "rejected",
-]);
+export const approvalStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 export const leaveRequestTypeSchema = z.enum([
   "annual_leave",
@@ -135,12 +183,6 @@ export const overtimeRequestCommandSchema = z.object({
 export const updateContactProfileCommandSchema = z.object({
   phone: z.string().trim().max(30).optional().nullable(),
   homeAddress: z.string().trim().max(500).optional().nullable(),
-  birthDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional()
-    .nullable(),
-  gender: z.enum(["male", "female"]).optional().nullable(),
 });
 
 export type ApprovalStatus = z.infer<typeof approvalStatusSchema>;

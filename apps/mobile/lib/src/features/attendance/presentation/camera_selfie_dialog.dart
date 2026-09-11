@@ -1,307 +1,275 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class CameraSelfieDialog extends StatefulWidget {
-  const CameraSelfieDialog({super.key});
-
-  static Future<String?> show(BuildContext context) {
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const CameraSelfieDialog(),
-    );
-  }
-
+  const CameraSelfieDialog({this.cameraLoader, super.key});
+  final Future<List<CameraDescription>> Function()? cameraLoader;
+  static Future<String?> show(BuildContext context) =>
+      Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => const CameraSelfieDialog(),
+          fullscreenDialog: true,
+        ),
+      );
   @override
   State<CameraSelfieDialog> createState() => _CameraSelfieDialogState();
 }
 
-class _CameraSelfieDialogState extends State<CameraSelfieDialog> {
+class _CameraSelfieDialogState extends State<CameraSelfieDialog>
+    with WidgetsBindingObserver {
   CameraController? _controller;
-  bool _isInitializing = true;
-  String? _errorMessage;
-  Uint8List? _capturedBytes;
-  bool _isCapturing = false;
-
+  bool _initializing = true;
+  bool _capturing = false;
+  String? _error;
+  Uint8List? _photo;
+  int _generation = 0;
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    WidgetsBinding.instance.addObserver(this);
+    _initialize();
   }
 
-  Future<void> _initCamera() async {
+  Future<void> _initialize() async {
+    final generation = ++_generation;
+    final previous = _controller;
+    _controller = null;
+    await previous?.dispose();
+    CameraController? controller;
     try {
-      final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        setState(() {
-          _isInitializing = false;
-          _errorMessage = 'Tidak ada kamera yang terdeteksi pada perangkat.';
-        });
-        return;
-      }
-
-      final frontCamera = cameras.firstWhere(
+      final cameras = await (widget.cameraLoader ?? availableCameras)();
+      if (!mounted || generation != _generation) return;
+      if (cameras.isEmpty) throw StateError('Kamera tidak tersedia.');
+      final camera = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-
-      final controller = CameraController(
-        frontCamera,
+      controller = CameraController(
+        camera,
         ResolutionPreset.medium,
         enableAudio: false,
       );
-
       await controller.initialize();
-      if (!mounted) {
+      if (!mounted || generation != _generation) {
         await controller.dispose();
         return;
       }
-
       setState(() {
         _controller = controller;
-        _isInitializing = false;
+        _initializing = false;
+        _error = null;
       });
-    } catch (e) {
-      if (!mounted) return;
+    } catch (_) {
+      await controller?.dispose();
+      if (!mounted || generation != _generation) return;
       setState(() {
-        _isInitializing = false;
-        _errorMessage = 'Gagal mengakses kamera: $e';
+        _initializing = false;
+        _error =
+            'Kamera tidak dapat dibuka. Periksa izin kamera lalu coba kembali.';
       });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive) {
+      _generation++;
+      final controller = _controller;
+      setState(() {
+        _controller = null;
+        _initializing = true;
+      });
+      controller?.dispose();
+    } else if (state == AppLifecycleState.resumed && _controller == null) {
+      _initialize();
     }
   }
 
   @override
   void dispose() {
+    _generation++;
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }
 
-  Future<void> _capturePhoto() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    if (_isCapturing) return;
-
-    setState(() => _isCapturing = true);
-    try {
-      final xFile = await _controller!.takePicture();
-      final bytes = await xFile.readAsBytes();
-      if (!mounted) return;
-
-      setState(() {
-        _capturedBytes = bytes;
-        _isCapturing = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isCapturing = false;
-        _errorMessage = 'Gagal mengambil foto: $e';
-      });
+  Future<void> _capture() async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized || _capturing) {
+      return;
     }
-  }
-
-  void _retakePhoto() {
-    setState(() {
-      _capturedBytes = null;
-      _errorMessage = null;
-    });
-  }
-
-  void _confirmPhoto() {
-    if (_capturedBytes == null) return;
-    final base64String = base64Encode(_capturedBytes!);
-    Navigator.of(context).pop(base64String);
+    setState(() => _capturing = true);
+    try {
+      final file = await controller.takePicture();
+      final bytes = await file.readAsBytes();
+      await File(file.path).delete();
+      if (mounted) setState(() => _photo = bytes);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Foto belum berhasil diambil. Silakan coba kembali.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          color: Colors.black,
-          width: double.infinity,
-          height: 520,
-          child: Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                color: Colors.black87,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _capturedBytes == null
-                          ? 'Selfie Presensi'
-                          : 'Konfirmasi Selfie',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+    final colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      key: const Key('selfie-fullscreen'),
+      backgroundColor: colors.scrim,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _preview(),
+          SafeArea(
+            child: Column(
+              children: [
+                ColoredBox(
+                  color: colors.scrim.withAlpha(170),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Tutup kamera',
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(null),
-                    ),
-                  ],
+                      Expanded(
+                        child: Text(
+                          _photo == null
+                              ? 'Selfie Kehadiran'
+                              : 'Konfirmasi Selfie',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-
-              // Viewfinder / Preview
-              Expanded(child: _buildCameraBody(theme)),
-
-              // Bottom action bar
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.black87,
-                child: _capturedBytes == null
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FilledButton.icon(
+                const Spacer(),
+                Container(
+                  color: colors.scrim.withAlpha(170),
+                  padding: const EdgeInsets.all(20),
+                  child: _photo == null
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
                             key: const Key('capture-photo-button'),
                             onPressed:
                                 _controller?.value.isInitialized == true &&
-                                    !_isCapturing
-                                ? _capturePhoto
+                                    !_capturing
+                                ? _capture
                                 : null,
-                            icon: _isCapturing
-                                ? const SizedBox.square(
-                                    dimension: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Icon(Icons.camera_alt),
-                            label: const Text('Ambil Foto'),
+                            icon: const Icon(Icons.camera_alt),
+                            label: Text(
+                              _capturing ? 'Mengambil...' : 'Ambil Foto',
+                            ),
                           ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              key: const Key('retake-photo-button'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white54),
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                key: const Key('retake-photo-button'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white),
+                                ),
+                                onPressed: () => setState(() {
+                                  _photo = null;
+                                  _error = null;
+                                }),
+                                child: const Text('Ambil Ulang'),
                               ),
-                              onPressed: _retakePhoto,
-                              child: const Text('Ambil Ulang'),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton(
-                              key: const Key('confirm-photo-button'),
-                              onPressed: _confirmPhoto,
-                              child: const Text('Gunakan Foto'),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton(
+                                key: const Key('confirm-photo-button'),
+                                onPressed: () =>
+                                    Navigator.of(context)
+                                        .pop(base64Encode(_photo!)),
+                                child: const Text('Gunakan Foto'),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-              ),
-            ],
+                          ],
+                        ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildCameraBody(ThemeData theme) {
-    if (_isInitializing) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
-            Text(
-              'Menyiapkan kamera...',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
+  Widget _preview() {
+    if (_photo != null) return Image.memory(_photo!, fit: BoxFit.cover);
+    if (_error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Colors.amber, size: 48),
-              const SizedBox(height: 12),
               Text(
-                _errorMessage!,
+                _error!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white),
               ),
-              const SizedBox(height: 16),
-              // Support simulation fallback in dev/test when physical camera is unavailable
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+              TextButton(
                 onPressed: () {
-                  // Fallback synthetic 1x1 jpeg base64
-                  Navigator.of(context).pop(
-                    '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=',
-                  );
+                  setState(() {
+                    _error = null;
+                    _initializing = true;
+                  });
+                  _initialize();
                 },
-                child: const Text('Gunakan Foto Simulasi (Dev)'),
+                child: const Text('Coba Lagi'),
               ),
             ],
           ),
         ),
       );
     }
-
-    if (_capturedBytes != null) {
-      return Center(child: Image.memory(_capturedBytes!, fit: BoxFit.contain));
+    if (_initializing || _controller == null) {
+      return const Center(child: CircularProgressIndicator());
     }
-
+    final controller = _controller!;
+    final portrait = MediaQuery.orientationOf(context) == Orientation.portrait;
+    final size = controller.value.previewSize!;
     return Stack(
       fit: StackFit.expand,
       children: [
-        CameraPreview(_controller!),
-        // Oval face guideline overlay
-        Center(
-          child: Container(
-            width: 220,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.circular(110),
-              border: Border.all(
-                color: Colors.white.withAlpha(180),
-                width: 2.5,
-              ),
+        ClipRect(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: portrait ? size.height : size.width,
+              height: portrait ? size.width : size.height,
+              child: CameraPreview(controller),
             ),
           ),
         ),
-        const Positioned(
-          top: 16,
-          left: 0,
-          right: 0,
-          child: Text(
-            'Posisikan wajah Anda di dalam lingkaran',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+        Center(
+          child: FractionallySizedBox(
+            widthFactor: portrait ? .65 : .35,
+            heightFactor: .5,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(200),
+                border: Border.all(color: Colors.white70, width: 2),
+              ),
             ),
           ),
         ),

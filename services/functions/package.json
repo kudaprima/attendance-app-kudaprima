@@ -13,14 +13,15 @@
     "lint": "oxlint src test",
     "seed:auth-emulator": "pnpm build && node lib/development/seed-auth-emulator.js",
     "seed:profile-emulator": "pnpm build && node lib/development/seed-profile-emulator.js",
-    "test": "vitest run --exclude test/*.emulator.test.ts",
-    "test:emulator": "vitest run test/employee-profile.emulator.test.ts",
+    "test": "vitest run --exclude \"test/*.emulator.test.ts\"",
+    "test:emulator": "vitest run .emulator.test.ts --no-file-parallelism",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@kuda-prima/contracts": "workspace:*",
     "firebase-admin": "14.3.0",
-    "firebase-functions": "7.3.2"
+    "firebase-functions": "7.3.2",
+    "jpeg-js": "^0.4.4"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "5.0.2",

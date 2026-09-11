@@ -48,7 +48,7 @@ Setelah login interaktif, jalankan:
 ```powershell
 pnpm firebase login
 . .\scripts\use-dev-env.ps1
-flutterfire configure --project=kuda-prima-attandance-dev --platforms=android,ios
+flutterfire configure --project=kuda-prima-attandance-dev --platforms=android
 ```
 
 Periksa diff sebelum commit karena perintah kedua menghasilkan konfigurasi aplikasi. Tidak ada deploy otomatis dari mesin lokal.
@@ -69,48 +69,21 @@ Android Emulator mengakses Auth melalui **10.0.2.2:9099**, Firestore melalui **1
 
 Gunakan **pnpm emulators** hanya ketika Functions, Hosting, dan Storage juga diperlukan. **pnpm emulators:profile** adalah profil development utama untuk alur login dan profil. Kedua perintah yang memuat Functions selalu membangun shared contracts lebih dulu agar deklarasi TypeScript tidak kedaluwarsa. **pnpm emulators:auth** tetap tersedia untuk pengujian autentikasi secara terisolasi.
 
-### Akun dan profil development
+### Persistent development data and tests
 
-Setelah profil emulator siap, buka terminal baru dari root repository dan jalankan seeder idempotent:
+`pnpm emulators:profile` imports saved Auth, Firestore and Storage data automatically.
+The first empty workspace bootstraps synthetic fixtures; later starts do not require
+seeding. Existing credentials and attendance are preserved. Two alternating local
+checkpoints are saved every minute; Ctrl+C exports the final dataset. Use
+`pnpm emulators:save` before a forced shutdown. Local snapshots are ignored by Git.
 
-```powershell
-. .\scripts\use-dev-env.ps1
-pnpm emulators:profile:seed
-```
+Read **docs/testing/manual-simulation-runbook.md** for accounts and exact scenarios.
+Client Firestore disk cache remains disabled in emulator mode; persistence is provided
+by server-side exports, so stale client cache is not confused with restored data.
 
-Seeder hanya terhubung ke Auth **127.0.0.1:9099** dan Firestore **127.0.0.1:8080**, lalu membuat atau memperbarui akun berikut:
-
-| Peran      | Email                             |
-| ---------- | --------------------------------- |
-| Teknisi    | **technician.dev@kudaprima.test** |
-| Supervisor | **supervisor.dev@kudaprima.test** |
-| Admin      | **admin.dev@kudaprima.test**      |
-
-Kata sandi fixture ketiganya adalah **KudaPrimaDev2026#**. Kredensial ini bukan rahasia dan tidak boleh digunakan pada Firebase online. Role berasal dari custom claim token yang dibuat Admin SDK, bukan dari pilihan pada aplikasi. Seeder juga membuat profil **users**, counter Employee ID, audit provisioning, dan konfigurasi **officeLocations/main** secara idempotent. Jalankan ulang seeder setiap kali Emulator Suite dimulai ulang karena data emulator bersifat sementara. Gunakan **pnpm emulators:auth:seed** hanya untuk test Auth yang sengaja tidak membutuhkan profil.
-
-Kemudian jalankan aplikasi dengan konfigurasi Run yang sesuai perangkat, atau:
-
-```powershell
-cd apps\mobile
-flutter run --dart-define=USE_FIREBASE_EMULATORS=true
-```
-
-Uji login, pemulihan sesi setelah aplikasi dibuka ulang, pergantian ketiga role melalui logout/login, kata sandi salah, dan logout. Emulator Suite UI pada **http://127.0.0.1:4000** harus menampilkan Auth pada port **9099**, Firestore pada port **8080**, dan Functions pada port **5001**. Firestore harus berisi tiga dokumen **users**, **systemCounters/employeeId**, serta tiga record **auditLogs**. Dashboard menampilkan Employee ID dan status kerja dari profil, bukan dari input pengguna.
-
-### Integration test Firestore
-
-Jika Emulator Suite tidak berjalan, gunakan wrapper yang menyalakan Firestore sementara lalu menghentikannya otomatis:
-
-```powershell
-pnpm test:emulator:profile
-```
-
-Jika **pnpm emulators:profile** sedang berjalan, jangan membuka instance kedua pada port 8080. Jalankan test langsung terhadap emulator aktif, lalu jalankan ulang seeder karena test membersihkan data sintetisnya:
-
-```powershell
-pnpm --filter @kuda-prima/functions test:emulator
-pnpm emulators:profile:seed
-```
+`pnpm test:emulator:profile` uses a separate demo project, ports 19099/18180/19299 and
+`.tmp/emulator-tests`. Its cleanup never targets the manual-development dataset.
+Do not run the test package directly against the development ports.
 
 ## Quality gate
 

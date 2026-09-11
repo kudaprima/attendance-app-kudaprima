@@ -1,3 +1,4 @@
+import 'package:attendance/src/features/attendance/data/attendance_history_provider.dart';
 import 'package:attendance/src/core/config/app_config.dart';
 import 'package:attendance/src/features/attendance/application/attendance_submission_providers.dart';
 import 'package:attendance/src/features/attendance/application/location_error_message.dart';
@@ -14,6 +15,7 @@ import 'package:attendance/src/features/profile/domain/employee_profile.dart';
 import 'package:attendance/src/features/profile/presentation/profile_tab_view.dart';
 import 'package:attendance/src/features/services/presentation/services_tab_view.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -39,11 +41,13 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
   int _lowAccuracySamples = 0;
   AttendanceSubmissionResult? _lastSubmission;
   bool _isSubmitting = false;
+  AttendanceSubmissionCommand? _pendingCommand;
   int _selectedTabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    ref.watch(attendanceHistoryProvider(widget.profile.uid));
+    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
     final date = DateFormat('EEEE, d MMMM y', 'id_ID').format(now);
     final officeLocation = ref.watch(primaryOfficeLocationProvider);
 
@@ -51,12 +55,12 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
       appBar: AppBar(
         title: Text(
           _selectedTabIndex == 0
-              ? 'PT Kuda Prima'
+              ? 'Kehadiran'
               : _selectedTabIndex == 1
-                  ? 'Layanan Karyawan'
-                  : _selectedTabIndex == 2
-                      ? 'Riwayat Presensi'
-                      : 'Profil Karyawan',
+              ? 'Layanan Karyawan'
+              : _selectedTabIndex == 2
+              ? 'Riwayat Presensi'
+              : 'Profil Karyawan',
         ),
         actions: [
           IconButton(
@@ -91,7 +95,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
           NavigationDestination(
             icon: Icon(Icons.alarm_outlined),
             selectedIcon: Icon(Icons.alarm),
-            label: 'Presensi',
+            label: 'Kehadiran',
           ),
           NavigationDestination(
             icon: Icon(Icons.work_history_outlined),
@@ -166,7 +170,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
                             ),
                           )
                         : const Icon(Icons.login),
-                    label: const Text('Presensi masuk'),
+                    label: const Text('Absen Masuk'),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -178,7 +182,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
                         ? () => _handleAttendanceAction('check_out')
                         : null,
                     icon: const Icon(Icons.logout),
-                    label: const Text('Presensi pulang'),
+                    label: const Text('Absen Keluar'),
                   ),
                 ),
               ],
@@ -189,15 +193,15 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
         Text(
           'Informasi Sistem',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(height: 8),
         const _StatusTile(
           icon: Icons.cloud_off_outlined,
           title: 'Antrean offline',
-          subtitle: '0 event menunggu sinkronisasi',
+          subtitle: 'Belum tersedia. Gunakan koneksi internet saat absen.',
         ),
         if (AppConfig.useFirebaseEmulators) ...[
           const SizedBox(height: 12),
@@ -285,7 +289,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
                     : const Icon(Icons.my_location),
                 label: Text(
                   result == null
-                      ? 'Periksa lokasi'
+                      ? 'Periksa Lokasi'
                       : result.status == LocationReadinessStatus.retryAccuracy
                       ? 'Coba ambil lokasi lagi'
                       : 'Periksa ulang lokasi',
@@ -326,8 +330,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
       return (
         Icons.location_on_outlined,
         'Lokasi presensi belum diperiksa',
-        '${office.name} memakai radius ${office.radiusMeters.toStringAsFixed(0)} meter. '
-            'Lokasi hanya diambil saat tombol ditekan.',
+        'Klik "Periksa Lokasi" untuk verifikasi',
         colors.primary,
       );
     }
@@ -409,24 +412,47 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
     return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
-  bool get _canCheckIn {
-    if (_isSubmitting) return false;
-    if (_lastSubmission != null && _lastSubmission!.eventType == 'check_in') {
-      return false;
-    }
-    return _locationReadiness?.canAttend == true;
+  AttendanceSubmissionResult? get _todaySubmission {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 7));
+    final candidates =
+        [
+            ?_lastSubmission,
+            ...?ref
+                .read(attendanceHistoryProvider(widget.profile.uid))
+                .valueOrNull
+                ?.map((e) => e.result),
+          ].where((event) {
+            final time = DateTime.parse(event.capturedAt)
+                .toUtc()
+                .add(const Duration(hours: 7));
+            return time.year == now.year &&
+                time.month == now.month &&
+                time.day == now.day;
+          }).toList()
+          ..sort(
+            (a, b) =>
+                DateTime.parse(b.capturedAt)
+                    .compareTo(DateTime.parse(a.capturedAt)),
+          );
+    return candidates.isEmpty ? null : candidates.first;
   }
 
-  bool get _canCheckOut {
-    if (_isSubmitting) return false;
-    if (_lastSubmission == null || _lastSubmission!.eventType != 'check_in') {
-      return false;
-    }
-    return _locationReadiness?.canAttend == true;
-  }
+  bool get _historyReady =>
+      ref.read(attendanceHistoryProvider(widget.profile.uid)).hasValue;
+  bool get _canCheckIn =>
+      !_isSubmitting &&
+      _historyReady &&
+      _todaySubmission == null &&
+      _locationReadiness?.canAttend == true;
+  bool get _canCheckOut =>
+      !_isSubmitting &&
+      _historyReady &&
+      _todaySubmission?.eventType == 'check_in' &&
+      _locationReadiness?.canAttend == true;
 
   Widget _buildAttendanceStatusLabel(BuildContext context) {
-    final submission = _lastSubmission;
+    final submission = _todaySubmission;
+    if (!_historyReady) return const Text("Memuat status kehadiran...");
     if (submission == null) {
       return const Text('Belum ada presensi hari ini');
     }
@@ -476,35 +502,34 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
     if (readiness == null || !readiness.canAttend) return;
     if (_isSubmitting) return;
 
-    String? note;
-    if (readiness.status == LocationReadinessStatus.field ||
-        readiness.lowAccuracy) {
-      note = await FieldAttendanceNoteDialog.show(context);
-      if (!mounted) return;
-      if (note == null) return;
-    }
-
-    final photoBase64 = await CameraSelfieDialog.show(context);
-    if (!mounted) return;
-    if (photoBase64 == null) return;
-
     setState(() => _isSubmitting = true);
     try {
-      final command = AttendanceSubmissionCommand(
-        eventType: eventType,
-        capturedAt: DateTime.now(),
-        latitude: readiness.sample.latitude,
-        longitude: readiness.sample.longitude,
-        accuracyMeters: readiness.sample.accuracyMeters,
-        locationType: readiness.status == LocationReadinessStatus.office
-            ? 'office'
-            : 'field',
-        idempotencyKey: const Uuid().v4(),
-        photoBase64: photoBase64,
-        note: note,
-        isMocked: readiness.sample.isMocked,
-      );
-
+      if (_pendingCommand?.eventType != eventType) _pendingCommand = null;
+      if (_pendingCommand == null) {
+        String? note;
+        if (readiness.status == LocationReadinessStatus.field ||
+            readiness.lowAccuracy) {
+          note = await FieldAttendanceNoteDialog.show(context);
+          if (!mounted || note == null) return;
+        }
+        final photoBase64 = await CameraSelfieDialog.show(context);
+        if (!mounted || photoBase64 == null) return;
+        _pendingCommand = AttendanceSubmissionCommand(
+          eventType: eventType,
+          capturedAt: DateTime.now().toUtc(),
+          latitude: readiness.sample.latitude,
+          longitude: readiness.sample.longitude,
+          accuracyMeters: readiness.sample.accuracyMeters,
+          locationType: readiness.status == LocationReadinessStatus.office
+              ? 'office'
+              : 'field',
+          idempotencyKey: const Uuid().v4(),
+          photoBase64: photoBase64,
+          note: note,
+          isMocked: readiness.sample.isMocked,
+        );
+      }
+      final command = _pendingCommand!;
       final result = await ref
           .read(attendanceSubmissionRepositoryProvider)
           .submitAttendance(command);
@@ -512,6 +537,7 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
       if (!mounted) return;
       setState(() {
         _lastSubmission = result;
+        _pendingCommand = null;
         _isSubmitting = false;
       });
 
@@ -525,13 +551,27 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isSubmitting = false);
+      final rejected =
+          e is FirebaseFunctionsException &&
+          [
+            'invalid-argument',
+            'failed-precondition',
+            'permission-denied',
+          ].contains(e.code);
+      if (rejected) _pendingCommand = null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal mengirim presensi: $e'),
+          content: Text(
+            rejected
+                ? (e.message ??
+                      'Absen ditolak. Periksa data lalu coba kembali.')
+                : 'Absen belum terkonfirmasi. Periksa koneksi lalu ketuk tombol absen untuk mencoba kiriman yang sama.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

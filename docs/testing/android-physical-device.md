@@ -33,14 +33,9 @@ Open PowerShell at the repository root in terminal 1:
 pnpm emulators:profile
 ```
 
-Wait until every service included by the command reports ready, then keep this terminal running. After the employee-profile PR is merged, this profile includes Auth, Firestore, and Functions. In terminal 2, seed only synthetic development data:
-
-```powershell
-. .\scripts\use-dev-env.ps1
-pnpm emulators:profile:seed
-```
-
-The profile seed command is available after the employee-profile PR is merged. Until then, use the existing Auth seed command.
+Wait until all four services report ready. Existing accounts, profiles, attendance
+and photos are imported automatically. Only a first empty workspace bootstraps
+synthetic fixtures. No separate seeding step is required.
 
 ## 3. Prepare the USB Route
 
@@ -50,7 +45,7 @@ In terminal 3 at the repository root, run:
 .\scripts\prepare-android-device.ps1
 ```
 
-The helper selects one physical device, rejects `offline` or `unauthorized` states, and maps device-local ports `9099`, `8080`, and `5001` to the same ports on Windows. If multiple phones are attached, specify the serial shown by `adb devices -l`:
+The helper selects one physical device, rejects `offline` or `unauthorized` states, and maps device-local ports `9099`, `8080`, `5001`, and `9199` to the same ports on Windows. If multiple phones are attached, specify the serial shown by `adb devices -l`:
 
 ```powershell
 .\scripts\prepare-android-device.ps1 -Serial RXXXXXXXXXX
@@ -67,9 +62,9 @@ flutter devices
 flutter run -d RXXXXXXXXXX --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
 ```
 
-Replace `RXXXXXXXXXX` with the actual serial. A physical phone uses `127.0.0.1` through `adb reverse`; `10.0.2.2` is only for the Android emulator. The application banner must show Firebase emulator hosts at `127.0.0.1`.
+Replace `RXXXXXXXXXX` with the actual serial. A physical phone uses `127.0.0.1` through `adb reverse`; `10.0.2.2` is only for the Android emulator. Verify the command uses `FIREBASE_EMULATOR_HOST=127.0.0.1`.
 
-In VS Code, first select the connected phone in the device picker, then use **Flutter: Physical Android (Firebase Emulators)**. Never use the AVD launch configuration for a USB phone. The development notice on the login page must show `127.0.0.1:9099` before credentials are entered.
+In VS Code, first select the connected phone in the device picker, then use **Flutter: Physical Android (Firebase Emulators)**. Never use the AVD launch configuration for a USB phone. Login uses ordinary Email/Kata Sandi fields without development shortcuts.
 
 ## 5. First Test Scenarios
 
@@ -86,8 +81,8 @@ Record pass/fail and any device log for each scenario:
    purple semantic palette remains visible after feature changes.
 9. Run the location-readiness scenarios in **docs/testing/attendance-location-readiness.md**.
 
-Camera capture, offline attendance, and end-to-end attendance submission remain future scenarios.
-Do not mark them complete based on login or location-readiness testing.
+Follow the camera/fullscreen/history/restart scenarios in **manual-simulation-runbook.md**.
+Offline queue and real-device acceptance remain separate milestones.
 
 ## Troubleshooting and Cleanup
 

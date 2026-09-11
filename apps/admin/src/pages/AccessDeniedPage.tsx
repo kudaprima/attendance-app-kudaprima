@@ -41,17 +41,25 @@ export function AccessDeniedPage({
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           {!isActive ? (
             <p>
-              Akun Anda telah <strong>dinonaktifkan</strong> oleh pihak manajemen PT Kuda Prima. Hubungi Administrator jika terdapat kekeliruan data.
+              Akun Anda telah <strong>dinonaktifkan</strong> oleh pihak
+              manajemen PT Kuda Prima. Hubungi Administrator jika terdapat
+              kekeliruan data.
             </p>
           ) : role === "technician" ? (
             <p>
-              Akun Anda terdaftar dengan peran <strong>Teknisi</strong>. Web Portal Administrasi ini hanya dapat diakses oleh peran <strong>Supervisor</strong> dan <strong>Admin</strong>.
-              <br /><br />
-              Untuk mencatat kehadiran masuk/pulang, cuti, atau pengajuan lembur, silakan gunakan <strong>Aplikasi Android Kuda Prima</strong>.
+              Akun Anda terdaftar dengan peran <strong>Teknisi</strong>. Web
+              Portal Administrasi ini hanya dapat diakses oleh peran{" "}
+              <strong>Supervisor</strong> dan <strong>Admin</strong>.
+              <br />
+              <br />
+              Untuk mencatat kehadiran masuk/pulang, cuti, atau pengajuan
+              lembur, silakan gunakan{" "}
+              <strong>Aplikasi Android Kuda Prima</strong>.
             </p>
           ) : (
             <p>
-              Akun Anda belum memiliki hak akses manajerial yang valid di sistem PT Kuda Prima.
+              Akun Anda belum memiliki hak akses manajerial yang valid di sistem
+              PT Kuda Prima.
             </p>
           )}
         </CardContent>

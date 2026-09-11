@@ -24,3 +24,27 @@ Koreksi hanya untuk event yang terlupa, wajib alasan dan cross-approval. Event a
 Izin, sakit, dan cuti memerlukan persetujuan. Sakit dapat diajukan maksimal H+3, cuti minimal H-1, lampiran opsional. Cuti 12 hari/tahun hanya untuk karyawan kontrak/tetap setelah tepat satu tahun kerja, tanpa carry-over atau setengah hari. Hari libur dan akhir pekan tidak mengurangi saldo. Pending request menahan saldo; approved request menguranginya. Magang atau masa kerja di bawah satu tahun memakai izin.
 
 Supervisor dan admin memiliki fungsi operasional setara, tetapi tidak boleh menyetujui pengajuan sendiri.
+
+## Konsistensi transaksi presensi
+
+Satu pasangan masuk/pulang per karyawan per tanggal WIB. Pulang harus sesudah masuk.
+Command baru maksimal berumur 12 jam; toleransi jam perangkat di masa depan maksimal
+lima menit. Pengiriman ulang command yang telah tersimpan mengembalikan event yang
+sama; penggunaan key sama dengan payload berbeda ditolak. Lihat ADR 0004.
+
+## Pengelolaan karyawan melalui portal admin
+
+- Hanya admin aktif dengan profil dan klaim yang sesuai dapat menambah, mengedit,
+  atau menghapus akun. Supervisor tetap dapat membaca daftar karyawan.
+- Tambah karyawan memerlukan nama lengkap, alamat utama Gmail (`gmail.com`), kata
+  sandi aplikasi minimal delapan karakter, status akun, status kerja (magang,
+  kontrak, tetap), dan tanggal mulai bekerja yang valid. Backend menetapkan role
+  teknisi dan Employee ID berurutan; form tidak memberikan pilihan role.
+- Edit hanya mengubah nama lengkap, email Gmail, kata sandi, status akun, dan status
+  kerja. Kata sandi kosong berarti tidak diubah. UID, Employee ID, role, dan tanggal
+  mulai bekerja tetap. Kata sandi aplikasi berbeda dari kata sandi Google.
+- Hapus memerlukan konfirmasi dan langsung menghapus Firebase Auth serta profil
+  `users/{uid}`. Presensi dan audit terdahulu tetap immutable sampai retensinya
+  berakhir. Penonaktifan tanpa penghapusan tetap tersedia melalui status akun.
+- Admin tidak dapat menonaktifkan atau menghapus akun yang sedang digunakannya.
+- Lihat ADR 0005 untuk sinkronisasi Auth/Firestore, pengaitan Google, serta retry.

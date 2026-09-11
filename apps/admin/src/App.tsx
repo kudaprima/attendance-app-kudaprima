@@ -38,11 +38,7 @@ import { EmployeesPage } from "@/pages/EmployeesPage";
 import { ReportsPage } from "@/pages/ReportsPage";
 
 export type AdminTab =
-  | "Ringkasan"
-  | "Persetujuan"
-  | "Distribusi APK"
-  | "Karyawan"
-  | "Laporan";
+  "Ringkasan" | "Persetujuan" | "Distribusi APK" | "Karyawan" | "Laporan";
 
 const navigation = [
   { label: "Ringkasan" as AdminTab, icon: BriefcaseBusiness },
@@ -173,7 +169,9 @@ export function AdminDashboard({
                 {summaryCards.map(({ label, value, icon: Icon, tone }) => (
                   <Card key={label}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{label}</CardTitle>
+                      <CardTitle className="text-sm font-medium">
+                        {label}
+                      </CardTitle>
                       <Icon className={tone} size={18} />
                     </CardHeader>
                     <CardContent>
@@ -190,8 +188,8 @@ export function AdminDashboard({
                 <CardHeader>
                   <CardTitle>Aktivitas terbaru</CardTitle>
                   <CardDescription>
-                    Event asli bersifat immutable; koreksi dicatat sebagai event dan
-                    audit terpisah.
+                    Event asli bersifat immutable; koreksi dicatat sebagai event
+                    dan audit terpisah.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -236,12 +234,16 @@ export function AdminDashboard({
                                       : "outline"
                                 }
                               >
-                                {event.eventType === "check_in" ? "Masuk" : "Pulang"}
+                                {event.eventType === "check_in"
+                                  ? "Masuk"
+                                  : "Pulang"}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline">
-                                {event.locationType === "office" ? "Kantor" : "Lapangan"}
+                                {event.locationType === "office"
+                                  ? "Kantor"
+                                  : "Lapangan"}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
@@ -270,11 +272,7 @@ export function AdminDashboard({
 function AuthenticatedApp() {
   const { user, role, signOut } = useCurrentAdminAuth();
   return (
-    <AdminDashboard
-      user={user ?? undefined}
-      role={role}
-      onSignOut={signOut}
-    />
+    <AdminDashboard user={user ?? undefined} role={role} onSignOut={signOut} />
   );
 }
 

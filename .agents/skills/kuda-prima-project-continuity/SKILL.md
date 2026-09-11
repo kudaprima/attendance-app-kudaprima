@@ -31,10 +31,12 @@ are supporting hints only.
    handoff does not imply authorization for external changes, deployment, billing, or release.
 9. For emulator and manual verification:
    - Start the Android 10 AVD via `.\scripts\start-android-emulator.ps1`.
-   - Launch the Firebase suite including storage and seed data via `pnpm emulators:profile`.
+   - Launch the persistent Firebase suite via `pnpm emulators:profile`; import is automatic and only an empty workspace bootstraps synthetic fixtures.
    - Run the mobile app with `--dart-define=USE_FIREBASE_EMULATORS=true` and verify flows using synthetic test accounts (`technician.dev@kudaprima.test`).
-   - Run the web admin portal via `pnpm dev:admin` (`http://localhost:5173`), verify `LoginPage`, test RBAC rejection on `technician.dev@kudaprima.test`, verify managerial access on `admin.dev` and `supervisor.dev`, check cross-approval protection on `/persetujuan`, and verify QR Code generation on `/distribusi`.
+   - Run the web admin portal via `pnpm dev:admin` (`http://localhost:5173`), verify `LoginPage`, test RBAC rejection on `technician.dev@kudaprima.test`, verify managerial access on `admin.dev` and `supervisor.dev`, check live attendance on the dashboard. Approval Center and distribution QR remain UI placeholders until their backend milestones are implemented.
    - Consult `docs/testing/manual-simulation-runbook.md` for the exact step-by-step terminal execution playbook.
 
 Before ending a milestone, ensure another capable contributor can identify what works, what was
 actually tested, what remains, and the safest next action without reading prior chat messages.
+
+Integration tests must use `pnpm test:emulator:profile`: separate demo project, ports and temporary storage. Never clean the manual simulation dataset.

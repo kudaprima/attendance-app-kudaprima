@@ -1,3 +1,5 @@
+import 'package:attendance/src/features/attendance/data/attendance_history_provider.dart';
+
 import 'dart:async';
 
 import 'package:attendance/src/app.dart';
@@ -28,6 +30,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          attendanceHistoryProvider.overrideWith(
+            (ref, uid) => Stream.value([]),
+          ),
           authRepositoryProvider.overrideWithValue(repository),
           employeeProfileRepositoryProvider.overrideWithValue(
             profileRepository,
@@ -41,8 +46,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('PT Kuda Prima'), findsOneWidget);
-    expect(find.text('Presensi masuk'), findsOneWidget);
+    expect(find.text('Kehadiran'), findsNWidgets(2));
+    expect(find.text('Absen Masuk'), findsOneWidget);
     expect(find.text('KP-000001 • Teknisi'), findsOneWidget);
   });
 
@@ -56,6 +61,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          attendanceHistoryProvider.overrideWith(
+            (ref, uid) => Stream.value([]),
+          ),
           authRepositoryProvider.overrideWithValue(repository),
           employeeProfileRepositoryProvider.overrideWithValue(
             profileRepository,
@@ -86,6 +94,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          attendanceHistoryProvider.overrideWith(
+            (ref, uid) => Stream.value([]),
+          ),
           authRepositoryProvider.overrideWithValue(repository),
           employeeProfileRepositoryProvider.overrideWithValue(
             const _FakeEmployeeProfileRepository(null),
@@ -97,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Profil belum tersedia'), findsOneWidget);
-    expect(find.text('Presensi masuk'), findsNothing);
+    expect(find.text('Absen Masuk'), findsNothing);
   });
 
   testWidgets('blocks an inactive employee profile', (tester) async {
@@ -107,6 +118,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          attendanceHistoryProvider.overrideWith(
+            (ref, uid) => Stream.value([]),
+          ),
           authRepositoryProvider.overrideWithValue(repository),
           employeeProfileRepositoryProvider.overrideWithValue(
             _FakeEmployeeProfileRepository(_inactiveTechnicianProfile),
@@ -118,7 +132,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Akun dinonaktifkan'), findsOneWidget);
-    expect(find.text('Presensi masuk'), findsNothing);
+    expect(find.text('Absen Masuk'), findsNothing);
   });
 }
 
@@ -200,7 +214,7 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> signInWithDevelopmentAccount({
+  Future<void> signInWithEmail({
     required String email,
     required String password,
   }) async {}
@@ -212,5 +226,9 @@ class _FakeAuthRepository implements AuthRepository {
     _controller.add(null);
   }
 
+  @override
+  Future<void> signInWithGoogle() async {}
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {}
   Future<void> close() => _controller.close();
 }

@@ -7,11 +7,7 @@ describe("LoginPage", () => {
   it("renders login inputs and submit button", () => {
     const handleLogin = vi.fn();
     render(
-      <LoginPage
-        onLogin={handleLogin}
-        loading={false}
-        errorMessage={null}
-      />,
+      <LoginPage onLogin={handleLogin} loading={false} errorMessage={null} />,
     );
 
     expect(screen.getByLabelText("Email Perusahaan")).toBeInTheDocument();
@@ -22,11 +18,7 @@ describe("LoginPage", () => {
   it("submits email and password on form submit", async () => {
     const handleLogin = vi.fn().mockResolvedValue(undefined);
     render(
-      <LoginPage
-        onLogin={handleLogin}
-        loading={false}
-        errorMessage={null}
-      />,
+      <LoginPage onLogin={handleLogin} loading={false} errorMessage={null} />,
     );
 
     fireEvent.change(screen.getByLabelText("Email Perusahaan"), {

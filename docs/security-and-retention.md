@@ -2,8 +2,8 @@
 
 ## Kontrol utama
 
-- Firebase Auth memakai Google; Sign in with Apple ditambahkan untuk iOS.
-- App Check memakai Play Integrity pada Android serta App Attest/DeviceCheck pada iOS.
+- Firebase Auth mendukung Google serta Email/Kata Sandi dan reset kata sandi. Semua akun tetap memerlukan profil dan custom claims dari backend; login tidak memberi role otomatis.
+- Android online mengaktifkan App Check: debug provider hanya pada debug build dan Play Integrity pada release. Konfigurasi outside-Google-Play wajib diverifikasi untuk APK sideloaded (ADR 0004). Auth ID token bukan pengganti App Check. iOS di luar scope aktif.
 - Developer Options saja diperbolehkan. Login dan dashboard tetap dapat digunakan, tetapi semua
   aksi presensi harus diblokir ketika sampel lokasi ditandai mock. Tidak tersedia bypass pengguna;
   aksi baru boleh aktif kembali setelah perangkat memberikan sampel baru yang tidak ditandai mock.
@@ -27,8 +27,39 @@
 
 Foto selfie disimpan tiga bulan lalu dihapus oleh scheduled function, tanpa backup foto. Data presensi, approval, correction, dan audit disimpan satu tahun. Backup bulanan hanya berisi data, bukan foto.
 
-Karyawan keluar dinonaktifkan segera. Auth/contact/profile dihapus setelah tiga bulan, sedangkan nama dan Employee ID dipertahankan pada histori presensi sampai masa retensinya berakhir.
+Karyawan keluar dinonaktifkan segera. Pada alur retensi biasa, Auth/contact/profile
+dihapus setelah tiga bulan. Sebagai aksi eksplisit terpisah, admin dapat memakai
+Hapus Karyawan dengan konfirmasi untuk langsung menghapus Auth/contact/profile.
+Nama dan Employee ID pada histori presensi tetap dipertahankan sampai masa
+retensinya berakhir; aksi ini tidak menghapus histori maupun audit.
+
+## Keamanan pengelolaan akun
+
+CRUD karyawan memakai callable Functions dengan App Check online serta verifikasi
+akun Auth, profil, klaim admin, email sesi, dan waktu pencabutan sesi. Client tetap
+dilarang menulis field perusahaan atau menghapus profil langsung melalui Firestore.
+Kata sandi hanya dikirim ke Firebase Auth melalui backend; tidak disimpan pada
+profil, log, audit, atau penyimpanan browser.
+
+Pendaftaran Gmail oleh admin adalah provisioning tepercaya: admin memastikan alamat
+utama tersebut milik karyawan. Backend menandai email hasil provisioning sebagai
+terverifikasi agar login Google pertama mempertahankan provider kata sandi.
+Penanda ini merupakan pernyataan admin, bukan bukti verifikasi email otomatis.
+Saat email diubah, provider federasi lama dilepas dan refresh token dicabut; kata
+sandi aplikasi tetap kecuali admin menggantinya. Satu akun per email harus aktif
+pada konfigurasi Firebase Auth. Akun Google tanpa profil/role tidak mendapat akses.
+
+Selama mutasi Auth/Firestore, profil ditahan nonaktif. Kegagalan parsial ditampilkan
+sebagai proses belum selesai dan dapat diulang. Lease privat mencegah operasi yang
+bertumpuk; revisi profil menolak form lama. Audit hanya berisi identitas pelaku/subjek,
+aksi, waktu, serta indikator perubahan kata sandi tanpa nilainya. Lihat ADR 0005.
 
 ## Rahasia
 
 Jangan commit file environment, service account, google-services.json, GoogleService-Info.plist, signing key, atau token CI. Gunakan Firebase environment/secrets dan secret manager Codemagic. Nilai konfigurasi Firebase web bukan service-account secret, tetapi tetap dikelola melalui environment per deployment.
+
+## Development persistence
+
+Snapshot emulator hanya untuk data sintetis lokal dan dikecualikan dari Git. Integration
+test memakai project, port dan direktori temporary terpisah. Backup emulator yang
+menyertakan selfie sintetis tidak mengubah larangan backup foto produksi.

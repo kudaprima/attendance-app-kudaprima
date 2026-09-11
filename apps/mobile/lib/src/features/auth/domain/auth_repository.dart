@@ -3,10 +3,14 @@ import 'package:attendance/src/features/auth/domain/auth_session.dart';
 abstract interface class AuthRepository {
   Stream<AuthSession?> watchSession();
 
-  Future<void> signInWithDevelopmentAccount({
+  Future<void> signInWithEmail({
     required String email,
     required String password,
   });
+
+  Future<void> signInWithGoogle();
+
+  Future<void> sendPasswordResetEmail(String email);
 
   Future<void> signOut();
 }

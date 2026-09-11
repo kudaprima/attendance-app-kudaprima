@@ -26,7 +26,7 @@ void main() {
     await tester.tap(find.text('Buka Dialog'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Catatan Lapangan'), findsOneWidget);
+    expect(find.text('Catatan'), findsOneWidget);
 
     // Try submitting empty note
     await tester.tap(find.byKey(const Key('submit-field-note-button')));

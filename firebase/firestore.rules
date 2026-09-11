@@ -13,7 +13,8 @@ service cloud.firestore {
 
     function isManager() {
       return activeUser()
-        && request.auth.token.role in ['admin', 'supervisor'];
+        && request.auth.token.role in ['admin', 'supervisor']
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == request.auth.token.role;
     }
 
     function validOptionalString(value, maximumLength) {
@@ -26,10 +27,7 @@ service cloud.firestore {
       return activeUser()
         && request.auth.uid == userId
         && changedFields.hasOnly([
-          'fullName',
           'phone',
-          'birthDate',
-          'gender',
           'homeAddress',
           'updatedAt',
           'updatedBy'

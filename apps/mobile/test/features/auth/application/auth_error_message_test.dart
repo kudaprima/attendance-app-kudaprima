@@ -9,12 +9,16 @@ void main() {
       FirebaseAuthException(code: 'network-request-failed'),
     );
 
-    expect(
-      message,
-      contains(
-        '${AppConfig.firebaseEmulatorHost}:${AppConfig.authEmulatorPort}',
-      ),
-    );
-    expect(message, contains('Periksa konfigurasi Run dan Terminal 1.'));
+    if (AppConfig.useFirebaseEmulators) {
+      expect(
+        message,
+        contains(
+          '${AppConfig.firebaseEmulatorHost}:${AppConfig.authEmulatorPort}',
+        ),
+      );
+    } else {
+      expect(message, contains('Periksa koneksi internet'));
+      expect(message, isNot(contains('9099')));
+    }
   });
 }

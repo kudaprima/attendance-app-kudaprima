@@ -67,7 +67,8 @@ const initialApprovals: ApprovalItem[] = [
     fullName: "Supervisor Development",
     type: "annual_leave",
     date: "2026-09-15 s.d 2026-09-17",
-    detail: "Keperluan keluarga di luar kota (Masa kerja > 5 tahun, kuota cukup)",
+    detail:
+      "Keperluan keluarga di luar kota (Masa kerja > 5 tahun, kuota cukup)",
     durationOrDays: "3 hari kerja",
     status: "pending",
   },
@@ -79,9 +80,7 @@ export function ApprovalsPage() {
 
   const handleAction = (id: string, action: "approved" | "rejected") => {
     setApprovals((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: action } : item,
-      ),
+      prev.map((item) => (item.id === id ? { ...item, status: action } : item)),
     );
   };
 
@@ -105,7 +104,9 @@ export function ApprovalsPage() {
             <TableHead>Durasi / Periode</TableHead>
             <TableHead>Keterangan</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Tindakan (Cross-Approval)</TableHead>
+            <TableHead className="text-right">
+              Tindakan (Cross-Approval)
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,7 +124,10 @@ export function ApprovalsPage() {
                 <TableCell className="text-sm">
                   <span className="font-medium">{item.durationOrDays}</span>
                   {item.isOver8Hours && (
-                    <Badge variant="destructive" className="ml-2 gap-1 text-[10px]">
+                    <Badge
+                      variant="destructive"
+                      className="ml-2 gap-1 text-[10px]"
+                    >
                       <AlertTriangle className="size-3" /> &gt;8 Jam
                     </Badge>
                   )}
@@ -133,12 +137,18 @@ export function ApprovalsPage() {
                 </TableCell>
                 <TableCell>
                   {item.status === "pending" && (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-100 text-amber-800 border-amber-200"
+                    >
                       Menunggu
                     </Badge>
                   )}
                   {item.status === "approved" && (
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-100 text-emerald-800 border-emerald-200"
+                    >
                       Disetujui
                     </Badge>
                   )}
@@ -201,14 +211,18 @@ export function ApprovalsPage() {
           Pusat Persetujuan (Approval Center)
         </h1>
         <p className="text-sm text-muted-foreground">
-          Persetujuan pengajuan lembur, cuti, dan izin sakit karyawan dengan aturan <strong>Cross-Approval</strong>.
+          Persetujuan pengajuan lembur, cuti, dan izin sakit karyawan dengan
+          aturan <strong>Cross-Approval</strong>.
         </p>
       </div>
 
       <div className="rounded-lg bg-blue-50/70 p-4 border border-blue-200 text-xs text-blue-900 flex gap-3 items-center">
         <ShieldCheck className="size-5 shrink-0 text-blue-600" />
         <div>
-          <strong>Aturan Tata Kelola PT Kuda Prima:</strong> Supervisor dan Admin memiliki hak operasional setara, tetapi <em>dilarang menyetujui pengajuannya sendiri</em>. Setiap permohonan harus disetujui oleh supervisor atau admin lain yang berbeda.
+          <strong>Aturan Tata Kelola PT Kuda Prima:</strong> Supervisor dan
+          Admin memiliki hak operasional setara, tetapi{" "}
+          <em>dilarang menyetujui pengajuannya sendiri</em>. Setiap permohonan
+          harus disetujui oleh supervisor atau admin lain yang berbeda.
         </div>
       </div>
 
@@ -218,35 +232,41 @@ export function ApprovalsPage() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overtime" className="gap-2">
                 <Clock className="size-4" />
-                Lembur ({overtimeItems.filter((i) => i.status === "pending").length})
+                Lembur (
+                {overtimeItems.filter((i) => i.status === "pending").length})
               </TabsTrigger>
               <TabsTrigger value="leave" className="gap-2">
                 <Palmtree className="size-4" />
-                Cuti Tahunan ({leaveItems.filter((i) => i.status === "pending").length})
+                Cuti Tahunan (
+                {leaveItems.filter((i) => i.status === "pending").length})
               </TabsTrigger>
               <TabsTrigger value="permission" className="gap-2">
                 <FileText className="size-4" />
-                Izin & Sakit ({permissionItems.filter((i) => i.status === "pending").length})
+                Izin & Sakit (
+                {permissionItems.filter((i) => i.status === "pending").length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overtime" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Lembur hari kerja dimulai 17:01 WIB setelah check-out presensi harian.
+                Lembur hari kerja dimulai 17:01 WIB setelah check-out presensi
+                harian.
               </div>
               {renderTable(overtimeItems)}
             </TabsContent>
 
             <TabsContent value="leave" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Hak cuti 12 hari/tahun berlaku setelah masa kerja minimal 1 tahun. Hari libur/akhir pekan tidak memotong kuota.
+                Hak cuti 12 hari/tahun berlaku setelah masa kerja minimal 1
+                tahun. Hari libur/akhir pekan tidak memotong kuota.
               </div>
               {renderTable(leaveItems)}
             </TabsContent>
 
             <TabsContent value="permission" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Izin sakit maksimal diajukan H+3. Surat dokter bersifat opsional.
+                Izin sakit maksimal diajukan H+3. Surat dokter bersifat
+                opsional.
               </div>
               {renderTable(permissionItems)}
             </TabsContent>

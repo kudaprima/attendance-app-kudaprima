@@ -1,207 +1,180 @@
-# Manual Simulation Runbook: Emulators, Mobile Attendance, Firebase Suite, & Web Admin Panel
+# Manual Simulation Runbook
 
-Panduan ini memuat langkah-langkah detail, perintah terminal, akun uji sintetis, dan verifikasi alur end-to-end yang dapat dijalankan secara mandiri di komputer pengembang Windows.
+## Persistent development services
 
----
-
-## 1. Ringkasan Arsitektur Pengujian Lokal
-
-```text
-[ Terminal 1: Firebase Emulators ] ── Port 4000 (UI), 8080 (Firestore), 9099 (Auth), 5001 (Functions), 9199 (Storage)
-                                                  │
-                 ┌────────────────────────────────┴────────────────────────┐
-                 ▼                                                         ▼
-[ Terminal 2: Flutter Android AVD ]                       [ Terminal 3: Web Admin React ]
-- Target: Android 10 (API 29)                             - URL: http://localhost:5173
-- Port Reverse via ADB                                    - RBAC: admin.dev / supervisor.dev
-- Akun: technician.dev@kudaprima.test                     - Live Monitoring, Persetujuan, QR Code
-```
-
----
-
-## 2. Kredensial Akun Uji Sintetis (Local Development)
-
-Semua akun disediakan melalui skrip seeder (`pnpm emulators:profile:seed`):
-
-| Akun / Email | Password | Role | Hak Akses |
-| :--- | :--- | :--- | :--- |
-| `technician.dev@kudaprima.test` | `KudaPrimaDev2026#` | `technician` | Mobile App Presensi & Layanan. **Ditolak total dari Web Admin**. |
-| `supervisor.dev@kudaprima.test` | `KudaPrimaDev2026#` | `supervisor` | Web Admin: Live Presensi, Persetujuan, Ekspor Laporan. |
-| `admin.dev@kudaprima.test` | `KudaPrimaDev2026#` | `admin` | Web Admin Akses Penuh: Master Karyawan, Distribusi APK QR, Persetujuan. |
-
----
-
-## 3. Langkah-Langkah Eksekusi Manual di Terminal
-
-### Langkah 1: Persiapan Environment (Buka PowerShell 1)
-Pastikan path cache tooling dan Android AVD diarahkan ke Drive D:
+Open each PowerShell terminal at the repository root and activate its environment:
 
 ```powershell
-# Jalankan di root repositori
-cd "D:\KudaPrima\Project Management\daily_attandance"
+Set-Location -LiteralPath 'D:\KudaPrima\Project Management\daily_attandance'
 . .\scripts\use-dev-env.ps1
 ```
 
----
-
-### Langkah 2: Jalankan Firebase Emulator Suite & Seeding Database
-Di **PowerShell 1**, jalankan emulator:
+Restore dependencies once before starting services. Stop and inspect any failed command:
 
 ```powershell
+pnpm install --frozen-lockfile
+Push-Location apps\mobile
+flutter pub get
+Pop-Location
+```
+
+Terminal 1 runs the persistent Firebase suite:
+
+```powershell
+. .\scripts\use-dev-env.ps1
 pnpm emulators:profile
 ```
 
-**Hasil yang diharapkan**:
-- Emulator Auth aktif di port `9099`
-- Emulator Firestore aktif di port `8080`
-- Emulator Functions aktif di port `5001` (diinisialisasi cepat dalam <1 detik berkat lazy loading)
-- Emulator Storage aktif di port `9199`
-- **Firebase Emulator UI** aktif di browser: [http://127.0.0.1:4000](http://127.0.0.1:4000)
+No manual seed is needed. Existing Auth, Firestore and Storage snapshots are imported
+from `.emulator-data/`. Only the first start without an export creates synthetic
+accounts and profiles. Do not run destructive tests or reset the database used for
+manual review. Rebuilding or reinstalling the APK with `adb install -r` preserves data.
 
-> [!IMPORTANT]
-> **Wajib Mengisi Data Awal (Seeding)**:
-> Saat pertama kali emulator menyala, database Auth dan Firestore masih kosong.
-> Buka tab/jendela terminal baru dan jalankan perintah:
-> ```powershell
-> pnpm emulators:profile:seed
-> ```
-> Perintah ini akan langsung mendaftarkan akun `technician.dev`, `supervisor.dev`, `admin.dev`, membuat profil karyawan di Firestore (`KP-000001`, `KP-000002`, `KP-000003`), serta menyetel lokasi kantor utama `officeLocations/main`.
-> Setelah itu, cek [http://127.0.0.1:4000/auth](http://127.0.0.1:4000/auth) dan [http://127.0.0.1:4000/firestore](http://127.0.0.1:4000/firestore) untuk memastikan data sudah masuk.
+The suite listens on loopback: Auth 9099, Firestore 8080, Functions 5001, Storage 9199,
+UI http://127.0.0.1:4000. It checkpoints every minute and exports on orderly Ctrl+C.
+Before a forced shutdown or important experiment run `pnpm emulators:save` in another
+terminal. A sudden crash may lose changes after the last completed checkpoint.
 
-> [!NOTE]
-> Biarkan **PowerShell 1** tetap berjalan di latar belakang selama Anda melakukan simulasi.
+## Run Android and admin
 
----
-
-### Langkah 3: Jalankan Android Emulator AVD (Buka PowerShell 2)
-Buka terminal baru (**PowerShell 2**), aktifkan environment, dan nyalakan emulator:
+In terminal 2, start the Android 10 AVD and check its assigned device ID:
 
 ```powershell
-cd "D:\KudaPrima\Project Management\daily_attandance"
-. .\scripts\use-dev-env.ps1
-
-# Nyalakan Android 10 AVD (API 29)
 .\scripts\start-android-emulator.ps1
+flutter devices
 ```
 
-Tunggu hingga AVD selesai booting dan muncul di home screen Android.
-Pastikan koneksi ADB tersambung:
-
-```powershell
-adb devices
-# Harus menampilkan: emulator-5554    device
-```
-
-Aktifkan port reverse agar emulator Android dapat mengakses service Firebase di localhost laptop:
-
-```powershell
-adb reverse tcp:9099 tcp:9099
-adb reverse tcp:8080 tcp:8080
-adb reverse tcp:5001 tcp:5001
-adb reverse tcp:9199 tcp:9199
-```
-
----
-
-### Langkah 4: Jalankan Aplikasi Flutter Mobile (Di PowerShell 2)
-Di **PowerShell 2**, masuk ke direktori mobile dan jalankan aplikasi dengan flag emulator:
+In terminal 3, run mobile. Replace `emulator-5554` if `flutter devices` shows another ID:
 
 ```powershell
 cd apps\mobile
 flutter run --dart-define=USE_FIREBASE_EMULATORS=true -d emulator-5554
 ```
 
-#### Simulasi Pengujian di Handphone / Emulator:
-1. **Layar Login**:
-   - Tekan tombol pengisian cepat dev mode atau ketik:
-     - Email: `technician.dev@kudaprima.test`
-     - Password: `KudaPrimaDev2026#`
-   - Tekan **Masuk**.
-2. **Tab 1: Presensi**:
-   - Perhatikan bahwa tampilan kini rapi dan tidak berdempetan (spacing 16dp).
-   - Tekan **Periksa Lokasi**:
-     - Jika di luar kantor (radius > 100m), status menjadi "Presensi Lapangan".
-   - Tekan **Presensi Masuk**:
-     - Jika lokasi lapangan, dialog catatan wajib akan muncul. Masukkan catatan: `Pemasangan kabel internet di klien A`.
-     - Kamera viewfinder langsung akan terbuka. Arahkan wajah ke oval panduan dan ambil selfie.
-     - Pratinjau selfie tampil, tekan **Kirim Presensi**.
-     - Notifikasi hijau sukses muncul, dan tombol beralih ke state siap presensi pulang.
-3. **Tab 2: Layanan**:
-   - Ketuk tab **Layanan** di bar navigasi bawah.
-   - Lihat kartu **Kuota Cuti**: Menampilkan sisa kuota cuti tahunan dengan validasi masa kerja.
-   - Lihat 4 menu cepat: *Pengajuan Cuti*, *Izin Sakit*, *Pengajuan Lembur*, dan *Izin Khusus*.
-   - Cek daftar status pengajuan aktif.
-4. **Tab 3: Riwayat**:
-   - Ketuk tab **Riwayat**: Periksa ringkasan kehadiran bulanan dan log presensi masuk yang baru saja Anda kirimkan.
-5. **Tab 4: Profil**:
-   - Ketuk tab **Profil**: Lihat kartu identitas resmi karyawan (NIK `KP-000001`, Teknisi, Tetap).
-   - Tekan tombol **Ubah** pada kartu Kontak: Ubah nomor telepon dan alamat domisili -> simpan.
-   - Gulir ke bawah, lihat kartu **Versi Aplikasi Sideloaded v1.0.0** dan tekan **Bagikan QR Code Aplikasi** untuk melihat modal QR unduhan APK.
-
----
-
-### Langkah 5: Jalankan Web Admin Portal (Buka PowerShell 3)
-Buka terminal baru (**PowerShell 3**), aktifkan environment, dan jalankan dev server admin:
+In terminal 4, start admin:
 
 ```powershell
-cd "D:\KudaPrima\Project Management\daily_attandance"
-. .\scripts\use-dev-env.ps1
-
 pnpm dev:admin
 ```
 
-Buka browser di laptop Anda dan akses: [http://localhost:5173](http://localhost:5173)
+Admin: http://localhost:5173. For physical Android use the physical-device runbook
+and `FIREBASE_EMULATOR_HOST=127.0.0.1` after `adb reverse`. The Android AVD uses
+10.0.2.2. Do not clear app data or uninstall to update a debug build.
 
-#### Skenario Uji 1: Uji Pemblokiran Role Teknisi (RBAC Gate)
-1. Di layar login admin, klik tombol quick-fill **Teknisi (Ditolak)** atau ketik:
-   - Email: `technician.dev@kudaprima.test`
-   - Password: `KudaPrimaDev2026#`
-2. Tekan **Masuk ke Portal**.
-3. **Hasil yang diharapkan**:
-   - Muncul layar merah **Akses Ditolak (Khusus Supervisor & Admin)**.
-   - Menjelaskan bahwa teknisi harus menggunakan aplikasi Android.
-   - Klik tombol **Kembali ke Halaman Login**.
+For USB hardware, replace the AVD/mobile steps with the following from the root.
+Use the actual ID from `adb devices -l`; `RXXXXXXXXXX` is a placeholder:
 
-#### Skenario Uji 2: Uji Akses Supervisor & Live Attendance Monitoring
-1. Di layar login admin, klik quick-fill **Supervisor** (`supervisor.dev@kudaprima.test`).
-2. Tekan **Masuk ke Portal**.
-3. **Hasil yang diharapkan**:
-   - Masuk ke dashboard admin dengan badge peran ungu **Supervisor**.
-   - Pada tabel **Presensi Langsung Hari Ini**, Anda langsung melihat event presensi masuk teknisi yang dikirim dari handphone pada Langkah 4 secara realtime (tercatat nama, role Teknisi, geofence Lapangan, catatan teknisi, jam WIB, dan foto selfie).
-4. Klik tab **Pusat Persetujuan**:
-   - Periksa daftar lembur, cuti, dan izin sakit.
-   - Perhatikan aturan **Cross-Approval**: jika pemohon adalah akun supervisor yang sedang login, tombol tindakan berstatus non-aktif dengan tanda `🚫 Self-Approval dilarang`.
-5. Klik tombol **Keluar / Logout** di header kanan atas.
+```powershell
+adb devices -l
+.\scripts\prepare-android-device.ps1 -Serial RXXXXXXXXXX
+cd apps\mobile
+flutter run -d RXXXXXXXXXX --dart-define=USE_FIREBASE_EMULATORS=true --dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1
+```
 
-#### Skenario Uji 3: Uji Akses Penuh Admin & Distribusi APK QR Code
-1. Di layar login admin, klik quick-fill **Admin** (`admin.dev@kudaprima.test`).
-2. Tekan **Masuk ke Portal**.
-3. **Hasil yang diharapkan**:
-   - Dashboard terbuka dengan badge peran biru **Admin**.
-   - Klik menu **Distribusi APK**:
-     - Muncul kartu **Distribusi Sideloaded Android APK**.
-     - Muncul **QR Code Vektor SVG** beresolusi tajam yang dapat di-scan langsung menggunakan kamera smartphone Anda.
-     - Terdapat tombol **Unduh File APK Langsung** dan tombol **Cetak Poster QR Code**.
-     - Terdapat panduan langkah aktivasi izin instalasi pihak ketiga di Android.
-   - Klik menu **Master Karyawan**:
-     - Menampilkan direktori seluruh karyawan (Teknisi, Supervisor, Admin) dengan NIK, email, kuota cuti, dan opsi deaktifasi akun.
-   - Klik menu **Laporan**:
-     - Menampilkan rekapitulasi kehadiran dan tombol **Ekspor CSV**.
+An AVD sample flagged as mock must block attendance. Use physical hardware for
+camera/GPS acceptance; do not disable the mock-location guard to make a scenario pass.
 
----
+## Synthetic accounts
 
-### Langkah 6: Menghentikan Simulasi & Membebaskan Resource Laptop
+| Role       | Email                         |
+| ---------- | ----------------------------- |
+| Technician | technician.dev@kudaprima.test |
+| Supervisor | supervisor.dev@kudaprima.test |
+| Admin      | admin.dev@kudaprima.test      |
 
-Setelah selesai melakukan pengetesan, matikan seluruh proses di masing-masing terminal agar tidak memakan memori/CPU:
+Initial fixture password: `KudaPrimaDev2026#`. If changed locally, use the changed
+password: restart and seeding do not reset existing passwords or re-enable accounts.
+Enter credentials manually; account shortcuts have been removed.
 
-1. **PowerShell 3 (Admin Web)**: Tekan `Ctrl + C`, lalu ketik `Y`.
-2. **PowerShell 2 (Flutter Mobile)**: Tekan tombol `q` untuk keluar dari `flutter run`.
-   - Tutup AVD emulator dari terminal:
-     ```powershell
-     adb emu kill
-     ```
-3. **PowerShell 1 (Firebase Emulators)**: Tekan `Ctrl + C`, lalu ketik `Y`.
-4. Bersihkan port ADB reverse jika diperlukan:
-   ```powershell
-   adb reverse --remove-all
-   ```
+## Review scenarios
+
+1. Login shows the canonical company logo, Email, Kata Sandi, Lupa Kata Sandi and
+   Masuk dengan Google. Wrong credentials show an error. Password reset creates an
+   emulator OOB link (available through Auth Emulator); it does not send real email.
+   Google sign-in in local mode explains that the real flow requires online Firebase.
+2. Login as technician. The heading and first navigation item say Kehadiran. Before
+   location capture the instruction is `Klik "Periksa Lokasi" untuk verifikasi`.
+   Actions are Absen Masuk and Absen Keluar.
+3. Capture location. Outside the office, Absen Masuk opens Catatan and refuses a blank
+   note. Outside-office attendance remains valid and is not by itself an approval case.
+   Mock location must block attendance. Do not bypass that restriction for simulation.
+4. Continue to the selfie screen. It fills the Android screen in portrait/landscape;
+   system safe areas protect controls. Take/retake/confirm a camera photo. Camera denial
+   has a retry/error path and cannot submit a synthetic fallback photograph.
+5. Submit once. Verify Firestore event and audit, then open Riwayat. Close/reopen the
+   app: recorded check-in still enables only Absen Keluar. A second check-in is rejected
+   server-side, even with a different request key. A completed daily pair remains closed.
+   Check-in before 07.00 WIB is blocked; after 08.15 WIB it is late. Checkout before
+   17.00 WIB is early departure. Late/early records require approval, but the approval
+   backend is a later milestone. Use a fresh synthetic account or the next WIB day to
+   repeat a completed daily pair; do not delete existing attendance to repeat the test.
+6. Test network failure with synthetic data. The same pending command can be retried
+   within the session without creating another event. Durable offline queue is not yet
+   implemented; do not interpret the retry feature as offline availability.
+7. Login to admin as technician: access denied. Login as manager: today's real events
+   appear. Deactivate a synthetic manager profile in Emulator UI: access is blocked.
+   Restore that test profile only if it was changed for this scenario.
+8. Record account/event/photo counts, save and restart services, then login again.
+   Verify the same data and photo downloads. Run automated tests and check again;
+   the test suite must not modify the development dataset.
+
+Approval Center and CSV reports still contain demonstration fixtures. Their UI does
+not demonstrate backend approval or payroll. The employee directory uses actual
+profiles and the admin CRUD flow below.
+Distribution QR/OTA are placeholders and are not acceptance criteria for this build.
+
+## Isolated automated checks
+
+```powershell
+pnpm check
+pnpm build
+pnpm test:emulator:profile
+cd apps\mobile
+flutter analyze
+flutter test
+```
+
+Integration tests start a separate demo project on Auth 19099, Firestore 18180 and Storage 19299,
+with hub 14400, logging 14500, and `.tmp/emulator-tests` as temporary directory. Keep
+these ports free. Never point cleanup tests at the manual-development suite.
+
+## Employee CRUD in the admin portal
+
+1. Run the local suite and admin as above; sign in as `admin.dev@kudaprima.test`.
+   Open Karyawan and verify the directory shows the current Firestore profiles,
+   including inactive accounts. Supervisor can read but cannot mutate the directory.
+2. Click Tambah Karyawan. Use a new synthetic primary Gmail, name, application
+   password of at least eight characters, account state, employment status and valid
+   start date. Non-Gmail addresses and duplicate emails must fail without changing
+   another account. The form contains no role selector.
+3. Save and verify one Auth user, one `users/{uid}` profile and a generated Employee
+   ID. The role is technician. Reload the page and verify the saved row remains.
+   The employee can sign in using the assigned application password. No password
+   value may appear in the Firestore profile or audit record.
+4. Edit the row: change name, email, account state, employment status and optionally
+   password. Start date/role/Employee ID are not editable. With password left blank,
+   the existing password still works. With a new password, the old password fails.
+   Disable the account and verify sign-in is denied; enable it and verify recovery.
+5. Click Hapus, then Batal: the row and account remain. Repeat and confirm Hapus
+   permanen: Auth and profile are removed; prior attendance/audit remain unchanged.
+   Do not delete the baseline synthetic admin/supervisor or prior manual dataset.
+6. Interrupt connectivity while saving. The UI must show failure/pending state,
+   preserve the form for retry and prevent repeated clicks while submitting. A
+   partially created row can be completed with Edit or removed with Delete. A row
+   with an interrupted deletion can only finish deletion. Open two editors and
+   verify an outdated revision is rejected rather than overwriting a newer save.
+
+For Google provider linking, `pnpm test:emulator:profile` exercises synthetic IdP
+tokens exclusively on Auth 19099 and verifies the same UID plus password after Google
+sign-in, and removal of the previous provider when email changes. It never contacts
+Google or changes the manual dataset. Real Google OAuth requires an authorized online
+test separately: enable Google/Password and one-account-per-email, configure web
+App Check, then verify both login methods for the admin-provisioned primary Gmail.
+
+### Latest recorded manual result
+
+On 10 September 2026, the user reported that a new employee account was created,
+the new account logged in, and its check-in/check-out records were stored. The login
+method was not specified, so this result does not verify online Google OAuth. Manual
+edit, deactivate/reactivate, password/email replacement, and confirmed deletion
+remain unchecked in this recorded session.
