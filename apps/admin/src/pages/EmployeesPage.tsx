@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Pencil, Trash2, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import {
   createEmployeeCommandSchema,
   updateEmployeeCommandSchema,
   type EmploymentStatus,
+  type UserRole,
 } from "@kuda-prima/contracts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,10 @@ const statusLabels: Record<EmploymentStatus, string> = {
   contract: "Kontrak",
   permanent: "Tetap",
 };
+const roleLabels: Record<UserRole, string> = {
+  admin: "Admin",
+  technician: "Teknisi",
+};
 
 function EmployeeForm({
   employee,
@@ -72,11 +77,19 @@ function EmployeeForm({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  const { user } = useCurrentAdminAuth();
+  const isSelf = employee?.uid === user?.uid;
+  const [jobTitle, setJobTitle] = useState(employee?.jobTitle ?? "");
+  const [roleConfirmed, setRoleConfirmed] = useState(false);
   const submittedRequest = useRef<{ id: string; values: string } | null>(null);
   const [fullName, setFullName] = useState(employee?.fullName ?? "");
   const [email, setEmail] = useState(employee?.email ?? "");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [active, setActive] = useState(employee?.active ?? true);
+  const [employeeRole, setEmployeeRole] = useState<UserRole>(
+    employee?.role ?? "technician",
+  );
   const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus>(
     employee?.employmentStatus ?? "contract",
   );
@@ -94,6 +107,8 @@ function EmployeeForm({
       email,
       active,
       employmentStatus,
+      employeeRole,
+      jobTitle,
       password,
       startDate,
     });
@@ -102,6 +117,8 @@ function EmployeeForm({
     }
     const fields = {
       requestId: submittedRequest.current.id,
+      role: employeeRole,
+      jobTitle,
       fullName,
       email,
       active,
@@ -117,12 +134,17 @@ function EmployeeForm({
       : createEmployeeCommandSchema.safeParse({
           ...fields,
           password,
+          role: employeeRole,
           employmentStartDate: startDate,
         });
     if (!result.success) {
       setError(
-        "Lengkapi nama, Gmail yang valid, status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
+        "Lengkapi nama, Gmail, Hak Akses, Jabatan (2–100 karakter), status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
       );
+      return;
+    }
+    if (employee && employee.role !== employeeRole && !roleConfirmed) {
+      setError("Konfirmasi perubahan Hak Akses terlebih dahulu.");
       return;
     }
     submitting.current = true;
@@ -154,7 +176,7 @@ function EmployeeForm({
       }}
     >
       <DialogContent
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
+        className="max-h-[88dvh] overflow-y-auto sm:max-w-4xl"
         showCloseButton={!busy}
       >
         <DialogHeader>
@@ -164,11 +186,11 @@ function EmployeeForm({
           <DialogDescription>
             {employee
               ? "Perbarui data akun dan status karyawan."
-              : "Daftarkan Gmail karyawan dan tentukan kata sandi untuk login."}
+              : "Daftarkan akun karyawan dan tentukan kata sandi untuk login."}
           </DialogDescription>
         </DialogHeader>
-        <form className="space-y-4" onSubmit={submit}>
-          <fieldset disabled={busy} className="space-y-4">
+        <form className="space-y-5" onSubmit={submit}>
+          <fieldset disabled={busy} className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="employee-name">Nama lengkap</Label>
               <Input
@@ -182,7 +204,7 @@ function EmployeeForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="employee-email">Email Gmail</Label>
+              <Label htmlFor="employee-email">Email</Label>
               <Input
                 id="employee-email"
                 type="email"
@@ -194,41 +216,73 @@ function EmployeeForm({
                 autoComplete="off"
               />
               <p className="text-xs text-muted-foreground">
-                Gunakan alamat utama akun Google milik karyawan.
+                Gunakan alamat email akun Google milik karyawan atau alamat
+                email lainnya.
               </p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="employee-password">
                 {employee ? "Kata sandi baru (opsional)" : "Kata sandi"}
               </Label>
-              <Input
-                id="employee-password"
-                type="password"
-                required={!employee}
-                minLength={8}
-                maxLength={128}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="employee-password"
+                  type={showPassword ? "text" : "password"}
+                  required={!employee}
+                  minLength={8}
+                  maxLength={128}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="pr-11"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1/2 right-1 -translate-y-1/2"
+                  aria-label={
+                    showPassword
+                      ? "Sembunyikan kata sandi"
+                      : "Tampilkan kata sandi"
+                  }
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {employee
                   ? "Kosongkan untuk mempertahankan kata sandi saat ini."
                   : "Minimal 8 karakter. Kata sandi ini untuk aplikasi, bukan pengganti kata sandi Google."}
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 md:col-span-2">
               <div className="space-y-2">
                 <Label htmlFor="employee-active">Status akun</Label>
                 <Select
                   value={String(active)}
                   onValueChange={(value) => setActive(value === "true")}
-                  disabled={busy}
+                  disabled={busy || isSelf}
                 >
-                  <SelectTrigger id="employee-active" className="w-full">
+                  <SelectTrigger
+                    id="employee-active"
+                    className={
+                      active
+                        ? "w-full"
+                        : "w-full bg-accent text-accent-foreground [&_svg]:text-accent-foreground"
+                    }
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    sideOffset={4}
+                    align="start"
+                    avoidCollisions={false}
+                  >
                     <SelectItem value="true">Aktif</SelectItem>
                     <SelectItem value="false">Nonaktif</SelectItem>
                   </SelectContent>
@@ -246,7 +300,13 @@ function EmployeeForm({
                   <SelectTrigger id="employee-status" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    sideOffset={4}
+                    align="start"
+                    avoidCollisions={false}
+                  >
                     {Object.entries(statusLabels).map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
@@ -256,6 +316,43 @@ function EmployeeForm({
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+                <Label htmlFor="employee-role">Hak Akses</Label>
+                <Select
+                  value={employeeRole}
+                  onValueChange={(value) => { setEmployeeRole(value as UserRole); setRoleConfirmed(false); }}
+                  disabled={busy || isSelf}
+                >
+                  <SelectTrigger id="employee-role" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent
+                    position="popper"
+                    side="bottom"
+                    sideOffset={4}
+                    align="start"
+                    avoidCollisions={false}
+                  >
+                    {Object.entries(roleLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            <div className="space-y-2">
+              <Label htmlFor="employee-job-title">Jabatan</Label>
+              <Input id="employee-job-title" required minLength={2} maxLength={100} value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} aria-describedby="job-title-help" />
+              <p id="job-title-help" className="text-xs text-muted-foreground">Jabatan tidak menentukan Hak Akses. Gunakan huruf, angka, spasi, titik, koma, &amp;, /, (), atau tanda hubung.</p>
+            </div>
+            {employee && employee.role !== employeeRole && (
+              <label className="flex gap-2 text-sm md:col-span-2">
+                <input type="checkbox" checked={roleConfirmed} onChange={(event) => setRoleConfirmed(event.target.checked)} />
+                Saya mengonfirmasi perubahan Hak Akses dari {roleLabels[employee.role]} menjadi {roleLabels[employeeRole]}. Akses portal dan sesi login akan berubah.
+              </label>
+            )}
+            {isSelf && <p className="text-sm text-muted-foreground md:col-span-2">Hak Akses dan status akun sendiri tidak dapat diubah.</p>}
             {!employee && (
               <div className="space-y-2">
                 <Label htmlFor="employee-start">Tanggal mulai bekerja</Label>
@@ -274,7 +371,7 @@ function EmployeeForm({
               {error}
             </p>
           )}
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button
               type="button"
               variant="outline"
@@ -362,7 +459,7 @@ function DeleteEmployeeDialog({
 
 export function EmployeesPage() {
   const { role, user } = useCurrentAdminAuth();
-  const isAdmin = role === "admin";
+  const canManageEmployees = role === "admin";
   const [directory, setDirectory] = useState<{
     uid: string | undefined;
     rows: EmployeeEntry[];
@@ -374,11 +471,24 @@ export function EmployeesPage() {
   const loading = !sameUser || directory.loading;
   const loadError = sameUser && directory.error;
   const [reload, setReload] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editor, setEditor] = useState<{
     employee: EmployeeEntry | null;
   } | null>(null);
   const [deleting, setDeleting] = useState<EmployeeEntry | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const filteredEmployees = employees.filter((employee) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      employee.fullName.toLowerCase().includes(q) ||
+      employee.employeeId.toLowerCase().includes(q) ||
+      employee.email.toLowerCase().includes(q) ||
+      (employee.jobTitle?.toLowerCase().includes(q) ?? false)
+    );
+  });
+
   useEffect(() => {
     return watchEmployees(
       (rows) => {
@@ -394,13 +504,13 @@ export function EmployeesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Master Data Karyawan
+            Kelola Data User
           </h1>
           <p className="text-sm text-muted-foreground">
             Kelola akun dan status kepegawaian PT Kuda Prima.
           </p>
         </div>
-        {isAdmin && (
+        {canManageEmployees && (
           <Button
             onClick={() => {
               setNotice(null);
@@ -418,11 +528,23 @@ export function EmployeesPage() {
         </p>
       )}
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar Karyawan</CardTitle>
-          <CardDescription>
-            Akun aktif dan nonaktif. {employees.length} karyawan terdaftar.
-          </CardDescription>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Daftar Karyawan</CardTitle>
+            <CardDescription>
+              Akun aktif dan nonaktif. {filteredEmployees.length} dari {employees.length} karyawan terdaftar.
+            </CardDescription>
+          </div>
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama, ID, email, jabatan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 pl-9 text-sm"
+              aria-label="Cari karyawan"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -449,6 +571,10 @@ export function EmployeesPage() {
             </div>
           ) : employees.length === 0 ? (
             <p>Belum ada karyawan terdaftar.</p>
+          ) : filteredEmployees.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Tidak ada karyawan yang cocok dengan pencarian &quot;{searchQuery}&quot;.
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -457,20 +583,20 @@ export function EmployeesPage() {
                     "Employee ID",
                     "Nama Lengkap",
                     "Email",
-                    "Role",
+                    "Jabatan",
                     "Status Karyawan",
                     "Mulai Kerja",
                     "Status Akun",
                   ].map((label) => (
                     <TableHead key={label}>{label}</TableHead>
                   ))}
-                  {isAdmin && (
+                  {canManageEmployees && (
                     <TableHead className="text-right">Aksi</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <TableRow key={employee.uid}>
                     <TableCell className="font-mono text-xs">
                       {employee.employeeId}
@@ -479,13 +605,7 @@ export function EmployeesPage() {
                       {employee.fullName}
                     </TableCell>
                     <TableCell>{employee.email}</TableCell>
-                    <TableCell>
-                      {employee.role === "admin"
-                        ? "Admin"
-                        : employee.role === "supervisor"
-                          ? "Supervisor"
-                          : "Teknisi"}
-                    </TableCell>
+                    <TableCell>{employee.jobTitle?.trim() || "Belum diisi"}</TableCell>
                     <TableCell>
                       {statusLabels[employee.employmentStatus]}
                     </TableCell>
@@ -493,6 +613,11 @@ export function EmployeesPage() {
                     <TableCell>
                       <Badge
                         variant={employee.active ? "default" : "secondary"}
+                        className={
+                          employee.active
+                            ? undefined
+                            : "bg-accent text-accent-foreground"
+                        }
                       >
                         {employee.active ? "Aktif" : "Nonaktif"}
                       </Badge>
@@ -502,7 +627,7 @@ export function EmployeesPage() {
                         </p>
                       )}
                     </TableCell>
-                    {isAdmin && (
+                    {canManageEmployees && (
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -536,14 +661,14 @@ export function EmployeesPage() {
           )}
         </CardContent>
       </Card>
-      {isAdmin && editor && (
+      {canManageEmployees && editor && (
         <EmployeeForm
           employee={editor.employee}
           onClose={() => setEditor(null)}
           onSaved={setNotice}
         />
       )}
-      {isAdmin && deleting && (
+      {canManageEmployees && deleting && (
         <DeleteEmployeeDialog
           employee={deleting}
           onClose={() => setDeleting(null)}

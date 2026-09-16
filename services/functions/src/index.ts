@@ -40,6 +40,18 @@ export const submitAttendance = onCall({ enforceAppCheck }, async (request) => {
   return handleSubmitAttendance(request);
 });
 
+export const processAttendanceApproval = onCall(
+  { enforceAppCheck },
+  async (request) => {
+    const [{ getFirestore }, { handleProcessAttendanceApproval }] =
+      await Promise.all([
+        import("firebase-admin/firestore"),
+        import("./attendance/attendance-approval-service.js"),
+      ]);
+    return handleProcessAttendanceApproval(request, getFirestore());
+  },
+);
+
 function employeeCallable(action: "create" | "update" | "delete") {
   return onCall({ enforceAppCheck, timeoutSeconds: 60 }, async (request) => {
     const [{ getAuth }, { getFirestore }, { manageEmployee }] =

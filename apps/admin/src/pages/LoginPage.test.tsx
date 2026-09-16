@@ -10,9 +10,13 @@ describe("LoginPage", () => {
       <LoginPage onLogin={handleLogin} loading={false} errorMessage={null} />,
     );
 
-    expect(screen.getByLabelText("Email Perusahaan")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Kata Sandi")).toBeInTheDocument();
     expect(screen.getByTestId("login-submit-button")).toBeInTheDocument();
+    expect(screen.getByAltText("Logo PT Kuda Prima")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Copyright © PT Kuda Prima 2026/),
+    ).toBeInTheDocument();
   });
 
   it("submits email and password on form submit", async () => {
@@ -21,7 +25,7 @@ describe("LoginPage", () => {
       <LoginPage onLogin={handleLogin} loading={false} errorMessage={null} />,
     );
 
-    fireEvent.change(screen.getByLabelText("Email Perusahaan"), {
+    fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "admin.dev@kudaprima.test" },
     });
     fireEvent.change(screen.getByLabelText("Kata Sandi"), {
@@ -45,5 +49,13 @@ describe("LoginPage", () => {
     );
 
     expect(screen.getByText("Akun tidak ditemukan.")).toBeInTheDocument();
+  });
+
+  it("does not render Google login button (admin strictly uses internal credentials)", () => {
+    render(
+      <LoginPage onLogin={vi.fn()} loading={false} errorMessage={null} />,
+    );
+
+    expect(screen.queryByText(/Masuk dengan Google/i)).not.toBeInTheDocument();
   });
 });

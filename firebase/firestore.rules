@@ -13,7 +13,7 @@ service cloud.firestore {
 
     function isManager() {
       return activeUser()
-        && request.auth.token.role in ['admin', 'supervisor']
+        && request.auth.token.role == 'admin'
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == request.auth.token.role;
     }
 
@@ -67,6 +67,14 @@ service cloud.firestore {
     match /officeLocations/{officeId} {
       allow read: if activeUser() && resource.data.active == true;
       allow write: if false;
+    }
+
+    match /serviceRequests/{requestId} {
+      allow read: if activeUser()
+        && (resource.data.userId == request.auth.uid || isManager());
+      allow create: if activeUser()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isManager();
     }
 
     match /{document=**} {

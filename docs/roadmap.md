@@ -31,9 +31,12 @@ requests/results. Pending leave reserves quota; approval consumes it exactly onc
 
 Implemented for the requested admin scope: employee creation, editing, deactivation,
 reactivation and confirmed Auth/profile deletion, with Gmail/password provisioning.
-See ADR 0005 and the employee CRUD runbook. Remaining: real reports/CSV, audit access, holiday calendar,
-retention of photos for three months and records for one year, monthly data-only
-backup/restore, departed-employee cleanup, observability and rate limits.
+The next approved access-model change replaces the Supervisor access role with Admin and adds
+manual job titles; see
+[the two-role and job-title implementation plan](plans/two-role-job-title-implementation-plan.md).
+See ADR 0005 and the employee CRUD runbook. Remaining: real reports/CSV, audit access,
+holiday calendar, retention of photos for three months and records for one year, monthly
+data-only backup/restore, departed-employee cleanup, observability and rate limits.
 
 ## M5: Release and acceptance
 

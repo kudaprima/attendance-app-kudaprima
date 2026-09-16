@@ -1,0 +1,13 @@
+node_modules/
+dist/
+services/functions/lib/
+coverage/
+*.tsbuildinfo
+.dart_tool/
+.gradle/
+build/
+.widget_preview/
+.emulator-data/
+.local/
+pnpm-lock.yaml
+

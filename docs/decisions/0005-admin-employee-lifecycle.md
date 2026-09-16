@@ -6,21 +6,22 @@
 ## Scope
 
 Replace the web employee directory fixtures with add, edit and confirmed delete
-operations. No role management, attendance changes, approvals, release or deployment
-work is included. New employees receive the technician role. Only active admins may
-mutate employees; supervisors retain read access.
+operations. Role is selected when an employee is created; attendance changes,
+approvals, release, and deployment work are outside this decision. Active admins and
+supervisors may mutate employees with the same operational permissions.
 
 ## Identity and credentials
 
 Require the employee's primary Gmail address and an application password of 8–128
-characters. An authorized admin acts as the trusted provisioner of that address;
+characters. An authorized admin or supervisor acts as the trusted provisioner of that address;
 the backend sets `emailVerified: true` on create and email updates. This is an admin
 attestation, not an automated proof of mailbox ownership. It prevents the first
 verified Google sign-in from replacing an unverified password credential. Both
 providers must resolve to the same Firebase UID with one-account-per-email enabled.
 An existing Auth account using the address is rejected, never silently adopted.
 
-Editing email retains UID, role, Employee ID and employment start date, removes old
+Creation assigns one of the supported roles (`admin`, `supervisor`, or `technician`)
+to both the profile and Auth custom claims. Editing email retains UID, role, Employee ID and employment start date, removes old
 federated providers, and revokes refresh tokens. A blank password on edit preserves
 the current password. The application password is not the Google account password.
 No password or password-derived request digest is written to Firestore or audit.
@@ -32,7 +33,7 @@ the same-UID/password-preservation behavior there; they do not validate online G
 ## Mutations and failure handling
 
 Shared strict Zod contracts reject unexpected fields. The backend reads the actor's
-Auth account and profile, validates admin claims, email and session revocation time,
+Auth account and profile, validates matching admin or supervisor claims, email and session revocation time,
 and refuses self-deactivation/deletion. Callables enforce App Check online; web
 initializes reCAPTCHA Enterprise using `VITE_FIREBASE_APPCHECK_SITE_KEY` when configured.
 

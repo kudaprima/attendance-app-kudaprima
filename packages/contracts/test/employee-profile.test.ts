@@ -11,6 +11,7 @@ describe("provisionEmployeeProfileCommandSchema", () => {
     email: "employee@kudaprima.test",
     fullName: "Karyawan Development",
     role: "technician",
+    jobTitle: "Teknisi Lapangan",
     employmentStatus: "contract",
     employmentStartDate: "2026-01-15",
   } as const;

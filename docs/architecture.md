@@ -51,8 +51,9 @@ homeAddress plus update metadata are permitted by rules. See ADR 0004.
 
 The employee directory subscribes to actual `users` profiles. `createEmployee`,
 `updateEmployee`, and `deleteEmployee` callables perform Auth and profile mutations
-under an active-admin authorization check. New accounts receive a technician claim
-and a sequential Employee ID. Corporate fields stay backend-owned.
+under an active-manager authorization check shared by admins and supervisors. New
+accounts receive the selected admin, supervisor, or technician claim and a sequential
+Employee ID. Corporate fields stay backend-owned.
 
 Auth and Firestore are separate systems: a private per-UID lease serializes requests,
 profiles remain inactive while a mutation is incomplete, and profile revisions reject

@@ -15,6 +15,7 @@ export interface EmployeeEntry {
   fullName: string;
   email: string;
   role: UserRole;
+  jobTitle: string;
   employmentStatus: EmploymentStatus;
   employmentStartDate: string;
   active: boolean;
@@ -37,6 +38,7 @@ export function watchEmployees(
             fullName: data.fullName,
             email: data.email,
             role: data.role,
+            jobTitle: typeof data.jobTitle === "string" ? data.jobTitle.trim() : "",
             employmentStatus: data.employmentStatus,
             employmentStartDate: data.employmentStartDate,
             active: data.active === true,
@@ -61,7 +63,7 @@ export function employeeErrorMessage(error: unknown): string {
   if (code === "functions/already-exists")
     return "Email atau permintaan sudah terdaftar. Periksa kembali daftar karyawan.";
   if (code === "functions/permission-denied")
-    return "Hanya admin aktif yang dapat mengelola karyawan.";
+    return "Hanya Admin aktif yang dapat mengelola karyawan.";
   if (code === "functions/unauthenticated")
     return "Sesi berakhir. Silakan masuk kembali.";
   if (code === "functions/aborted")
@@ -69,8 +71,8 @@ export function employeeErrorMessage(error: unknown): string {
   if (code === "functions/not-found")
     return "Karyawan tidak ditemukan. Muat ulang daftar.";
   if (code === "functions/invalid-argument")
-    return "Periksa alamat Gmail, kata sandi minimal 8 karakter, dan kolom wajib.";
+    return "Periksa alamat Gmail, Hak Akses, Jabatan, kata sandi minimal 8 karakter, dan kolom wajib.";
   if (code === "functions/failed-precondition")
-    return "Operasi tidak dapat dilakukan. Selesaikan perubahan tertunda; akun admin sendiri tidak dapat dinonaktifkan atau dihapus.";
+    return "Operasi tidak dapat dilakukan. Selesaikan perubahan tertunda; akun sendiri tidak dapat diturunkan, dinonaktifkan, atau dihapus dan harus tersisa minimal dua Admin aktif.";
   return "Perubahan belum terkonfirmasi. Periksa koneksi lalu coba kembali.";
 }

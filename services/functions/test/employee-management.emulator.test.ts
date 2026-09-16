@@ -33,6 +33,7 @@ const input = (changes = {}) => ({
   email: `employee${randomUUID().replaceAll("-", "")}@gmail.com`,
   password: "SyntheticPass123!",
   active: true,
+  role: "technician",
   employmentStatus: "contract",
   employmentStartDate: "2026-09-01",
   ...changes,
@@ -104,6 +105,7 @@ beforeEach(async () => {
     password: "SyntheticAdmin123!",
   });
   await auth.setCustomUserClaims(identity.uid, { role: "admin" });
+  identity.token.role = "admin";
   identity.token.auth_time = Math.floor(Date.now() / 1000);
   await database.doc(`users/${identity.uid}`).set({
     authUid: identity.uid,
@@ -160,6 +162,17 @@ describe("admin employee lifecycle", () => {
         .sort(),
     ).toEqual(["google.com", "password"]);
   });
+  it.each(["technician", "supervisor", "admin"] as const)(
+    "creates an account with the selected %s role",
+    async (role) => {
+      const data = input({ role });
+      const result = await create(data);
+      expect(
+        (await database.doc(`users/${result.uid}`).get()).data()?.role,
+      ).toBe(role);
+      expect((await auth.getUser(result.uid)).customClaims?.role).toBe(role);
+    },
+  );
   it("updates only allowed fields, unlinks the old Google identity and preserves the password", async () => {
     const data = input();
     const result = await create(data);
@@ -232,28 +245,32 @@ describe("admin employee lifecycle", () => {
     );
     expect((await auth.getUser(second.uid)).disabled).toBe(false);
   });
-  it("rejects unauthenticated, technician, supervisor, inactive and stale-claim callers", async () => {
+  it("allows supervisors and rejects unauthenticated, technician, inactive and stale-claim callers", async () => {
     await expect(
       manageEmployee(database, auth, "create", { data: input() }),
     ).rejects.toMatchObject({ code: "unauthenticated" });
-    for (const role of ["technician", "supervisor"]) {
-      await expect(
-        manageEmployee(database, auth, "create", {
-          auth: { ...identity, token: { role } },
-          data: input(),
-        }),
-      ).rejects.toMatchObject({ code: "permission-denied" });
-    }
+    await expect(
+      manageEmployee(database, auth, "create", {
+        auth: { ...identity, token: { role: "technician" } },
+        data: input(),
+      }),
+    ).rejects.toMatchObject({ code: "permission-denied" });
+    await auth.setCustomUserClaims(identity.uid, { role: "supervisor" });
+    await database.doc(`users/${identity.uid}`).update({ role: "supervisor" });
+    identity.token.role = "supervisor";
+    await expect(create(input({ role: "admin" }))).resolves.toMatchObject({
+      employeeId: "KP-000001",
+    });
     await database.doc(`users/${identity.uid}`).update({ active: false });
     await expect(create()).rejects.toMatchObject({ code: "permission-denied" });
     await database.doc(`users/${identity.uid}`).update({ active: true });
     await auth.setCustomUserClaims(identity.uid, { role: "technician" });
     await expect(create()).rejects.toMatchObject({ code: "permission-denied" });
   });
-  it("rejects non-Gmail and privilege escalation at the backend", async () => {
+  it("rejects non-Gmail, unknown roles and malformed dates at the backend", async () => {
     for (const data of [
       input({ email: "employee@example.com" }),
-      input({ role: "admin" }),
+      input({ role: "owner" }),
       input({ employmentStartDate: "2026-02-30" }),
     ]) {
       await expect(create(data)).rejects.toMatchObject({
@@ -298,6 +315,9 @@ describe("admin employee lifecycle", () => {
     expect((await database.doc(`users/${uid}`).get()).data()?.active).toBe(
       false,
     );
+    await expect(create({ ...data, role: "admin" })).rejects.toMatchObject({
+      code: "already-exists",
+    });
     await edit(uid, { email: data.email, expectedRevision: 0 });
     expect((await auth.getUser(uid)).customClaims?.role).toBe("technician");
     expect((await loginPassword(data.email)).localId).toBe(uid);

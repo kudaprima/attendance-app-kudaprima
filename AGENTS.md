@@ -1,5 +1,17 @@
 # Repository Guidelines
 
+## Agent Handoff and Active Scope
+
+Before acting, read **docs/handoff/current-task.md** for the active task, authorized
+scope, execution hold, and existing changes. Follow
+**docs/testing/agent-handoff-runbook.md** when transferring work between agents.
+The latest explicit user instruction takes precedence over an older checkpoint.
+An approved plan or a successful readiness check does not authorize application
+implementation while the checkpoint is **HOLD_APPLICATION_IMPLEMENTATION**.
+Use one editing agent at a time and preserve pre-existing changes. Update the
+checkpoint only when documentation writes are authorized; read-only audits return
+proposed updates in chat. A checkpoint is a coordination record, not a technical lock.
+
 ## Project Structure & Module Organization
 
 This monorepo contains the Flutter employee app in **apps/mobile**, the React admin portal in **apps/admin**, Firebase Gen 2 functions in **services/functions**, and shared Zod contracts in **packages/contracts**. Firebase rules and indexes live in **firebase**. Keep architecture, domain, security, and setup decisions in **docs**. Put the supplied company logo in **assets/branding/pt-kuda-prima-logo.png**.

@@ -36,15 +36,15 @@ retensinya berakhir; aksi ini tidak menghapus histori maupun audit.
 ## Keamanan pengelolaan akun
 
 CRUD karyawan memakai callable Functions dengan App Check online serta verifikasi
-akun Auth, profil, klaim admin, email sesi, dan waktu pencabutan sesi. Client tetap
+akun Auth, profil, klaim admin atau supervisor, email sesi, dan waktu pencabutan sesi. Client tetap
 dilarang menulis field perusahaan atau menghapus profil langsung melalui Firestore.
 Kata sandi hanya dikirim ke Firebase Auth melalui backend; tidak disimpan pada
 profil, log, audit, atau penyimpanan browser.
 
-Pendaftaran Gmail oleh admin adalah provisioning tepercaya: admin memastikan alamat
+Pendaftaran Gmail oleh admin atau supervisor adalah provisioning tepercaya: pengelola memastikan alamat
 utama tersebut milik karyawan. Backend menandai email hasil provisioning sebagai
 terverifikasi agar login Google pertama mempertahankan provider kata sandi.
-Penanda ini merupakan pernyataan admin, bukan bukti verifikasi email otomatis.
+Penanda ini merupakan pernyataan pengelola, bukan bukti verifikasi email otomatis.
 Saat email diubah, provider federasi lama dilepas dan refresh token dicabut; kata
 sandi aplikasi tetap kecuali admin menggantinya. Satu akun per email harus aktif
 pada konfigurasi Firebase Auth. Akun Google tanpa profil/role tidak mendapat akses.

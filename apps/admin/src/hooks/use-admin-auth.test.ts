@@ -1,4 +1,4 @@
-﻿import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   authChanged: undefined as any,
@@ -33,13 +33,14 @@ import { useAdminAuth } from "./use-admin-auth";
 const user = {
   uid: "manager",
   email: "manager@kudaprima.test",
-  getIdTokenResult: async () => ({ claims: { role: "supervisor" } }),
+  getIdTokenResult: async () => ({ claims: { role: "admin" } }),
 };
 const profile = {
   active: true,
   authUid: "manager",
   email: user.email,
-  role: "supervisor",
+  role: "admin",
+  jobTitle: "Supervisor",
 };
 beforeEach(() => {
   mocks.authChanged = undefined;
@@ -78,7 +79,7 @@ describe("manager auth verification", () => {
     act(() =>
       mocks.profileChanged({
         exists: () => true,
-        data: () => ({ ...profile, role: "admin" }),
+        data: () => ({ ...profile, role: "technician" }),
       }),
     );
     expect(result.current.isActive).toBe(false);

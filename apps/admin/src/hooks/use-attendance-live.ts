@@ -58,27 +58,57 @@ export function useAttendanceLiveFeed() {
   });
 
   useEffect(() => {
-    let unsubscribeSnapshot: (() => void) | null = null;
+    let unsubscribeEvents: (() => void) | null = null;
+    let unsubscribeAttendanceApprovals: (() => void) | null = null;
+    let unsubscribeServiceRequests: (() => void) | null = null;
 
-    const setupListener = () => {
+    let todayKPIs = { presentToday: 0, late: 0, field: 0 };
+    let pendingAttendanceCount = 0;
+    let pendingServiceCount = 0;
+
+    const updateAllKPIs = () => {
+      setKpis({
+        presentToday: todayKPIs.presentToday,
+        late: todayKPIs.late,
+        field: todayKPIs.field,
+        pendingApproval: pendingAttendanceCount + pendingServiceCount,
+      });
+    };
+
+    const cleanupListeners = () => {
+      if (unsubscribeEvents) {
+        unsubscribeEvents();
+        unsubscribeEvents = null;
+      }
+      if (unsubscribeAttendanceApprovals) {
+        unsubscribeAttendanceApprovals();
+        unsubscribeAttendanceApprovals = null;
+      }
+      if (unsubscribeServiceRequests) {
+        unsubscribeServiceRequests();
+        unsubscribeServiceRequests = null;
+      }
+    };
+
+    const setupListeners = () => {
       try {
+        // 1. Listen to today's attendance events
         const eventsRef = collection(firestore, "attendanceEvents");
         const { start, end } = wibDayBounds(new Date());
-        const q = query(
+        const qEvents = query(
           eventsRef,
           where("capturedAt", ">=", start),
           where("capturedAt", "<", end),
           orderBy("capturedAt", "desc"),
         );
 
-        unsubscribeSnapshot = onSnapshot(
-          q,
+        unsubscribeEvents = onSnapshot(
+          qEvents,
           (snapshot) => {
             const items: AttendanceEventItem[] = [];
             const uniqueUsers = new Set<string>();
             let lateCount = 0;
             let fieldCount = 0;
-            let pendingApprovalCount = 0;
 
             for (const doc of snapshot.docs) {
               const data = doc.data();
@@ -107,18 +137,16 @@ export function useAttendanceLiveFeed() {
               if (item.locationType === "field") {
                 fieldCount += 1;
               }
-              if (item.requiresApproval) {
-                pendingApprovalCount += 1;
-              }
             }
 
+            items.sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
             setEvents(items);
-            setKpis({
+            todayKPIs = {
               presentToday: uniqueUsers.size,
               late: lateCount,
               field: fieldCount,
-              pendingApproval: pendingApprovalCount,
-            });
+            };
+            updateAllKPIs();
             setLoading(false);
           },
           (error) => {
@@ -126,20 +154,63 @@ export function useAttendanceLiveFeed() {
             setLoading(false);
           },
         );
+
+        // 2. Listen to pending attendance approvals across all dates
+        const qApprovals = query(
+          collection(firestore, "attendanceEvents"),
+          where("requiresApproval", "==", true),
+        );
+
+        unsubscribeAttendanceApprovals = onSnapshot(
+          qApprovals,
+          (snapshot) => {
+            let count = 0;
+            for (const doc of snapshot.docs) {
+              const data = doc.data();
+              const status = data.approvalStatus;
+              if (status !== "approved" && status !== "rejected") {
+                count += 1;
+              }
+            }
+            pendingAttendanceCount = count;
+            updateAllKPIs();
+          },
+          (error) => {
+            console.warn("Firestore attendance approvals count error:", error);
+          },
+        );
+
+        // 3. Listen to pending service requests (leave, sick, permission, overtime)
+        const qServices = collection(firestore, "serviceRequests");
+        unsubscribeServiceRequests = onSnapshot(
+          qServices,
+          (snapshot) => {
+            let count = 0;
+            for (const doc of snapshot.docs) {
+              const data = doc.data();
+              const status = data.status;
+              if (status === "pending" || !status) {
+                count += 1;
+              }
+            }
+            pendingServiceCount = count;
+            updateAllKPIs();
+          },
+          (error) => {
+            console.warn("Firestore service requests count error:", error);
+          },
+        );
       } catch (err) {
-        console.warn("Firestore attendanceEvents setup error:", err);
+        console.warn("Firestore attendance setup error:", err);
         setLoading(false);
       }
     };
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
-      }
+      cleanupListeners();
 
       if (user) {
-        setupListener();
+        setupListeners();
       } else {
         setLoading(false);
       }
@@ -150,16 +221,15 @@ export function useAttendanceLiveFeed() {
       const nextDay = wibDayBounds(new Date()).start;
       if (nextDay !== day && auth.currentUser) {
         day = nextDay;
-        unsubscribeSnapshot?.();
-        setupListener();
+        cleanupListeners();
+        setupListeners();
       }
     }, 30000);
+
     return () => {
       clearInterval(dayTimer);
       unsubscribeAuth();
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-      }
+      cleanupListeners();
     };
   }, []);
 

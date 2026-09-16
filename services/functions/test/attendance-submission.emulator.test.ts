@@ -181,7 +181,7 @@ describe("attendance transactions", () => {
       command({ latitude: 0, note: "Synthetic site visit" }),
     );
     expect(result.locationType).toBe("field");
-    expect(result.requiresApproval).toBe(false);
+    expect(result.requiresApproval).toBe(true);
   });
   it("bootstraps daily state from existing history without changing events", async () => {
     await database.doc("attendanceEvents/legacy").set({

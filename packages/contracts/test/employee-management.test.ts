@@ -9,6 +9,8 @@ const create = {
   email: "sample@gmail.com",
   password: "SyntheticPass123!",
   active: true,
+  role: "technician",
+  jobTitle: "Teknisi Lapangan",
   employmentStatus: "contract",
   employmentStartDate: "2026-09-01",
 };
@@ -37,11 +39,20 @@ describe("employee management commands", () => {
       ).toBe(false);
     }
   });
-  it("rejects role assignment and client employee ID", () => {
-    expect(
-      createEmployeeCommandSchema.safeParse({ ...create, role: "admin" })
-        .success,
-    ).toBe(false);
+  it("accepts each supported role and rejects unknown roles", () => {
+    for (const role of ["technician", "admin"]) {
+      expect(
+        createEmployeeCommandSchema.safeParse({ ...create, role }).success,
+      ).toBe(true);
+    }
+    for (const rejectedRole of ["supervisor", "owner"]) {
+      expect(
+        createEmployeeCommandSchema.safeParse({ ...create, role: rejectedRole })
+          .success,
+      ).toBe(false);
+    }
+  });
+  it("rejects a client employee ID", () => {
     expect(
       createEmployeeCommandSchema.safeParse({
         ...create,
@@ -53,12 +64,18 @@ describe("employee management commands", () => {
     const {
       password: _password,
       employmentStartDate: _start,
-      ...fields
+      ...editableFields
     } = create;
-    const edit = { ...fields, uid: "employee", expectedRevision: 0 };
+    const edit = { ...editableFields, uid: "employee", expectedRevision: 0 };
     expect(updateEmployeeCommandSchema.safeParse(edit).success).toBe(true);
     expect(
       updateEmployeeCommandSchema.safeParse({ ...edit, password: "" }).success,
+    ).toBe(false);
+    expect(
+      updateEmployeeCommandSchema.safeParse({
+        ...edit,
+        role: "supervisor",
+      }).success,
     ).toBe(false);
     expect(
       updateEmployeeCommandSchema.safeParse({

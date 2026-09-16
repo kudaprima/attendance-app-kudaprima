@@ -37,6 +37,7 @@ function existingProfileMatches(
     existing.email === command.email &&
     existing.fullName === command.fullName &&
     existing.role === command.role &&
+    existing.jobTitle === command.jobTitle &&
     existing.employmentStatus === command.employmentStatus &&
     existing.employmentStartDate === command.employmentStartDate &&
     typeof existing.employeeId === "string" &&
@@ -48,6 +49,7 @@ export async function ensureEmployeeProfile(
   database: Firestore,
   command: ProvisionEmployeeProfileCommand,
   actorUid: string,
+  initiallyActive = true,
 ): Promise<ProvisioningResult> {
   const profileReference = database.doc(`users/${command.authUid}`);
   const counterReference = database.doc(employeeCounterPath);
@@ -85,7 +87,7 @@ export async function ensureEmployeeProfile(
     const serverTimestamp = FieldValue.serverTimestamp();
 
     transaction.set(profileReference, {
-      active: true,
+      active: initiallyActive,
       authUid: command.authUid,
       birthDate: null,
       createdAt: serverTimestamp,
@@ -99,6 +101,7 @@ export async function ensureEmployeeProfile(
       homeAddress: null,
       phone: null,
       role: command.role,
+      jobTitle: command.jobTitle,
       updatedAt: serverTimestamp,
       updatedBy: actorUid,
     });

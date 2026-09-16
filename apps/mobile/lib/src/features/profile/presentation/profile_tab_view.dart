@@ -173,6 +173,18 @@ class ProfileTabView extends ConsumerWidget {
           child: Column(
             children: [
               ListTile(
+                leading: const Icon(Icons.badge_outlined),
+                title: const Text('Jabatan'),
+                subtitle: Text(profile.jobTitleLabel),
+              ),
+              if (profile.jobTitle.trim().isEmpty)
+                const ListTile(
+                  subtitle: Text(
+                    'Hubungi Admin untuk melengkapi Jabatan Anda.',
+                  ),
+                ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.email_outlined),
                 title: const Text('Email Perusahaan'),
                 subtitle: Text(profile.email),

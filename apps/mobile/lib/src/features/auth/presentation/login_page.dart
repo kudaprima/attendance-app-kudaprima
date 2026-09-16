@@ -85,6 +85,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: AutofillGroup(
@@ -122,7 +126,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             labelText: 'Email',
                             hintText: 'Email',
                             prefixIcon: Icon(Icons.mail_outline),
-                            border: OutlineInputBorder(),
                           ),
                           validator: (_) =>
                               _validEmail ? null : 'Masukkan email yang valid.',
@@ -140,7 +143,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             labelText: 'Kata Sandi',
                             hintText: 'Kata Sandi',
                             prefixIcon: const Icon(Icons.lock_outline),
-                            border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword
                                   ? 'Tampilkan kata sandi'
@@ -170,6 +172,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                         FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                           onPressed: _busy ? null : _submit,
                           child: Text(_busy ? 'Memeriksa...' : 'Masuk'),
                         ),
@@ -186,6 +194,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                         const SizedBox(height: 16),
                         OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                           onPressed: _busy
                               ? null
                               : () => _run(

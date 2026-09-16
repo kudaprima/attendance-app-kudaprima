@@ -142,13 +142,15 @@ these ports free. Never point cleanup tests at the manual-development suite.
 
 1. Run the local suite and admin as above; sign in as `admin.dev@kudaprima.test`.
    Open Karyawan and verify the directory shows the current Firestore profiles,
-   including inactive accounts. Supervisor can read but cannot mutate the directory.
+   including inactive accounts. Repeat as `supervisor.dev@kudaprima.test` and verify
+   both roles can add, edit, and delete employees.
 2. Click Tambah Karyawan. Use a new synthetic primary Gmail, name, application
    password of at least eight characters, account state, employment status and valid
-   start date. Non-Gmail addresses and duplicate emails must fail without changing
-   another account. The form contains no role selector.
+   start date, and the intended Admin, Supervisor, or Teknisi role. Non-Gmail addresses
+   and duplicate emails must fail without changing another account.
 3. Save and verify one Auth user, one `users/{uid}` profile and a generated Employee
-   ID. The role is technician. Reload the page and verify the saved row remains.
+   ID. Verify the profile and Auth custom claim use the selected role. Reload the page
+   and verify the saved row remains.
    The employee can sign in using the assigned application password. No password
    value may appear in the Firestore profile or audit record.
 4. Edit the row: change name, email, account state, employment status and optionally

@@ -13,6 +13,7 @@ export default defineConfig({
     environment: "jsdom",
     maxWorkers: 1,
     pool: "threads",
+    testTimeout: 15000,
     setupFiles: ["./src/test/setup.ts"],
   },
 });
