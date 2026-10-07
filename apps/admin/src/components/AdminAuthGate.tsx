@@ -28,7 +28,6 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
     return (
       <LoginPage
         onLogin={login}
-        onGoogleLogin={authState.loginGoogle}
         onResetPassword={authState.resetPassword}
         loading={loading}
         errorMessage={error}
@@ -39,7 +38,7 @@ export function AdminAuthGate({ children }: AdminAuthGateProps) {
   if (
     !isActive ||
     role === "technician" ||
-    (role !== "admin" && role !== "supervisor")
+    role !== "admin"
   ) {
     return (
       <AccessDeniedPage

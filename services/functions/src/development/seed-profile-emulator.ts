@@ -47,6 +47,7 @@ async function main(): Promise<void> {
       email: account.email,
       fullName: account.displayName,
       role: account.role,
+      jobTitle: account.jobTitle,
       employmentStatus: account.employmentStatus,
       employmentStartDate: account.employmentStartDate,
     };

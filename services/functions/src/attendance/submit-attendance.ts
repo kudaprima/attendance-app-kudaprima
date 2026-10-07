@@ -31,7 +31,7 @@ export async function handleSubmitAttendance(
   }
 
   if (
-    !["technician", "supervisor", "admin"].includes(
+    !["technician", "admin"].includes(
       String(request.auth.token.role),
     )
   ) {

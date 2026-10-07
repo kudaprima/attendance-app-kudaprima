@@ -1,59 +1,53 @@
-import React, { useState } from "react";
-import { Lock, LogIn, Mail, ShieldAlert } from "lucide-react";
+import { useState, type SubmitEvent } from "react";
+import { Loader2, LockKeyhole, Mail, ShieldAlert } from "lucide-react";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface LoginPageProps {
-  onLogin: (email: string, pass: string) => Promise<void>;
-  onGoogleLogin?: () => Promise<void>;
-  onResetPassword?: (email: string) => Promise<void>;
-  loading: boolean;
-  errorMessage: string | null;
+  readonly onLogin: (email: string, pass: string) => Promise<void>;
+  readonly onResetPassword?: (email: string) => Promise<void>;
+  readonly loading: boolean;
+  readonly errorMessage: string | null;
 }
 
 export function LoginPage({
   onLogin,
-  onGoogleLogin,
   onResetPassword,
   loading,
   errorMessage,
-}: LoginPageProps) {
+}: Readonly<LoginPageProps>) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const busy = submitting || loading;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!email || !password) {
       setLocalError("Email dan kata sandi wajib diisi.");
       return;
     }
 
     setLocalError(null);
+    setNotice(null);
     setSubmitting(true);
     try {
       await onLogin(email.trim(), password);
-    } catch (err: any) {
-      setLocalError(err.message || "Gagal masuk.");
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "Gagal masuk.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const runAction = async (action: () => Promise<void>) => {
-    if (submitting || loading) return;
+    if (busy) return;
     setSubmitting(true);
     setLocalError(null);
     setNotice(null);
@@ -67,122 +61,134 @@ export function LoginPage({
       setSubmitting(false);
     }
   };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="mx-auto grid size-12 place-items-center rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-sm">
-            KP
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">PT Kuda Prima</h1>
-          <p className="text-sm text-muted-foreground">
-            Portal Administrasi & Operasional Presensi
-          </p>
+    <div className="flex min-h-svh flex-col bg-[#f0f2f5] text-slate-950 dark:bg-background dark:text-foreground">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-5 py-10 sm:px-8 lg:py-16">
+        <div className="grid w-full items-center gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20">
+          <section
+            className="text-center lg:text-left"
+            aria-label="PT Kuda Prima"
+          >
+            <BrandLogo className="mx-auto w-56 lg:mx-0 lg:w-72" />
+            <h1 className="mt-7 max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              Portal administrasi kehadiran PT Kuda Prima.
+            </h1>
+            <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-muted-foreground lg:mx-0 lg:text-lg">
+              Kelola kehadiran, persetujuan, akun karyawan, dan versi aplikasi
+              dari satu tempat.
+            </p>
+          </section>
+
+          <section className="mx-auto w-full max-w-md" aria-label="Form login">
+            <Card className="border-0 bg-white shadow-[0_2px_12px_rgba(15,23,42,0.14)] dark:bg-card">
+              <CardContent className="p-5 sm:p-6">
+                <div className="mb-5">
+                  <h2 className="text-xl font-semibold">Masuk ke portal</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Gunakan akun Administrator untuk masuk ke portal.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="nama@gmail.com"
+                        className="h-12 bg-background pl-10 text-base"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        disabled={busy}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Kata Sandi</Label>
+                    <div className="relative">
+                      <LockKeyhole className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="Masukkan kata sandi"
+                        className="h-12 bg-background pl-10 text-base"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        disabled={busy}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {(localError || errorMessage) && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
+                    >
+                      <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                      <span>{localError || errorMessage}</span>
+                    </div>
+                  )}
+
+                  {notice && (
+                    <output
+                      className="block rounded-xl bg-primary/10 p-3 text-sm text-primary"
+                    >
+                      {notice}
+                    </output>
+                  )}
+
+                  <Button
+                    type="submit"
+                    data-testid="login-submit-button"
+                    className="h-12 w-full text-base font-semibold"
+                    disabled={busy}
+                  >
+                    {busy && <Loader2 className="animate-spin" />}
+                    {busy ? "Memverifikasi..." : "Masuk"}
+                  </Button>
+
+                  {onResetPassword && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto w-full py-0 text-primary"
+                      disabled={busy}
+                      onClick={() =>
+                        runAction(async () => {
+                          if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email.trim()))
+                            throw new Error("Masukkan email terlebih dahulu.");
+                          await onResetPassword(email.trim());
+                          setNotice(
+                            "Jika email terdaftar, petunjuk reset akan dikirim.",
+                          );
+                        })
+                      }
+                    >
+                      Lupa kata sandi?
+                    </Button>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+
+            <p className="mt-6 text-center text-xs leading-5 text-slate-500 dark:text-muted-foreground">
+              Akses portal dibatasi untuk akun internal yang aktif.
+            </p>
+          </section>
         </div>
+      </main>
 
-        <Card className="border-border shadow-md">
-          <form onSubmit={handleSubmit}>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">Masuk ke Akun</CardTitle>
-              <CardDescription>
-                Masukkan email dan kata sandi akun Supervisor atau Admin Anda.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {(localError || errorMessage) && (
-                <div className="flex items-center gap-2 rounded-lg bg-destructive/15 p-3 text-sm text-destructive">
-                  <ShieldAlert className="size-4 shrink-0" />
-                  <span>{localError || errorMessage}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Perusahaan</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Email"
-                    className="pl-9"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={submitting || loading}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Kata Sandi</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Kata Sandi"
-                    className="pl-9"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={submitting || loading}
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-
-            {notice && (
-              <p role="status" className="px-6 pb-3 text-sm">
-                {notice}
-              </p>
-            )}
-            {onResetPassword && (
-              <div className="px-6 text-right">
-                <Button
-                  type="button"
-                  variant="link"
-                  disabled={submitting || loading}
-                  onClick={() =>
-                    runAction(async () => {
-                      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-                        throw new Error("Masukkan Email terlebih dahulu.");
-                      await onResetPassword(email.trim());
-                      setNotice(
-                        "Jika email terdaftar, petunjuk reset akan dikirim. Pada simulator, tautan tersedia di Auth Emulator.",
-                      );
-                    })
-                  }
-                >
-                  Lupa Kata Sandi
-                </Button>
-              </div>
-            )}
-            <CardFooter className="flex flex-col space-y-3">
-              <Button
-                type="submit"
-                data-testid="login-submit-button"
-                className="w-full gap-2"
-                disabled={submitting || loading}
-              >
-                <LogIn className="size-4" />
-                {submitting || loading ? "Memverifikasi..." : "Masuk"}
-              </Button>
-              {onGoogleLogin && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  disabled={submitting || loading}
-                  onClick={() => runAction(onGoogleLogin)}
-                >
-                  Masuk dengan Google
-                </Button>
-              )}
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+      <footer className="border-t border-slate-200/80 bg-white/70 px-4 py-5 text-center text-sm text-slate-500 dark:border-border dark:bg-card/60 dark:text-muted-foreground">
+        Copyright © PT Kuda Prima 2026. Seluruh hak cipta dilindungi.
+      </footer>
     </div>
   );
 }

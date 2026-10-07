@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { LogOut, ShieldBan } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,46 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface AccessDeniedPageProps {
-  email: string | null;
-  role: string | null;
-  isActive: boolean;
-  onSignOut: () => Promise<void>;
+export interface AccessDeniedPageProps {
+  readonly email: string | null;
+  readonly role: string | null;
+  readonly isActive: boolean;
+  readonly onSignOut: () => Promise<void>;
+}
+
+function renderAccessDeniedReason(
+  isActive: boolean,
+  role: string | null,
+): ReactNode {
+  if (!isActive) {
+    return (
+      <p>
+        Akun Anda telah <strong>dinonaktifkan</strong> oleh pihak manajemen PT
+        Kuda Prima. Hubungi Administrator jika terdapat kekeliruan data.
+      </p>
+    );
+  }
+
+  if (role === "technician") {
+    return (
+      <p>
+        Akun Anda terdaftar dengan peran <strong>Teknisi</strong>. Web Portal
+        Administrasi ini hanya dapat diakses oleh peran{" "}
+        <strong>Supervisor</strong> dan <strong>Admin</strong>.
+        <br />
+        <br />
+        Untuk mencatat kehadiran masuk/pulang, cuti, atau pengajuan lembur,
+        silakan gunakan <strong>Aplikasi Android Kuda Prima</strong>.
+      </p>
+    );
+  }
+
+  return (
+    <p>
+      Akun Anda belum memiliki hak akses manajerial yang valid di sistem PT Kuda
+      Prima.
+    </p>
+  );
 }
 
 export function AccessDeniedPage({
@@ -22,7 +58,7 @@ export function AccessDeniedPage({
   role,
   isActive,
   onSignOut,
-}: AccessDeniedPageProps) {
+}: Readonly<AccessDeniedPageProps>) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md border-destructive/30 text-center shadow-lg">
@@ -39,29 +75,7 @@ export function AccessDeniedPage({
         </CardHeader>
 
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          {!isActive ? (
-            <p>
-              Akun Anda telah <strong>dinonaktifkan</strong> oleh pihak
-              manajemen PT Kuda Prima. Hubungi Administrator jika terdapat
-              kekeliruan data.
-            </p>
-          ) : role === "technician" ? (
-            <p>
-              Akun Anda terdaftar dengan peran <strong>Teknisi</strong>. Web
-              Portal Administrasi ini hanya dapat diakses oleh peran{" "}
-              <strong>Supervisor</strong> dan <strong>Admin</strong>.
-              <br />
-              <br />
-              Untuk mencatat kehadiran masuk/pulang, cuti, atau pengajuan
-              lembur, silakan gunakan{" "}
-              <strong>Aplikasi Android Kuda Prima</strong>.
-            </p>
-          ) : (
-            <p>
-              Akun Anda belum memiliki hak akses manajerial yang valid di sistem
-              PT Kuda Prima.
-            </p>
-          )}
+          {renderAccessDeniedReason(isActive, role)}
         </CardContent>
 
         <CardFooter className="justify-center">

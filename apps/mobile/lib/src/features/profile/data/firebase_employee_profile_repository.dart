@@ -56,6 +56,9 @@ final class FirebaseEmployeeProfileRepository
       email: email,
       fullName: fullName.trim(),
       role: role,
+      jobTitle: data['jobTitle'] is String
+          ? (data['jobTitle'] as String).trim()
+          : '',
       employmentStatus: employmentStatus,
       employmentStartDate: employmentStartDate,
       active: active,

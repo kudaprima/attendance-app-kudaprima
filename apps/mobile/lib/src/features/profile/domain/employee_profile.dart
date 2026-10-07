@@ -30,6 +30,7 @@ class EmployeeProfile {
     required this.active,
     required this.createdAt,
     required this.updatedAt,
+    this.jobTitle = '',
     this.phone,
     this.homeAddress,
   });
@@ -39,6 +40,9 @@ class EmployeeProfile {
   final String email;
   final String fullName;
   final UserRole role;
+  final String jobTitle;
+  String get jobTitleLabel =>
+      jobTitle.trim().isEmpty ? 'Belum diisi' : jobTitle.trim();
   final EmploymentStatus employmentStatus;
   final String employmentStartDate;
   final bool active;
@@ -54,6 +58,7 @@ class EmployeeProfile {
       email: email,
       fullName: fullName,
       role: role,
+      jobTitle: jobTitle,
       employmentStatus: employmentStatus,
       employmentStartDate: employmentStartDate,
       active: active,

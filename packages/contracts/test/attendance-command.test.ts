@@ -4,6 +4,7 @@ import {
   attendanceCommandSchema,
   attendanceSubmissionResultSchema,
   officeLocationSchema,
+  processAttendanceApprovalCommandSchema,
 } from "../src/index.js";
 
 describe("attendanceCommandSchema", () => {
@@ -63,6 +64,16 @@ describe("attendanceCommandSchema", () => {
       distanceMeters: 520,
       capturedAt: "2026-09-05T18:42:00+07:00",
       message: "Presensi tercatat di luar hari kerja.",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("validates processAttendanceApprovalCommandSchema", () => {
+    const result = processAttendanceApprovalCommandSchema.safeParse({
+      eventId: "evt-123",
+      status: "approved",
+      notes: "Disetujui untuk tugas luar kantor",
     });
 
     expect(result.success).toBe(true);

@@ -27,7 +27,7 @@ describe("AccessDeniedPage", () => {
     render(
       <AccessDeniedPage
         email="ex.employee@kudaprima.test"
-        role="supervisor"
+        role="admin"
         isActive={false}
         onSignOut={handleSignOut}
       />,

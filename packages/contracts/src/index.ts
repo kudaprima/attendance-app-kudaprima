@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-export const userRoleSchema = z.enum(["technician", "supervisor", "admin"]);
+export const userRoleSchema = z.enum(["technician", "admin"]);
+// Historical snapshots are immutable and may retain a retired role.
+export const historicalUserRoleSchema = z.enum(["technician", "supervisor", "admin"]);
+export const jobTitleSchema = z.string().trim().min(2, "Jabatan wajib diisi, minimal 2 karakter.").max(100, "Jabatan maksimal 100 karakter.").regex(/^[\p{L}\p{M}\p{N} .,\u0026/()-]+$/u, "Jabatan mengandung karakter yang tidak diizinkan.");
 export const employmentStatusSchema = z.enum([
   "intern",
   "contract",
@@ -41,6 +44,7 @@ export const provisionEmployeeProfileCommandSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
   fullName: z.string().trim().min(2).max(120),
   role: userRoleSchema,
+  jobTitle: jobTitleSchema,
   employmentStatus: employmentStatusSchema,
   employmentStartDate: calendarDateSchema,
 });
@@ -66,12 +70,16 @@ export const createEmployeeCommandSchema = z
     ...managedEmployeeFields,
     requestId: z.uuid(),
     password: employeePasswordSchema,
+    role: userRoleSchema,
+    jobTitle: jobTitleSchema,
     employmentStartDate: calendarDateSchema,
   })
   .strict();
 export const updateEmployeeCommandSchema = z
   .object({
     ...managedEmployeeFields,
+    role: userRoleSchema,
+    jobTitle: jobTitleSchema,
     requestId: z.uuid(),
     uid: z
       .string()
@@ -136,7 +144,7 @@ export const attendanceEventRecordSchema = z.object({
   userId: z.string(),
   employeeId: employeeIdSchema,
   fullName: z.string(),
-  role: userRoleSchema,
+  role: historicalUserRoleSchema,
   eventType: attendanceEventTypeSchema,
   capturedAt: z.string().datetime({ offset: true }),
   serverTimestamp: z.string().datetime({ offset: true }).optional(),
@@ -151,11 +159,26 @@ export const attendanceEventRecordSchema = z.object({
   isMocked: z.boolean(),
   status: z.enum(["normal", "late", "early_departure", "non_working_day"]),
   requiresApproval: z.boolean(),
+  approvalReasons: z.array(z.string()).optional(),
+  approvalStatus: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
+  approvedBy: z.string().nullable().optional(),
+  approvedByName: z.string().nullable().optional(),
+  approvedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  approvalNotes: z.string().nullable().optional(),
   photoStoragePath: z.string(),
   idempotencyKey: z.string().uuid(),
 });
 
 export const approvalStatusSchema = z.enum(["pending", "approved", "rejected"]);
+
+export const processAttendanceApprovalCommandSchema = z.object({
+  eventId: z.string().min(1),
+  status: z.enum(["approved", "rejected"]),
+  notes: z.string().trim().max(500).optional(),
+});
+export type ProcessAttendanceApprovalCommand = z.infer<
+  typeof processAttendanceApprovalCommandSchema
+>;
 
 export const leaveRequestTypeSchema = z.enum([
   "annual_leave",

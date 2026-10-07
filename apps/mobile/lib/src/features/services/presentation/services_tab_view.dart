@@ -1,4 +1,5 @@
 import 'package:attendance/src/features/profile/domain/employee_profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -80,6 +81,27 @@ class _ServicesTabViewState extends State<ServicesTabView> {
     );
   }
 
+  Future<void> _submitServiceRequest({
+    required String type,
+    required String reason,
+    required String date,
+  }) async {
+    try {
+      await FirebaseFirestore.instance.collection('serviceRequests').add({
+        'userId': widget.profile.uid,
+        'employeeId': widget.profile.employeeId,
+        'fullName': widget.profile.fullName,
+        'type': type,
+        'date': date,
+        'reason': reason,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Firestore serviceRequest error: $e');
+    }
+  }
+
   void _showOvertimeDialog(BuildContext context) {
     final now = DateTime.now();
     final isWeekend =
@@ -87,6 +109,7 @@ class _ServicesTabViewState extends State<ServicesTabView> {
     final hour = now.hour;
     final minute = now.minute;
     final isAfterWork = (hour > 17) || (hour == 17 && minute >= 1);
+    final taskController = TextEditingController();
 
     showDialog<void>(
       context: context,
@@ -106,8 +129,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                 style: Theme.of(ctx).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: taskController,
+                decoration: const InputDecoration(
                   labelText: 'Deskripsi Tugas Lembur',
                   hintText:
                       'Misal: Penanganan perbaikan server di kantor klien',
@@ -117,7 +141,7 @@ class _ServicesTabViewState extends State<ServicesTabView> {
               ),
               const SizedBox(height: 12),
               const Text(
-                '• Durasi lembur dicatat per menit dan membutuhkan persetujuan supervisor/admin.\n'
+                '• Durasi lembur dicatat per menit dan membutuhkan persetujuan Admin.\n'
                 '• Lembur lebih dari 8 jam akan diberikan tanda peringatan keselamatan kerja.',
                 style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
@@ -130,15 +154,24 @@ class _ServicesTabViewState extends State<ServicesTabView> {
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
+              final task = taskController.text.trim();
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Pengajuan lembur berhasil diajukan untuk persetujuan.',
-                  ),
-                ),
+              await _submitServiceRequest(
+                type: 'overtime',
+                reason: task.isEmpty ? 'Tugas lembur operasional' : task,
+                date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
               );
+              if (mounted) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Pengajuan lembur berhasil diajukan untuk persetujuan.',
+                    ),
+                  ),
+                );
+              }
             },
             child: const Text('Ajukan Lembur'),
           ),
@@ -155,6 +188,7 @@ class _ServicesTabViewState extends State<ServicesTabView> {
     bool isLeave = false,
   }) {
     DateTime selectedDate = DateTime.now();
+    final reasonController = TextEditingController();
 
     showDialog<void>(
       context: context,
@@ -198,6 +232,7 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                   ),
                   const SizedBox(height: 12),
                   TextField(
+                    controller: reasonController,
                     decoration: InputDecoration(
                       labelText: 'Keterangan',
                       hintText: hint,
@@ -214,15 +249,26 @@ class _ServicesTabViewState extends State<ServicesTabView> {
                 child: const Text('Batal'),
               ),
               FilledButton(
-                onPressed: () {
+                onPressed: () async {
+                  final reason = reasonController.text.trim();
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.of(dialogCtx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '$title berhasil diajukan ke supervisor/admin.',
-                      ),
-                    ),
+                  await _submitServiceRequest(
+                    type: isLeave
+                        ? 'annual_leave'
+                        : title.contains('Sakit')
+                        ? 'sick_leave'
+                        : 'permission',
+                    reason: reason.isEmpty ? title : reason,
+                    date: DateFormat('yyyy-MM-dd').format(selectedDate),
                   );
+                  if (mounted) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('$title berhasil diajukan ke Admin.'),
+                      ),
+                    );
+                  }
                 },
                 child: const Text('Kirim Pengajuan'),
               ),
@@ -351,30 +397,124 @@ class _ServicesTabViewState extends State<ServicesTabView> {
           ),
         ),
         const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.inbox_outlined,
-                  size: 40,
-                  color: Colors.grey.shade400,
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: (() {
+            try {
+              return FirebaseFirestore.instance
+                  .collection('serviceRequests')
+                  .where('userId', isEqualTo: widget.profile.uid)
+                  .snapshots();
+            } catch (_) {
+              return null;
+            }
+          })(),
+          builder: (context, snapshot) {
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 16,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 40,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Belum ada permohonan aktif',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pengajuan lembur, izin, atau cuti yang Anda kirimkan akan muncul statusnya di sini.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Belum ada permohonan aktif',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Pengajuan lembur, izin, atau cuti yang Anda kirimkan akan muncul statusnya di sini.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
+              );
+            }
+
+            return Column(
+              children: docs.map((doc) {
+                final data = doc.data();
+                final type = data['type'] as String? ?? 'permission';
+                final status = data['status'] as String? ?? 'pending';
+                final date = data['date'] as String? ?? '';
+                final reason = data['reason'] as String? ?? '';
+
+                final typeTitle = type == 'annual_leave'
+                    ? 'Cuti Tahunan'
+                    : type == 'sick_leave'
+                    ? 'Izin Sakit'
+                    : type == 'overtime'
+                    ? 'Lembur'
+                    : 'Izin Khusus';
+
+                final statusColor = status == 'approved'
+                    ? Colors.green
+                    : status == 'rejected'
+                    ? Colors.red
+                    : Colors.amber.shade800;
+
+                final statusLabel = status == 'approved'
+                    ? 'Disetujui'
+                    : status == 'rejected'
+                    ? 'Ditolak'
+                    : 'Menunggu Persetujuan';
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: colors.primaryContainer.withAlpha(80),
+                      child: Icon(
+                        type == 'annual_leave'
+                            ? Icons.beach_access
+                            : type == 'sick_leave'
+                            ? Icons.local_hospital
+                            : type == 'overtime'
+                            ? Icons.more_time
+                            : Icons.assignment,
+                        color: colors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      typeTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'Tanggal: $date | $reason',
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Chip(
+                      label: Text(statusLabel),
+                      labelStyle: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor,
+                      ),
+                      backgroundColor: statusColor.withAlpha(25),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
         ),
       ],
     );

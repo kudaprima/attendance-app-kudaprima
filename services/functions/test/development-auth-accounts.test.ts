@@ -3,10 +3,24 @@ import { describe, expect, it } from "vitest";
 import { developmentAuthAccounts } from "../src/development/auth-emulator-accounts.js";
 
 describe("developmentAuthAccounts", () => {
-  it("provides one unique identity for every supported role", () => {
+  it("provides active accounts with distinct job titles for the two-role model", () => {
     expect(
-      developmentAuthAccounts.map((account) => account.role).sort(),
-    ).toEqual(["admin", "supervisor", "technician"]);
+      Array.from(
+        new Set(developmentAuthAccounts.map((account) => account.role)),
+      ).sort(),
+    ).toEqual(["admin", "technician"]);
+
+    expect(
+      developmentAuthAccounts.filter((account) => account.role === "admin"),
+    ).toHaveLength(2);
+
+    expect(
+      developmentAuthAccounts.every(
+        (account) =>
+          typeof account.jobTitle === "string" &&
+          account.jobTitle.trim().length >= 2,
+      ),
+    ).toBe(true);
 
     expect(
       new Set(developmentAuthAccounts.map((account) => account.uid)).size,

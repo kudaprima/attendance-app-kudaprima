@@ -47,7 +47,7 @@ export function evaluateAttendanceSchedule(
       requiresApproval: true,
       isAllowed: true,
       reason:
-        "Presensi dilakukan di luar hari kerja operasional (akhir pekan). Memerlukan persetujuan supervisor.",
+        "Presensi dilakukan di luar hari kerja operasional (akhir pekan). Memerlukan persetujuan Admin.",
     };
   }
 

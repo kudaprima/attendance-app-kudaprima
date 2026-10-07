@@ -21,7 +21,7 @@ export interface EmployeeProfileSnapshot {
   readonly authUid: string;
   readonly employeeId: string;
   readonly fullName: string;
-  readonly role: "technician" | "supervisor" | "admin";
+  readonly role: "technician" | "admin";
 }
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -38,7 +38,7 @@ const resultOf = (
   distanceMeters: event.distanceMeters,
   capturedAt: event.capturedAt,
   message: event.requiresApproval
-    ? "Absen tercatat dan memerlukan persetujuan supervisor/admin."
+    ? "Absen tercatat dan memerlukan persetujuan Admin."
     : "Absen berhasil dicatat.",
 });
 
@@ -64,7 +64,7 @@ export async function submitAttendanceCommand(
       !profile.active ||
       profile.authUid !== userId ||
       (actorRole !== undefined && actorRole !== profile.role) ||
-      !["technician", "supervisor", "admin"].includes(profile.role)
+      !["technician", "admin"].includes(profile.role)
     ) {
       throw new AttendanceValidationError(
         "Profil karyawan tidak tersedia atau akun tidak aktif.",
@@ -214,6 +214,22 @@ export async function submitAttendanceCommand(
           "Absen Keluar harus dilakukan setelah Absen Masuk.",
         );
       }
+      const approvalReasons: string[] = [];
+      if (schedule.status === "late") {
+        approvalReasons.push("Terlambat");
+      }
+      if (schedule.status === "early_departure") {
+        approvalReasons.push("Pulang Lebih Awal");
+      }
+      if (schedule.status === "non_working_day") {
+        approvalReasons.push("Di Luar Hari Kerja");
+      }
+      if (geofence.locationType === "field") {
+        approvalReasons.push("Di Luar Lokasi (Lapangan)");
+      }
+      const requiresApproval =
+        schedule.requiresApproval || geofence.locationType === "field";
+
       const event = {
         eventId,
         userId,
@@ -232,7 +248,13 @@ export async function submitAttendanceCommand(
         lowAccuracy: geofence.lowAccuracy,
         isMocked: false,
         status: schedule.status,
-        requiresApproval: schedule.requiresApproval,
+        requiresApproval,
+        approvalReasons,
+        approvalStatus: requiresApproval ? ("pending" as const) : null,
+        approvedBy: null,
+        approvedByName: null,
+        approvedAt: null,
+        approvalNotes: null,
         photoStoragePath,
         idempotencyKey: command.idempotencyKey,
         payloadHash,
@@ -254,7 +276,8 @@ export async function submitAttendanceCommand(
           eventType: command.eventType,
           status: schedule.status,
           locationType: geofence.locationType,
-          requiresApproval: schedule.requiresApproval,
+          requiresApproval,
+          approvalReasons,
         },
         timestamp: FieldValue.serverTimestamp(),
       });

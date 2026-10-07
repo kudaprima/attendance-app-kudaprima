@@ -1,6 +1,5 @@
 enum UserRole {
   technician('Teknisi'),
-  supervisor('Supervisor'),
   admin('Admin');
 
   const UserRole(this.label);

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
 abstract final class FirebaseBootstrap {
@@ -36,6 +37,11 @@ abstract final class FirebaseBootstrap {
       AppConfig.firebaseEmulatorHost,
       AppConfig.firestoreEmulatorPort,
       automaticHostMapping: false,
+    );
+
+    await FirebaseStorage.instance.useStorageEmulator(
+      AppConfig.firebaseEmulatorHost,
+      AppConfig.storageEmulatorPort,
     );
   }
 }

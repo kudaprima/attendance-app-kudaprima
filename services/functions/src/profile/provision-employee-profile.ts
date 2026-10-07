@@ -1,9 +1,8 @@
 import {
   provisionEmployeeProfileCommandSchema,
-  type UserRole,
 } from "@kuda-prima/contracts";
 import { getAuth, type UserRecord } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 
 import {
@@ -11,6 +10,8 @@ import {
   EmployeeProfileConflictError,
   ensureEmployeeProfile,
 } from "./employee-profile-service.js";
+
+import { assertActiveAdmin, withAccessManagementLock } from "../employees/access-management.js";
 
 interface CallableIdentity {
   readonly uid: string;
@@ -22,9 +23,6 @@ export interface ProvisionEmployeeProfileRequest {
   readonly data: unknown;
 }
 
-function isManagerRole(role: unknown): role is UserRole {
-  return role === "admin" || role === "supervisor";
-}
 
 function hasErrorCode(error: unknown, expectedCode: string): boolean {
   return (
@@ -50,22 +48,8 @@ export async function handleProvisionEmployeeProfile(
   }
 
   const database = getFirestore();
-  const actorSnapshot = await database.doc(`users/${request.auth.uid}`).get();
-  const actor = actorSnapshot.data();
-  const tokenRole = request.auth.token.role;
-
-  if (
-    !actorSnapshot.exists ||
-    actor?.active !== true ||
-    !isManagerRole(tokenRole) ||
-    actor.role !== tokenRole
-  ) {
-    throw new HttpsError(
-      "permission-denied",
-      "An active manager profile is required.",
-    );
-  }
-
+  return withAccessManagementLock(database, async () => {
+  await assertActiveAdmin(database, getAuth(), request.auth);
   let authUser: UserRecord;
   try {
     authUser = await getAuth().getUser(commandResult.data.authUid);
@@ -86,12 +70,22 @@ export async function handleProvisionEmployeeProfile(
     const result = await ensureEmployeeProfile(
       database,
       commandResult.data,
-      request.auth.uid,
+      request.auth!.uid,
+      false,
     );
+    const profileRef = database.doc("users/" + commandResult.data.authUid);
+    const profile = (await profileRef.get()).data()!;
+    if (profile.managementAction) throw new HttpsError("failed-precondition", "Selesaikan pengelolaan akun terlebih dahulu.");
+    const targetActive = profile.provisioningTargetActive ?? (result.created ? !authUser.disabled : profile.active);
+    await profileRef.update({ active: false, provisioningTargetActive: targetActive });
+    await getAuth().updateUser(authUser.uid, { disabled: true });
+    await getAuth().revokeRefreshTokens(authUser.uid);
     await getAuth().setCustomUserClaims(commandResult.data.authUid, {
       ...authUser.customClaims,
       role: commandResult.data.role,
     });
+    await getAuth().updateUser(authUser.uid, { disabled: !targetActive });
+    await profileRef.update({ active: targetActive, provisioningTargetActive: FieldValue.delete() });
     return result;
   } catch (error) {
     if (error instanceof EmployeeProfileConflictError) {
@@ -102,4 +96,5 @@ export async function handleProvisionEmployeeProfile(
     }
     throw error;
   }
+  });
 }

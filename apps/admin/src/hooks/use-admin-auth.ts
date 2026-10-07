@@ -10,10 +10,11 @@ import {
 } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, firestore, useFirebaseEmulators } from "@/lib/firebase";
-export type UserRole = "technician" | "supervisor" | "admin";
+export type UserRole = "technician" | "admin";
 export interface AdminAuthState {
   user: User | null;
   role: UserRole | null;
+  jobTitle: string;
   isActive: boolean;
   loading: boolean;
   error: string | null;
@@ -32,6 +33,7 @@ export function useCurrentAdminAuth(): AdminAuthState {
 export function useAdminAuth(): AdminAuthState {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [jobTitle, setJobTitle] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export function useAdminAuth(): AdminAuthState {
       unsubscribeProfile?.();
       setUser(currentUser);
       setRole(null);
+      setJobTitle("");
       setIsActive(false);
       setLoading(true);
       setError(null);
@@ -55,7 +58,7 @@ export function useAdminAuth(): AdminAuthState {
         if (current !== generation) return;
         const claim = token.claims.role;
         const nextRole =
-          claim === "admin" || claim === "supervisor" || claim === "technician"
+          claim === "admin" || claim === "technician"
             ? claim
             : null;
         setRole(nextRole);
@@ -64,6 +67,7 @@ export function useAdminAuth(): AdminAuthState {
           (snapshot) => {
             if (current !== generation) return;
             const profile = snapshot.data();
+            setJobTitle(typeof profile?.jobTitle === "string" ? profile.jobTitle.trim() : "");
             setIsActive(
               snapshot.exists() &&
                 profile?.active === true &&
@@ -135,6 +139,7 @@ export function useAdminAuth(): AdminAuthState {
   return {
     user,
     role,
+    jobTitle,
     isActive,
     loading,
     error,

@@ -10,6 +10,7 @@ export interface DevelopmentAuthAccount {
   readonly email: string;
   readonly displayName: string;
   readonly role: UserRole;
+  readonly jobTitle: string;
   readonly employmentStatus: EmploymentStatus;
   readonly employmentStartDate: string;
 }
@@ -20,6 +21,7 @@ export const developmentAuthAccounts = [
     email: "technician.dev@kudaprima.test",
     displayName: "Teknisi Development",
     role: "technician",
+    jobTitle: "Teknisi",
     employmentStatus: "contract",
     employmentStartDate: "2025-01-01",
   },
@@ -27,7 +29,8 @@ export const developmentAuthAccounts = [
     uid: "dev-supervisor",
     email: "supervisor.dev@kudaprima.test",
     displayName: "Supervisor Development",
-    role: "supervisor",
+    role: "admin",
+    jobTitle: "Supervisor",
     employmentStatus: "permanent",
     employmentStartDate: "2020-01-01",
   },
@@ -36,6 +39,7 @@ export const developmentAuthAccounts = [
     email: "admin.dev@kudaprima.test",
     displayName: "Admin Development",
     role: "admin",
+    jobTitle: "Administrator Sistem",
     employmentStatus: "permanent",
     employmentStartDate: "2020-01-01",
   },

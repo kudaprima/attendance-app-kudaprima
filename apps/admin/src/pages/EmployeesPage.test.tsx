@@ -43,6 +43,7 @@ const employee: EmployeeEntry = {
   fullName: "Karyawan Uji",
   email: "sample@gmail.com",
   role: "technician",
+  jobTitle: "Teknisi Lapangan",
   employmentStatus: "contract",
   employmentStartDate: "2025-01-01",
   active: false,
@@ -60,8 +61,11 @@ function fillCreate(email = "newemployee@gmail.com") {
   fireEvent.change(screen.getByLabelText("Nama lengkap"), {
     target: { value: "Karyawan Baru" },
   });
-  fireEvent.change(screen.getByLabelText("Email Gmail"), {
+  fireEvent.change(screen.getByLabelText("Email"), {
     target: { value: email },
+  });
+  fireEvent.change(screen.getByLabelText("Jabatan"), {
+    target: { value: "Teknisi Lapangan" },
   });
   fireEvent.change(screen.getByLabelText("Kata sandi"), {
     target: { value: "SyntheticPass123!" },
@@ -73,7 +77,7 @@ function fillCreate(email = "newemployee@gmail.com") {
 describe("employee management UI", () => {
   it("shows real account status and follows live database updates", () => {
     const view = render(<EmployeesPage />);
-    expect(screen.getByText("Nonaktif")).toBeInTheDocument();
+    expect(screen.getByText("Nonaktif")).toHaveClass("text-accent-foreground");
     act(() => mocks.next?.([{ ...employee, active: true }]));
     expect(screen.getByText("Aktif")).toBeInTheDocument();
     act(() => mocks.next?.([]));
@@ -86,11 +90,26 @@ describe("employee management UI", () => {
   it("creates only after validation and clears the password when the dialog closes", async () => {
     render(<EmployeesPage />);
     fireEvent.click(screen.getByRole("button", { name: "Tambah Karyawan" }));
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "max-h-[88dvh]",
+      "sm:max-w-4xl",
+    );
+    expect(screen.getByLabelText("Hak Akses")).toHaveTextContent("Teknisi");
+    const passwordInput = screen.getByLabelText("Kata sandi");
+    expect(passwordInput).toHaveAttribute("type", "password");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tampilkan kata sandi" }),
+    );
+    expect(passwordInput).toHaveAttribute("type", "text");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sembunyikan kata sandi" }),
+    );
+    expect(passwordInput).toHaveAttribute("type", "password");
     fillCreate("wrong@example.com");
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     expect(mocks.create).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Email Gmail"), {
+    fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "newemployee@gmail.com" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
@@ -101,6 +120,8 @@ describe("employee management UI", () => {
           email: "newemployee@gmail.com",
           password: "SyntheticPass123!",
           active: true,
+          role: "technician",
+          jobTitle: "Teknisi Lapangan",
           employmentStatus: "contract",
           employmentStartDate: "2026-09-01",
         }),
@@ -119,6 +140,9 @@ describe("employee management UI", () => {
       screen.queryByLabelText("Tanggal mulai bekerja"),
     ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Kata sandi baru (opsional)")).toHaveValue("");
+    expect(screen.getByLabelText("Status akun")).toHaveClass(
+      "text-accent-foreground",
+    );
     fireEvent.change(screen.getByLabelText("Nama lengkap"), {
       target: { value: "Nama Baru" },
     });
@@ -133,6 +157,21 @@ describe("employee management UI", () => {
     });
     expect(data).not.toHaveProperty("password");
     expect(data).not.toHaveProperty("employmentStartDate");
+  });
+  it("opens role choices below the trigger and saves the selected role", async () => {
+    render(<EmployeesPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Karyawan" }));
+    fireEvent.keyDown(screen.getByLabelText("Hak Akses"), { key: "Enter" });
+    const choices = await screen.findByRole("listbox");
+    expect(choices).toHaveAttribute("data-side", "bottom");
+    fireEvent.click(screen.getByRole("option", { name: "Admin" }));
+    fillCreate();
+    fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
+    await waitFor(() =>
+      expect(mocks.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: "admin", jobTitle: "Teknisi Lapangan" }),
+      ),
+    );
   });
   it("requires delete confirmation and keeps the dialog open on failure", async () => {
     render(<EmployeesPage />);
@@ -197,8 +236,8 @@ describe("employee management UI", () => {
     expect(screen.getByRole("button", { name: "Batal" })).toBeDisabled();
     await act(async () => finish());
   });
-  it("shows load failures and hides mutations for supervisors", () => {
-    mocks.role = "supervisor";
+  it("keeps technicians from employee management actions", () => {
+    mocks.role = "technician";
     render(<EmployeesPage />);
     expect(
       screen.queryByRole("button", { name: "Tambah Karyawan" }),
@@ -206,6 +245,12 @@ describe("employee management UI", () => {
     expect(
       screen.queryByRole("button", { name: "Edit Karyawan Uji" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Hapus Karyawan Uji" }),
+    ).not.toBeInTheDocument();
+  });
+  it("shows load failures and can reload the directory", () => {
+    render(<EmployeesPage />);
     act(() => mocks.error?.());
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Data karyawan belum dapat dimuat",
@@ -213,5 +258,57 @@ describe("employee management UI", () => {
     expect(screen.queryByText("sample@gmail.com")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Coba Lagi" }));
     expect(screen.getByText("sample@gmail.com")).toBeInTheDocument();
+  });
+
+  it("omits 'Hak Akses' from table column headers", () => {
+    render(<EmployeesPage />);
+    const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(headers).not.toContain("Hak Akses");
+    expect(headers).toContain("Jabatan");
+    expect(headers).toContain("Nama Lengkap");
+    expect(headers).toContain("Employee ID");
+  });
+
+  it("filters employees flexibly using search input", () => {
+    const secondEmployee: EmployeeEntry = {
+      uid: "employee2",
+      employeeId: "KP-000002",
+      fullName: "Budi Santoso",
+      email: "budi@gmail.com",
+      role: "technician",
+      jobTitle: "Supervisor Lapangan",
+      employmentStatus: "permanent",
+      employmentStartDate: "2024-05-01",
+      active: true,
+      revision: 1,
+    };
+    mocks.rows = [employee, secondEmployee];
+    render(<EmployeesPage />);
+
+    expect(screen.getByText("Karyawan Uji")).toBeInTheDocument();
+    expect(screen.getByText("Budi Santoso")).toBeInTheDocument();
+
+    const searchInput = screen.getByLabelText("Cari karyawan");
+
+    // Search by Name
+    fireEvent.change(searchInput, { target: { value: "Budi" } });
+    expect(screen.getByText("Budi Santoso")).toBeInTheDocument();
+    expect(screen.queryByText("Karyawan Uji")).not.toBeInTheDocument();
+
+    // Search by Employee ID
+    fireEvent.change(searchInput, { target: { value: "KP-000001" } });
+    expect(screen.getByText("Karyawan Uji")).toBeInTheDocument();
+    expect(screen.queryByText("Budi Santoso")).not.toBeInTheDocument();
+
+    // Search by Job Title
+    fireEvent.change(searchInput, { target: { value: "Supervisor" } });
+    expect(screen.getByText("Budi Santoso")).toBeInTheDocument();
+    expect(screen.queryByText("Karyawan Uji")).not.toBeInTheDocument();
+
+    // Search non-existent
+    fireEvent.change(searchInput, { target: { value: "NonExistent" } });
+    expect(screen.queryByText("Karyawan Uji")).not.toBeInTheDocument();
+    expect(screen.queryByText("Budi Santoso")).not.toBeInTheDocument();
+    expect(screen.getByText(/Tidak ada karyawan yang cocok/)).toBeInTheDocument();
   });
 });

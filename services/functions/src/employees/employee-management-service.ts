@@ -9,7 +9,8 @@ import {
 import type { Auth } from "firebase-admin/auth";
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { assertActiveAdmin, requireTwoOtherAdmins, withAccessManagementLock } from "./access-management.js";
 
 export interface EmployeeManagementRequest {
   auth?: { uid: string; token: Record<string, unknown> };
@@ -35,36 +36,20 @@ export async function manageEmployee(
   action: Action,
   request: EmployeeManagementRequest,
 ): Promise<EmployeeManagementResult> {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
+  return withAccessManagementLock(database, () => manageEmployeeLocked(database, auth, action, request));
+}
+
+async function manageEmployeeLocked(
+  database: Firestore,
+  auth: Auth,
+  action: Action,
+  request: EmployeeManagementRequest,
+): Promise<EmployeeManagementResult> {
   if (!request.auth)
     throw new HttpsError("unauthenticated", "Silakan masuk kembali.");
   const actorUid = request.auth.uid;
-  const [actorSnapshot, actorAuth] = await Promise.all([
-    database.doc(`users/${actorUid}`).get(),
-    auth.getUser(actorUid).catch(() => null),
-  ]);
-  const actor = actorSnapshot.data();
-  const tokensValidAfter = actorAuth?.tokensValidAfterTime
-    ? Date.parse(actorAuth.tokensValidAfterTime) / 1000
-    : Number.NaN;
-  if (
-    !actorAuth ||
-    request.auth.token.role !== "admin" ||
-    actorAuth.disabled ||
-    actorAuth.customClaims?.role !== "admin" ||
-    actor?.role !== "admin" ||
-    actor.active !== true ||
-    actor.authUid !== actorUid ||
-    actor.email !== actorAuth.email ||
-    request.auth.token.email !== actorAuth.email ||
-    typeof request.auth.token.auth_time !== "number" ||
-    !Number.isFinite(tokensValidAfter) ||
-    request.auth.token.auth_time < tokensValidAfter
-  ) {
-    throw new HttpsError(
-      "permission-denied",
-      "Hanya admin aktif yang dapat mengelola karyawan.",
-    );
-  }
+  await assertActiveAdmin(database, auth, request.auth);
   const schema =
     action === "create"
       ? createEmployeeCommandSchema
@@ -75,23 +60,27 @@ export async function manageEmployee(
   if (!parsed.success)
     throw new HttpsError(
       "invalid-argument",
-      "Data tidak valid. Periksa Gmail, kata sandi, dan kolom wajib.",
+      "Data tidak valid. Periksa Gmail, Hak Akses, Jabatan, kata sandi, dan kolom wajib.",
     );
   const command: Command = parsed.data;
   const uid = "uid" in command ? command.uid : `employee-${command.requestId}`;
   if (
     uid === actorUid &&
-    (action === "delete" || ("active" in command && !command.active))
+    (action === "delete" || ("active" in command && !command.active) || ("role" in command && command.role !== "admin"))
   ) {
     throw new HttpsError(
       "failed-precondition",
-      "Akun admin yang sedang digunakan tidak dapat dinonaktifkan atau dihapus.",
+      "Akun sendiri tidak dapat diturunkan hak aksesnya, dinonaktifkan, atau dihapus.",
     );
   }
   const profileRef = database.doc(`users/${uid}`);
   const auditRef = database.doc(`auditLogs/employee-${command.requestId}`);
   const lockRef = database.doc(`employeeManagementLocks/${uid}`);
   const owner = randomUUID();
+  const fingerprint = createHash("sha256").update(JSON.stringify(
+    Object.fromEntries(Object.entries(command).filter(([key]) => key !== "password").sort(([a], [b]) => a.localeCompare(b)))
+  )).digest("hex");
+  const requestRef = database.doc(`employeeManagementRequests/${command.requestId}`);
   const prior = await database.runTransaction(async (tx) => {
     const audit = await tx.get(auditRef);
     if (audit.exists) {
@@ -99,7 +88,7 @@ export async function manageEmployee(
       if (
         data.actorUid !== actorUid ||
         data.subjectUid !== uid ||
-        data.action !== `employee_${action}`
+        data.action !== `employee_${action}` || data.commandFingerprint !== fingerprint
       ) {
         throw new HttpsError(
           "already-exists",
@@ -108,6 +97,10 @@ export async function manageEmployee(
       }
       return { uid, employeeId: data.subjectEmployeeId as string };
     }
+    const savedRequest = await tx.get(requestRef);
+    if (savedRequest.exists && (savedRequest.get("fingerprint") !== fingerprint || savedRequest.get("actorUid") !== actorUid || savedRequest.get("uid") !== uid || savedRequest.get("action") !== action)) {
+      throw new HttpsError("already-exists", "ID permintaan telah digunakan dengan data berbeda.");
+    }
     const lock = await tx.get(lockRef);
     if (lock.exists && lock.data()!.expiresAt > Date.now()) {
       throw new HttpsError(
@@ -115,6 +108,7 @@ export async function manageEmployee(
         "Karyawan sedang diproses. Tunggu lalu coba kembali.",
       );
     }
+    if (!savedRequest.exists) tx.create(requestRef, { fingerprint, actorUid, uid, action, createdAt: FieldValue.serverTimestamp() });
     tx.set(lockRef, { owner, expiresAt: Date.now() + 300_000 });
     return null;
   });
@@ -141,6 +135,9 @@ export async function manageEmployee(
         );
       }
     }
+    if (profile?.role === "admin" && (action === "delete" || ("role" in command && (command.role !== "admin" || !command.active)))) {
+      await requireTwoOtherAdmins(database, auth, uid);
+    }
     if ("email" in command) {
       try {
         const existing = await auth.getUserByEmail(command.email);
@@ -159,7 +156,8 @@ export async function manageEmployee(
       if (
         profile &&
         (profile.createdBy !== actorUid ||
-          profile.managementRequestId !== create.requestId)
+          profile.managementRequestId !== create.requestId ||
+          profile.role !== create.role)
       ) {
         throw new HttpsError(
           "already-exists",
@@ -208,7 +206,8 @@ export async function manageEmployee(
             employeeId: `KP-${String(sequence).padStart(6, "0")}`,
             fullName: create.fullName,
             email: create.email,
-            role: "technician",
+            role: create.role,
+            jobTitle: create.jobTitle,
             employmentStatus: create.employmentStatus,
             employmentStartDate: create.employmentStartDate,
             active: false,
@@ -236,10 +235,10 @@ export async function manageEmployee(
         });
         profile = (await profileRef.get()).data();
       }
-      await auth.setCustomUserClaims(uid, { role: "technician" });
+      await auth.setCustomUserClaims(uid, { role: create.role });
     } else {
       // First revoke access in rules, then change the Auth identity. On a partial
-      // failure the row remains visible and inactive so an admin can retry safely.
+      // failure the row remains visible and inactive so a manager can retry safely.
       await profileRef.update({
         active: false,
         managementRequestId: command.requestId,
@@ -253,12 +252,6 @@ export async function manageEmployee(
         if (action !== "delete" || !hasCode(error, "auth/user-not-found"))
           throw error;
       }
-      if (action === "update" && profile!.managementAction === "create") {
-        await auth.setCustomUserClaims(uid, {
-          ...(await auth.getUser(uid)).customClaims,
-          role: profile!.role,
-        });
-      }
     }
 
     if (action === "delete") {
@@ -271,6 +264,7 @@ export async function manageEmployee(
       const edit = command as CreateEmployeeCommand | UpdateEmployeeCommand;
       const current = await auth.getUser(uid);
       const changedEmail = current.email !== edit.email;
+      await auth.setCustomUserClaims(uid, { ...current.customClaims, role: edit.role });
       await auth.updateUser(uid, {
         displayName: edit.fullName,
         email: edit.email,
@@ -299,6 +293,8 @@ export async function manageEmployee(
           email: edit.email,
           active: edit.active,
           employmentStatus: edit.employmentStatus,
+          role: edit.role,
+          jobTitle: edit.jobTitle,
           revision: (profile!.revision ?? 0) + 1,
           updatedBy: actorUid,
           updatedAt: FieldValue.serverTimestamp(),
@@ -311,6 +307,12 @@ export async function manageEmployee(
         actorUid,
         subjectUid: uid,
         subjectEmployeeId: employeeId,
+        commandFingerprint: fingerprint,
+        previousRole: action === "create" ? null : profile!.role,
+        newRole: "role" in command ? command.role : null,
+        jobTitleChanged: "jobTitle" in command && command.jobTitle !== profile!.jobTitle,
+        changedFields: action === "delete" ? ["deleted"] : Object.entries(command).filter(([key, value]) => !["password", "requestId", "uid", "expectedRevision"].includes(key) && profile![key] !== value).map(([key]) => key),
+        revision: (profile!.revision ?? 0) + 1,
         passwordChanged:
           "password" in command && command.password !== undefined,
         createdAt: FieldValue.serverTimestamp(),
@@ -325,7 +327,7 @@ export async function manageEmployee(
       committed?.exists &&
       committed.data()!.actorUid === actorUid &&
       committed.data()!.subjectUid === uid &&
-      committed.data()!.action === `employee_${action}`
+      committed.data()!.action === `employee_${action}` && committed.data()!.commandFingerprint === fingerprint
     )
       return { uid, employeeId: committed.data()!.subjectEmployeeId };
     if (accessPaused && committed !== null) {

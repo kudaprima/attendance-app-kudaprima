@@ -16,7 +16,7 @@ React admin ────┘                                  │              �
 
 - Mobile memakai feature-first layers: presentation, application, domain, dan data. Menggunakan 4-tab Material 3 Navigation (`Kehadiran`, `Layanan`, `Riwayat`, `Profil`).
 - Distribusi mobile adalah **Sideloaded Android APK** via QR Code (target Android 10+ / API 29+) yang diunduh dari portal admin. Tidak menggunakan Google Play Store maupun Apple App Store.
-- Admin memakai routes/features dan komponen shadcn/ui di **src/components/ui**. Dilindungi oleh `AdminAuthGate` dengan pemeriksaan Firebase ID Token Custom Claims (`role: admin | supervisor`). Teknisi (`technician`) diblokir dari akses web portal.
+- Admin memakai routes/features dan komponen shadcn/ui di **src/components/ui**. Dilindungi oleh `AdminAuthGate` dengan pemeriksaan Firebase ID Token Custom Claims (`role: admin`). Teknisi (`technician`) diblokir dari akses web portal.
 - Functions berisi use case, authorization, persistence, cross-approval enforcement, dan scheduled retention jobs.
 - **packages/contracts** adalah sumber skema Zod untuk payload web/backend (presensi, cuti, lembur, profil). Model Dart dibuat terpisah agar platform mobile tidak bergantung pada tool JavaScript.
 
@@ -30,7 +30,7 @@ Konfigurasi kantor berada pada data backend yang hanya dapat diubah melalui oper
 terotorisasi dan diaudit. Client mengirim sampel lokasi serta akurasinya, tetapi Functions yang
 mengambil konfigurasi aktif dan menentukan klasifikasi kantor atau lapangan.
 
-Self-approval dilarang keras (_strict cross-approval_): supervisor atau admin dilarang menyetujui pengajuannya sendiri di level backend maupun UI.
+Self-approval dilarang keras (_strict cross-approval_): admin dilarang menyetujui pengajuannya sendiri di level backend maupun UI.
 
 ## Profil karyawan
 
@@ -51,8 +51,9 @@ homeAddress plus update metadata are permitted by rules. See ADR 0004.
 
 The employee directory subscribes to actual `users` profiles. `createEmployee`,
 `updateEmployee`, and `deleteEmployee` callables perform Auth and profile mutations
-under an active-admin authorization check. New accounts receive a technician claim
-and a sequential Employee ID. Corporate fields stay backend-owned.
+under an active-admin authorization check. New
+accounts receive the selected admin or technician claim with a mandatory jobTitle and a sequential
+Employee ID. Corporate fields stay backend-owned.
 
 Auth and Firestore are separate systems: a private per-UID lease serializes requests,
 profiles remain inactive while a mutation is incomplete, and profile revisions reject

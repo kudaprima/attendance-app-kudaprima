@@ -5,8 +5,8 @@ void main() {
   group('UserRole', () {
     test('accepts only supported custom claim values', () {
       expect(UserRole.fromClaim('technician'), UserRole.technician);
-      expect(UserRole.fromClaim('supervisor'), UserRole.supervisor);
       expect(UserRole.fromClaim('admin'), UserRole.admin);
+      expect(UserRole.fromClaim('supervisor'), isNull);
       expect(UserRole.fromClaim('owner'), isNull);
       expect(UserRole.fromClaim(null), isNull);
     });
