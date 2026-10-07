@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 class AttendanceHistoryTabView extends ConsumerStatefulWidget {
   const AttendanceHistoryTabView({required this.profile, super.key});
   final EmployeeProfile profile;
-
   @override
   ConsumerState<AttendanceHistoryTabView> createState() =>
       _AttendanceHistoryTabViewState();
