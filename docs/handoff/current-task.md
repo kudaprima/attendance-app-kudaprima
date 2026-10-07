@@ -387,17 +387,26 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - Traced to literal `"Belum diisi"` fallback in `App.tsx` when `jobTitle` on the user profile is empty or unpopulated in Firestore.
   - Fixed by introducing `getDisplayJobTitle(jobTitle, role)` helper and threading `role` into `AdminDashboard`. Seamlessly falls back to `"Administrator Sistem"` for admin role and `"Teknisi Operasional"` for technician role, ensuring clear and professional role designation in both dev and prod environments.
 
-## Remaining work and next action
+## Merge Conflict Resolution & Synchronization with Origin/Main (2026-10-07 by Antigravity)
 
-1. All 3 user-reported items resolved with zero functional discrepancy between development and production.
-2. Automated Quality Gates verified clean:
-   - `pnpm check`: Brand check passed, contracts built, oxlint 0 warnings/0 errors, typecheck passed, Vitest 80/80 passed.
-   - `flutter analyze`: 0 issues found.
-   - `flutter test`: 45/45 tests passed.
-   - Monorepo total automated tests: 125/125 passed.
-3. User Manual E2E Simulation: Successfully executed and verified by user across Android Emulator and Web Admin.
-   - Verified: Foto selfie appears cleanly on Android attendance detail.
-   - Verified: Detail dialog opens smoothly with OpenStreetMap and photo on Web Admin.
-   - Verified: Header navbar displays "Masuk sebagai Administrator Sistem".
-4. Implementation plan `docs/plans/attendance-detail-map-photo-plan.md` updated to `COMPLETED`.
-5. Next Action: Stage files, commit with Conventional Commit, and push to GitHub `origin feat/reliable-attendance-and-persistent-dev`.
+- **Root Cause of Conflicts on GitHub PR**:
+  - PR #11 (`feat: harden attendance and add employee management (#11)`) was squash-merged to `main` as commit `d7c27f3`.
+  - Commit `d7c27f3` squashed 4 earlier commits (`3303935`, `298d91c`, `c59b32c`, `f29fc8b`).
+  - Branch `feat/reliable-attendance-and-persistent-dev` still retained those 4 original individual commits plus subsequent commits (`d6a056b` and `b1cf168`).
+  - Because `d7c27f3` is byte-for-byte identical in codebase tree to `f29fc8b` but possesses a distinct Git SHA, standard Git three-way merge compared both branches against ancestor `bcb18e4`, producing phantom conflicts on every file touched by PR #11.
+- **Resolution Executed**:
+  - Synchronized `origin/main` using `git merge -X ours --no-edit origin/main`, seamlessly merging main's squashed tree into the topic branch and creating merge commit `ef43738`.
+  - Cleaned minor package/lockfile duplications in `apps/admin/package.json` and `pnpm-lock.yaml`.
+  - Preserved 100% of Attendance Detail features, OpenStreetMap integration, selfie photo parity, and dev/prod compatibility.
+- **Automated Quality Gates Verified Clean**:
+  - `pnpm check:brand`: Passed (brand tokens, Flutter theme, and logo byte-identical).
+  - Contracts Vitest: 23/23 tests passed.
+  - Functions Vitest: 23/23 tests passed.
+  - Admin Vitest: 34/34 tests passed.
+  - Oxlint: 0 warnings, 0 errors across contracts, functions, and admin.
+  - TypeScript Typecheck: Passed cleanly across all packages.
+  - `flutter analyze`: 0 issues found.
+  - `flutter test`: 45/45 tests passed.
+  - Monorepo Total Automated Tests: 125/125 passed.
+- **Remaining Action**:
+  - Push branch `feat/reliable-attendance-and-persistent-dev` (including merge commit) to `origin` so the PR on GitHub marks conflicts completely resolved.
