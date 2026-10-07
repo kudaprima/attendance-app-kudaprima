@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Loader2, LockKeyhole, Mail, ShieldAlert } from "lucide-react";
 
 import { BrandLogo } from "@/components/BrandLogo";
@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface LoginPageProps {
-  onLogin: (email: string, pass: string) => Promise<void>;
-  onResetPassword?: (email: string) => Promise<void>;
-  loading: boolean;
-  errorMessage: string | null;
+  readonly onLogin: (email: string, pass: string) => Promise<void>;
+  readonly onResetPassword?: (email: string) => Promise<void>;
+  readonly loading: boolean;
+  readonly errorMessage: string | null;
 }
 
 export function LoginPage({
@@ -19,7 +19,7 @@ export function LoginPage({
   onResetPassword,
   loading,
   errorMessage,
-}: LoginPageProps) {
+}: Readonly<LoginPageProps>) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -27,7 +27,7 @@ export function LoginPage({
   const [localError, setLocalError] = useState<string | null>(null);
   const busy = submitting || loading;
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email || !password) {
       setLocalError("Email dan kata sandi wajib diisi.");
@@ -138,12 +138,11 @@ export function LoginPage({
                   )}
 
                   {notice && (
-                    <p
-                      role="status"
-                      className="rounded-xl bg-primary/10 p-3 text-sm text-primary"
+                    <output
+                      className="block rounded-xl bg-primary/10 p-3 text-sm text-primary"
                     >
                       {notice}
-                    </p>
+                    </output>
                   )}
 
                   <Button
@@ -164,7 +163,7 @@ export function LoginPage({
                       disabled={busy}
                       onClick={() =>
                         runAction(async () => {
-                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+                          if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email.trim()))
                             throw new Error("Masukkan email terlebih dahulu.");
                           await onResetPassword(email.trim());
                           setNotice(

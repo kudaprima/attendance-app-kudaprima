@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Eye,
   FileCheck2,
   LogOut,
   PackageCheck,
@@ -13,7 +14,9 @@ import {
 import { AdminAuthGate } from "@/components/AdminAuthGate";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AttendanceDetailDialog } from "@/components/attendance/AttendanceDetailDialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -45,7 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCurrentAdminAuth } from "@/hooks/use-admin-auth";
+import { useCurrentAdminAuth, type UserRole } from "@/hooks/use-admin-auth";
 import { useAttendanceLiveFeed } from "@/hooks/use-attendance-live";
 import { ApprovalsPage } from "@/pages/ApprovalsPage";
 import { DistributionPage } from "@/pages/DistributionPage";
@@ -70,6 +73,18 @@ const navigation = [
   { label: "Pengaturan" as AdminTab, icon: Settings },
 ];
 
+const wibDateFormatter = new Intl.DateTimeFormat("id-ID", {
+  weekday: "long",
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  timeZone: "Asia/Jakarta",
+  timeZoneName: "short",
+});
 
 function useWibClock() {
   const [now, setNow] = useState(() => new Date());
@@ -79,30 +94,137 @@ function useWibClock() {
     return () => window.clearInterval(timer);
   }, []);
 
-  return useMemo(
-    () =>
-      new Intl.DateTimeFormat("id-ID", {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Jakarta",
-        timeZoneName: "short",
-      }).format(now),
-    [now],
+  return useMemo(() => wibDateFormatter.format(now), [now]);
+}
+
+function getSummaryCardDescription(
+  loading: boolean,
+  clickable: boolean | undefined,
+  value: string,
+): string {
+  if (loading) {
+    return "Memuat data...";
+  }
+  if (clickable && Number(value) > 0) {
+    return "Klik untuk memproses antrean persetujuan.";
+  }
+  return "Data diperbarui secara real-time.";
+}
+
+function getEventStatusBadgeVariant(
+  status: string,
+): "default" | "destructive" | "outline" {
+  if (status === "normal") {
+    return "default";
+  }
+  if (status === "late") {
+    return "destructive";
+  }
+  return "outline";
+}
+
+function getEventTypeText(eventType: string): string {
+  if (eventType === "check_in") {
+    return "Masuk";
+  }
+  return "Pulang";
+}
+
+function getLocationTypeText(locationType: string): string {
+  if (locationType === "office") {
+    return "Kantor";
+  }
+  return "Lapangan";
+}
+
+function getEmptyAttendanceMessage(loading: boolean): string {
+  if (loading) {
+    return "Memuat data kehadiran...";
+  }
+  return "Belum ada data kehadiran hari ini.";
+}
+
+type AttendanceLiveEvent = ReturnType<
+  typeof useAttendanceLiveFeed
+>["events"][number];
+
+interface AttendanceTableBodyProps {
+  readonly events: readonly AttendanceLiveEvent[];
+  readonly loading: boolean;
+  readonly onSelectEvent: (event: AttendanceLiveEvent) => void;
+}
+
+function AttendanceTableBody({
+  events,
+  loading,
+  onSelectEvent,
+}: Readonly<AttendanceTableBodyProps>) {
+  if (events.length === 0) {
+    return (
+      <TableBody>
+        <TableRow>
+          <TableCell
+            colSpan={6}
+            className="h-24 text-center text-muted-foreground"
+          >
+            {getEmptyAttendanceMessage(loading)}
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    );
+  }
+
+  return (
+    <TableBody>
+      {events.map((event) => (
+        <TableRow key={event.id}>
+          <TableCell className="font-mono text-xs font-medium">
+            {event.employeeId}
+          </TableCell>
+          <TableCell className="font-medium">{event.fullName}</TableCell>
+          <TableCell>
+            <Badge variant={getEventStatusBadgeVariant(event.status)}>
+              {getEventTypeText(event.eventType)}
+            </Badge>
+          </TableCell>
+          <TableCell>
+            <Badge variant="outline">
+              {getLocationTypeText(event.locationType)}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-sm text-muted-foreground">
+            {event.timeWib}
+          </TableCell>
+          <TableCell className="text-right">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => onSelectEvent(event)}
+              aria-label={`Detail presensi ${event.fullName}`}
+            >
+              <Eye className="size-3 mr-1" />
+              Detail
+            </Button>
+          </TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
   );
+}
+
+interface AttendancePageProps {
+  readonly onNavigateToApprovals?: () => void;
 }
 
 function AttendancePage({
   onNavigateToApprovals,
-}: {
-  onNavigateToApprovals?: () => void;
-}) {
+}: Readonly<AttendancePageProps>) {
   const { events, kpis, loading } = useAttendanceLiveFeed();
+  const [selectedEvent, setSelectedEvent] = useState<
+    (typeof events)[number] | null
+  >(null);
   const summaryCards = [
     {
       label: "Hadir hari ini",
@@ -139,32 +261,42 @@ function AttendancePage({
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
         aria-label="Indikator utama"
       >
-        {summaryCards.map(({ label, value, icon: Icon, tone, onClick, clickable }) => (
-          <Card
-            key={label}
-            onClick={onClick}
-            className={
-              clickable
-                ? "cursor-pointer transition-all hover:border-violet-300 hover:shadow-sm"
-                : undefined
-            }
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{label}</CardTitle>
-              <Icon className={tone} size={18} />
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-semibold">{value}</p>
-              <p className="text-xs text-muted-foreground">
-                {loading
-                  ? "Memuat data..."
-                  : clickable && Number(value) > 0
-                    ? "Klik untuk memproses antrean persetujuan."
-                    : "Data diperbarui secara real-time."}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {summaryCards.map(
+          ({ label, value, icon: Icon, tone, onClick, clickable }) => (
+            <Card
+              key={label}
+              onClick={onClick}
+              role={clickable ? "button" : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onClick?.();
+                      }
+                    }
+                  : undefined
+              }
+              className={
+                clickable
+                  ? "cursor-pointer transition-all hover:border-violet-300 hover:shadow-sm"
+                  : undefined
+              }
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{label}</CardTitle>
+                <Icon className={tone} size={18} />
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-semibold">{value}</p>
+                <p className="text-xs text-muted-foreground">
+                  {getSummaryCardDescription(loading, clickable, value)}
+                </p>
+              </CardContent>
+            </Card>
+          ),
+        )}
       </section>
 
       <Card>
@@ -184,74 +316,60 @@ function AttendancePage({
                 <TableHead>Aktivitas</TableHead>
                 <TableHead>Lokasi</TableHead>
                 <TableHead>Waktu WIB</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {events.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    {loading
-                      ? "Memuat data kehadiran..."
-                      : "Belum ada data kehadiran hari ini."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                events.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell className="font-mono text-xs font-medium">
-                      {event.employeeId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {event.fullName}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          event.status === "normal"
-                            ? "default"
-                            : event.status === "late"
-                              ? "destructive"
-                              : "outline"
-                        }
-                      >
-                        {event.eventType === "check_in" ? "Masuk" : "Pulang"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {event.locationType === "office"
-                          ? "Kantor"
-                          : "Lapangan"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {event.timeWib}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+            <AttendanceTableBody
+              events={events}
+              loading={loading}
+              onSelectEvent={setSelectedEvent}
+            />
           </Table>
         </CardContent>
       </Card>
+
+      <AttendanceDetailDialog
+        open={Boolean(selectedEvent)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEvent(null);
+        }}
+        item={selectedEvent}
+      />
     </div>
   );
 }
 
+export interface AdminDashboardProps {
+  readonly jobTitle?: string | null;
+  readonly role?: UserRole | null;
+  readonly onSignOut?: () => void;
+}
+
+function getDisplayJobTitle(
+  jobTitle?: string | null,
+  role?: UserRole | null,
+): string {
+  const trimmed = jobTitle?.trim();
+  if (trimmed && trimmed !== "Belum diisi") {
+    return trimmed;
+  }
+  if (role === "admin") {
+    return "Administrator Sistem";
+  }
+  if (role === "technician") {
+    return "Teknisi Operasional";
+  }
+  return "Administrator Sistem";
+}
+
 export function AdminDashboard({
   jobTitle,
+  role,
   onSignOut,
-}: {
-  user?: { email?: string | null; displayName?: string | null };
-  role?: string | null;
-  jobTitle?: string | null;
-  onSignOut?: () => void;
-}) {
+}: Readonly<AdminDashboardProps>) {
   const [activeTab, setActiveTab] = useState<AdminTab>("Kehadiran");
   const currentTime = useWibClock();
+  const displayJobTitle = getDisplayJobTitle(jobTitle, role);
 
   return (
     <SidebarProvider>
@@ -317,7 +435,7 @@ export function AdminDashboard({
               {currentTime}
             </p>
             <p className="text-xs font-medium sm:text-sm">
-              Masuk sebagai {jobTitle?.trim() || "Belum diisi"}
+              Masuk sebagai {displayJobTitle}
             </p>
           </div>
           <div className="ml-auto sm:ml-0">
@@ -343,24 +461,19 @@ export function AdminDashboard({
 }
 
 function AuthenticatedApp() {
-  const { user, role, jobTitle, signOut } = useCurrentAdminAuth();
+  const { jobTitle, role, signOut } = useCurrentAdminAuth();
   return (
-    <AdminDashboard user={user ?? undefined} role={role} jobTitle={jobTitle} onSignOut={signOut} />
+    <AdminDashboard jobTitle={jobTitle} role={role} onSignOut={signOut} />
   );
 }
 
-export default function App({ bypassAuth = false }: { bypassAuth?: boolean }) {
+interface AppProps {
+  readonly bypassAuth?: boolean;
+}
+
+export default function App({ bypassAuth = false }: Readonly<AppProps>) {
   if (bypassAuth || import.meta.env.MODE === "test") {
-    return (
-      <AdminDashboard
-        user={{
-          email: "admin.dev@kudaprima.test",
-          displayName: "Admin Development",
-        }}
-        role="admin"
-        jobTitle="Administrator Sistem"
-      />
-    );
+    return <AdminDashboard jobTitle="Administrator Sistem" role="admin" />;
   }
 
   return (

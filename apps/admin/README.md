@@ -1,6 +1,6 @@
 # Admin Portal
 
-Dashboard supervisor/admin PT Kuda Prima dibangun dengan React, TypeScript, Vite, Tailwind CSS, dan shadcn/ui.
+Portal Admin PT Kuda Prima dibangun dengan React, TypeScript, Vite, Tailwind CSS, dan shadcn/ui.
 
 ```powershell
 pnpm --filter @kuda-prima/admin dev

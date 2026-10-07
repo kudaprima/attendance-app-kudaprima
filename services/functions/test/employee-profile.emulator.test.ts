@@ -44,6 +44,7 @@ const baseProfile = {
   fullName: "Teknisi Rules",
   gender: null,
   homeAddress: null,
+  jobTitle: "Teknisi Lapangan",
   phone: null,
   role: "technician",
   updatedAt: Timestamp.fromDate(new Date("2026-01-01T00:00:00.000Z")),
@@ -67,7 +68,8 @@ async function seedRuleProfiles(): Promise<void> {
       email: "rules-manager@kudaprima.test",
       employeeId: "KP-900003",
       fullName: "Manager Rules",
-      role: "supervisor",
+      jobTitle: "Supervisor",
+      role: "admin",
     });
     await setDoc(doc(database, "officeLocations/main"), {
       active: true,
@@ -120,16 +122,18 @@ describe("employee profile provisioning", () => {
       authUid: "provision-technician",
       email: "provision-technician@kudaprima.test",
       fullName: "Teknisi Provisioning",
+      jobTitle: "Teknisi Lapangan",
       role: "technician",
       employmentStatus: "contract",
       employmentStartDate: "2025-01-01",
     } as const;
     const secondCommand = {
       ...firstCommand,
-      authUid: "provision-supervisor",
-      email: "provision-supervisor@kudaprima.test",
-      fullName: "Supervisor Provisioning",
-      role: "supervisor",
+      authUid: "provision-admin",
+      email: "provision-admin@kudaprima.test",
+      fullName: "Admin Provisioning",
+      jobTitle: "Supervisor",
+      role: "admin",
       employmentStatus: "permanent",
     } as const;
 
@@ -164,6 +168,7 @@ describe("employee profile provisioning", () => {
       authUid: "conflicting-employee",
       email: "conflicting-employee@kudaprima.test",
       fullName: "Original Employee",
+      jobTitle: "Teknisi Lapangan",
       role: "technician",
       employmentStatus: "contract",
       employmentStartDate: "2025-01-01",
@@ -192,6 +197,7 @@ describe("employee profile provisioning", () => {
           authUid: "exhausted-counter-employee",
           email: "exhausted-counter-employee@kudaprima.test",
           fullName: "Exhausted Counter",
+          jobTitle: "Teknisi Lapangan",
           role: "technician",
           employmentStatus: "contract",
           employmentStartDate: "2025-01-01",
@@ -210,8 +216,12 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("rules-technician", { role: "technician" })
       .firestore();
 
-    await assertSucceeds(getDoc(doc(ownerDatabase, "users/rules-technician")));
-    await assertFails(getDoc(doc(ownerDatabase, "users/rules-manager")));
+    await expect(
+      assertSucceeds(getDoc(doc(ownerDatabase, "users/rules-technician"))),
+    ).resolves.toBeDefined();
+    await expect(
+      assertFails(getDoc(doc(ownerDatabase, "users/rules-manager"))),
+    ).resolves.toBeDefined();
   });
 
   it("allows an inactive employee to read their disabled status", async () => {
@@ -227,12 +237,12 @@ describe("employee profile Firestore rules", () => {
 
   it("allows active managers to read another employee profile", async () => {
     const managerDatabase = testEnvironment
-      .authenticatedContext("rules-manager", { role: "supervisor" })
+      .authenticatedContext("rules-manager", { role: "admin" })
       .firestore();
 
-    await assertSucceeds(
-      getDoc(doc(managerDatabase, "users/rules-technician")),
-    );
+    await expect(
+      assertSucceeds(getDoc(doc(managerDatabase, "users/rules-technician"))),
+    ).resolves.toBeDefined();
   });
 
   it("allows only validated self-service fields to change", async () => {
@@ -241,22 +251,28 @@ describe("employee profile Firestore rules", () => {
       .firestore();
     const reference = doc(ownerDatabase, "users/rules-technician");
 
-    await assertSucceeds(
-      updateDoc(reference, {
-        phone: "+628123456789",
-        updatedAt: serverTimestamp(),
-        updatedBy: "rules-technician",
-      }),
-    );
-    await assertFails(updateDoc(reference, { role: "admin" }));
-    for (const field of ["fullName", "birthDate", "gender"]) {
-      await assertFails(
+    await expect(
+      assertSucceeds(
         updateDoc(reference, {
-          [field]: "changed",
+          phone: "+628123456789",
           updatedAt: serverTimestamp(),
           updatedBy: "rules-technician",
         }),
-      );
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      assertFails(updateDoc(reference, { role: "admin" })),
+    ).resolves.toBeDefined();
+    for (const field of ["fullName", "birthDate", "gender"]) {
+      await expect(
+        assertFails(
+          updateDoc(reference, {
+            [field]: "changed",
+            updatedAt: serverTimestamp(),
+            updatedBy: "rules-technician",
+          }),
+        ),
+      ).resolves.toBeDefined();
     }
   });
 
@@ -265,13 +281,15 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("rules-inactive", { role: "technician" })
       .firestore();
 
-    await assertFails(
-      updateDoc(doc(inactiveDatabase, "users/rules-inactive"), {
-        fullName: "Inactive Employee Updated",
-        updatedAt: serverTimestamp(),
-        updatedBy: "rules-inactive",
-      }),
-    );
+    await expect(
+      assertFails(
+        updateDoc(doc(inactiveDatabase, "users/rules-inactive"), {
+          fullName: "Inactive Employee Updated",
+          updatedAt: serverTimestamp(),
+          updatedBy: "rules-inactive",
+        }),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("denies client-side profile creation", async () => {
@@ -279,12 +297,14 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("unprovisioned-user", { role: "technician" })
       .firestore();
 
-    await assertFails(
-      setDoc(doc(employeeDatabase, "users/unprovisioned-user"), {
-        ...baseProfile,
-        authUid: "unprovisioned-user",
-      }),
-    );
+    await expect(
+      assertFails(
+        setDoc(doc(employeeDatabase, "users/unprovisioned-user"), {
+          ...baseProfile,
+          authUid: "unprovisioned-user",
+        }),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("allows active employees to read but not write office configuration", async () => {
@@ -293,8 +313,10 @@ describe("employee profile Firestore rules", () => {
       .firestore();
     const reference = doc(employeeDatabase, "officeLocations/main");
 
-    await assertSucceeds(getDoc(reference));
-    await assertFails(updateDoc(reference, { radiusMeters: 200 }));
+    await expect(assertSucceeds(getDoc(reference))).resolves.toBeDefined();
+    await expect(
+      assertFails(updateDoc(reference, { radiusMeters: 200 })),
+    ).resolves.toBeDefined();
   });
 
   it("denies inactive employees from reading office configuration", async () => {
@@ -302,7 +324,9 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("rules-inactive", { role: "technician" })
       .firestore();
 
-    await assertFails(getDoc(doc(inactiveDatabase, "officeLocations/main")));
+    await expect(
+      assertFails(getDoc(doc(inactiveDatabase, "officeLocations/main"))),
+    ).resolves.toBeDefined();
   });
 
   it("allows active employee to read own attendanceEvents", async () => {
@@ -310,9 +334,11 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("rules-technician", { role: "technician" })
       .firestore();
 
-    await assertSucceeds(
-      getDoc(doc(employeeDatabase, "attendanceEvents/event-technician")),
-    );
+    await expect(
+      assertSucceeds(
+        getDoc(doc(employeeDatabase, "attendanceEvents/event-technician")),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("denies active employee from reading another employee's attendanceEvents", async () => {
@@ -330,19 +356,23 @@ describe("employee profile Firestore rules", () => {
       });
     });
 
-    await assertFails(
-      getDoc(doc(otherEmployeeDatabase, "attendanceEvents/event-technician")),
-    );
+    await expect(
+      assertFails(
+        getDoc(doc(otherEmployeeDatabase, "attendanceEvents/event-technician")),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("allows manager to read any employee's attendanceEvents", async () => {
     const managerDatabase = testEnvironment
-      .authenticatedContext("rules-manager", { role: "supervisor" })
+      .authenticatedContext("rules-manager", { role: "admin" })
       .firestore();
 
-    await assertSucceeds(
-      getDoc(doc(managerDatabase, "attendanceEvents/event-technician")),
-    );
+    await expect(
+      assertSucceeds(
+        getDoc(doc(managerDatabase, "attendanceEvents/event-technician")),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("denies client-side write, creation, or update to attendanceEvents", async () => {
@@ -350,19 +380,23 @@ describe("employee profile Firestore rules", () => {
       .authenticatedContext("rules-technician", { role: "technician" })
       .firestore();
 
-    await assertFails(
-      setDoc(doc(employeeDatabase, "attendanceEvents/client-spoofed-event"), {
-        eventId: "client-spoofed-event",
-        userId: "rules-technician",
-        eventType: "check_in",
-      }),
-    );
+    await expect(
+      assertFails(
+        setDoc(doc(employeeDatabase, "attendanceEvents/client-spoofed-event"), {
+          eventId: "client-spoofed-event",
+          userId: "rules-technician",
+          eventType: "check_in",
+        }),
+      ),
+    ).resolves.toBeDefined();
 
-    await assertFails(
-      updateDoc(doc(employeeDatabase, "attendanceEvents/event-technician"), {
-        status: "normal",
-      }),
-    );
+    await expect(
+      assertFails(
+        updateDoc(doc(employeeDatabase, "attendanceEvents/event-technician"), {
+          status: "normal",
+        }),
+      ),
+    ).resolves.toBeDefined();
   });
 
   it("denies unauthenticated read to attendanceEvents", async () => {
@@ -370,8 +404,10 @@ describe("employee profile Firestore rules", () => {
       .unauthenticatedContext()
       .firestore();
 
-    await assertFails(
-      getDoc(doc(unauthenticatedDatabase, "attendanceEvents/event-technician")),
-    );
+    await expect(
+      assertFails(
+        getDoc(doc(unauthenticatedDatabase, "attendanceEvents/event-technician")),
+      ),
+    ).resolves.toBeDefined();
   });
 });

@@ -37,7 +37,7 @@ function existingProfileMatches(
     existing.email === command.email &&
     existing.fullName === command.fullName &&
     existing.role === command.role &&
-    existing.jobTitle === command.jobTitle &&
+    (existing.jobTitle ?? "Belum diisi") === (command.jobTitle?.trim() || "Belum diisi") &&
     existing.employmentStatus === command.employmentStatus &&
     existing.employmentStartDate === command.employmentStartDate &&
     typeof existing.employeeId === "string" &&
@@ -101,7 +101,7 @@ export async function ensureEmployeeProfile(
       homeAddress: null,
       phone: null,
       role: command.role,
-      jobTitle: command.jobTitle,
+      jobTitle: command.jobTitle?.trim() || "Belum diisi",
       updatedAt: serverTimestamp,
       updatedBy: actorUid,
     });

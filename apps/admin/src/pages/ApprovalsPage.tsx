@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock,
+  Eye,
   FileText,
   MapPin,
   Palmtree,
@@ -12,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { AttendanceDetailDialog } from "@/components/attendance/AttendanceDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +60,16 @@ function formatWibDateTime(isoString: string): string {
   }
 }
 
+function getReasonBadgeClass(reason: string): string {
+  if (reason.includes("Terlambat")) {
+    return "bg-amber-100 text-amber-800 border-amber-200 text-[10px]";
+  }
+  if (reason.includes("Lapangan")) {
+    return "bg-blue-100 text-blue-800 border-blue-200 text-[10px]";
+  }
+  return "bg-purple-100 text-purple-800 border-purple-200 text-[10px]";
+}
+
 export function ApprovalsPage() {
   const { user } = useCurrentAdminAuth();
   const currentUid = user?.uid;
@@ -82,6 +94,8 @@ export function ApprovalsPage() {
   } | null>(null);
   const [actionNotes, setActionNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAttendance, setSelectedAttendance] =
+    useState<AttendanceApprovalEntry | null>(null);
 
   useEffect(() => {
     const unsubAttendance = watchAttendanceApprovals(
@@ -187,6 +201,143 @@ export function ApprovalsPage() {
     (i) => i.type === "sick_leave" || i.type === "permission",
   );
 
+  const renderServiceAction = (item: ServiceRequestEntry, isSelf: boolean) => {
+    if (item.status !== "pending") {
+      return (
+        <span className="text-xs text-muted-foreground font-medium">
+          Selesai diproses
+        </span>
+      );
+    }
+
+    if (isSelf) {
+      return (
+        <span className="text-xs italic text-muted-foreground">
+          🚫 Self-Approval dilarang
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex justify-end gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          onClick={() =>
+            openActionDialog(
+              "service",
+              item.id,
+              "approved",
+              "Setujui Pengajuan",
+              item.fullName,
+            )
+          }
+        >
+          <CheckCircle2 className="size-3.5 mr-1" />
+          Setujui
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-destructive hover:bg-destructive/10"
+          onClick={() =>
+            openActionDialog(
+              "service",
+              item.id,
+              "rejected",
+              "Tolak Pengajuan",
+              item.fullName,
+            )
+          }
+        >
+          <XCircle className="size-3.5 mr-1" />
+          Tolak
+        </Button>
+      </div>
+    );
+  };
+
+  const renderAttendanceStatusOrButtons = (
+    item: AttendanceApprovalEntry,
+    isSelf: boolean,
+  ) => {
+    if (item.approvalStatus !== "pending") {
+      return (
+        <span className="text-xs text-muted-foreground font-medium pl-1">
+          Selesai diproses
+        </span>
+      );
+    }
+
+    if (isSelf) {
+      return (
+        <span className="text-xs italic text-muted-foreground pl-1">
+          🚫 Self-Approval dilarang
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          onClick={() =>
+            openActionDialog(
+              "attendance",
+              item.id,
+              "approved",
+              "Setujui Presensi",
+              item.fullName,
+            )
+          }
+        >
+          <CheckCircle2 className="size-3.5 mr-1" />
+          Setujui
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-destructive hover:bg-destructive/10"
+          onClick={() =>
+            openActionDialog(
+              "attendance",
+              item.id,
+              "rejected",
+              "Tolak Presensi",
+              item.fullName,
+            )
+          }
+        >
+          <XCircle className="size-3.5 mr-1" />
+          Tolak
+        </Button>
+      </div>
+    );
+  };
+
+  const renderAttendanceAction = (
+    item: AttendanceApprovalEntry,
+    isSelf: boolean,
+  ) => {
+    return (
+      <div className="flex items-center justify-end gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => setSelectedAttendance(item)}
+        >
+          <Eye className="size-3.5 mr-1" />
+          Detail
+        </Button>
+        {renderAttendanceStatusOrButtons(item, isSelf)}
+      </div>
+    );
+  };
+
   const renderServiceTable = (items: ServiceRequestEntry[]) => {
     if (items.length === 0) {
       return (
@@ -259,54 +410,7 @@ export function ApprovalsPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {item.status === "pending" ? (
-                    isSelf ? (
-                      <span className="text-xs italic text-muted-foreground">
-                        🚫 Self-Approval dilarang
-                      </span>
-                    ) : (
-                      <div className="flex justify-end gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-                          onClick={() =>
-                            openActionDialog(
-                              "service",
-                              item.id,
-                              "approved",
-                              "Setujui Pengajuan",
-                              item.fullName,
-                            )
-                          }
-                        >
-                          <CheckCircle2 className="size-3.5 mr-1" />
-                          Setujui
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 text-destructive hover:bg-destructive/10"
-                          onClick={() =>
-                            openActionDialog(
-                              "service",
-                              item.id,
-                              "rejected",
-                              "Tolak Pengajuan",
-                              item.fullName,
-                            )
-                          }
-                        >
-                          <XCircle className="size-3.5 mr-1" />
-                          Tolak
-                        </Button>
-                      </div>
-                    )
-                  ) : (
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Selesai diproses
-                    </span>
-                  )}
+                  {renderServiceAction(item, isSelf)}
                 </TableCell>
               </TableRow>
             );
@@ -316,6 +420,144 @@ export function ApprovalsPage() {
     );
   };
 
+  const renderAttendanceContent = () => {
+    if (loading) {
+      return (
+        <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+          Memuat data presensi...
+        </div>
+      );
+    }
+
+    if (attendanceApprovals.length === 0) {
+      return (
+        <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+          Tidak ada permohonan yang menunggu persetujuan pada kategori ini.
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Karyawan</TableHead>
+            <TableHead>Tipe &amp; Waktu</TableHead>
+            <TableHead>Lokasi</TableHead>
+            <TableHead>Alasan Approval</TableHead>
+            <TableHead>Catatan Presensi</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Tindakan</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {attendanceApprovals.map((item) => {
+            const isSelf = item.userId === currentUid;
+            return (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <p className="font-medium text-sm">{item.fullName}</p>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {item.employeeId}
+                  </p>
+                </TableCell>
+                <TableCell className="text-xs">
+                  <span className="font-medium capitalize">
+                    {item.eventType === "check_in"
+                      ? "Absen Masuk"
+                      : "Absen Keluar"}
+                  </span>
+                  <p className="text-muted-foreground">
+                    {formatWibDateTime(item.capturedAt)}
+                  </p>
+                </TableCell>
+                <TableCell className="text-xs">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="size-3 text-muted-foreground shrink-0" />
+                    <span>
+                      {item.locationType === "office"
+                        ? "Kantor Utama"
+                        : `Lapangan (${item.distanceMeters}m)`}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {item.approvalReasons.map((reason) => (
+                      <Badge
+                        key={reason}
+                        variant="secondary"
+                        className={getReasonBadgeClass(reason)}
+                      >
+                        {reason}
+                      </Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-xs text-xs text-muted-foreground">
+                  {item.note || "-"}
+                  {item.approvalNotes && (
+                    <p className="mt-1 text-xs italic text-slate-500">
+                      Catatan Admin: {item.approvalNotes}
+                    </p>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.approvalStatus === "pending" && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-amber-100 text-amber-800 border-amber-200"
+                    >
+                      Menunggu
+                    </Badge>
+                  )}
+                  {item.approvalStatus === "approved" && (
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-100 text-emerald-800 border-emerald-200"
+                      >
+                        Disetujui
+                      </Badge>
+                      {item.approvedByName && (
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          oleh {item.approvedByName}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {item.approvalStatus === "rejected" && (
+                    <div>
+                      <Badge variant="destructive">Ditolak</Badge>
+                      {item.approvedByName && (
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          oleh {item.approvedByName}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  {renderAttendanceAction(item, isSelf)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
+  };
+
+  const getConfirmButtonLabel = () => {
+    if (submitting) {
+      return "Memproses...";
+    }
+    if (confirmDialog?.action === "approved") {
+      return "Ya, Setujui";
+    }
+    return "Ya, Tolak";
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -323,23 +565,26 @@ export function ApprovalsPage() {
           Pusat Persetujuan
         </h1>
         <p className="text-sm text-muted-foreground">
-          Tinjau dan kelola antrean pengajuan cuti, sakit, serta izin karyawan dalam satu dasbor terpadu.
+          Tinjau dan kelola antrean pengajuan cuti, sakit, serta izin karyawan
+          dalam satu dasbor terpadu.
         </p>
       </div>
 
       <div className="rounded-lg bg-blue-50/70 p-4 border border-blue-200 text-xs text-blue-900 flex gap-3 items-center">
         <ShieldCheck className="size-5 shrink-0 text-blue-600" />
         <div>
-          <strong>Aturan Tata Kelola &amp; Cross-Approval PT Kuda Prima:</strong> Administrator memiliki wewenang operasional persetujuan, namun{" "}
-          <em>dilarang menyetujui presensi atau pengajuannya sendiri</em>. Setiap verifikasi harus diproses oleh Administrator lain yang berbeda guna menjamin transparansi dan integritas data.
+          <strong>
+            Aturan Tata Kelola &amp; Cross-Approval PT Kuda Prima:
+          </strong>{" "}
+          Administrator memiliki wewenang operasional persetujuan, namun{" "}
+          <em>dilarang menyetujui presensi atau pengajuannya sendiri</em>.
+          Setiap verifikasi harus diproses oleh Administrator lain yang berbeda
+          guna menjamin transparansi dan integritas data.
         </div>
       </div>
 
       {notice && (
-        <div
-          role="status"
-          className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm transition-all"
-        >
+        <output className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm transition-all">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
             <span>{notice}</span>
@@ -352,7 +597,7 @@ export function ApprovalsPage() {
           >
             Tutup
           </Button>
-        </div>
+        </output>
       )}
 
       <Card>
@@ -382,198 +627,34 @@ export function ApprovalsPage() {
 
             <TabsContent value="attendance" className="space-y-4">
               <div className="text-xs text-muted-foreground">
-                Presensi yang memerlukan persetujuan mencakup: keterlambatan (&gt;08:15 WIB), presensi di luar radius kantor / lapangan, serta presensi di luar jadwal / jam operasional.
+                Presensi yang memerlukan persetujuan mencakup: keterlambatan
+                (&gt;08:15 WIB), presensi di luar radius kantor / lapangan,
+                serta presensi di luar jadwal / jam operasional.
               </div>
 
-              {loading ? (
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  Memuat data presensi...
-                </div>
-              ) : attendanceApprovals.length === 0 ? (
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  Tidak ada permohonan yang menunggu persetujuan pada kategori ini.
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Karyawan</TableHead>
-                      <TableHead>Tipe &amp; Waktu</TableHead>
-                      <TableHead>Lokasi</TableHead>
-                      <TableHead>Alasan Approval</TableHead>
-                      <TableHead>Catatan Presensi</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Tindakan</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attendanceApprovals.map((item) => {
-                      const isSelf = item.userId === currentUid;
-                      return (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <p className="font-medium text-sm">{item.fullName}</p>
-                            <p className="font-mono text-xs text-muted-foreground">
-                              {item.employeeId}
-                            </p>
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            <span className="font-medium capitalize">
-                              {item.eventType === "check_in"
-                                ? "Absen Masuk"
-                                : "Absen Keluar"}
-                            </span>
-                            <p className="text-muted-foreground">
-                              {formatWibDateTime(item.capturedAt)}
-                            </p>
-                          </TableCell>
-                          <TableCell className="text-xs">
-                            <div className="flex items-center gap-1">
-                              <MapPin className="size-3 text-muted-foreground shrink-0" />
-                              <span>
-                                {item.locationType === "office"
-                                  ? "Kantor Utama"
-                                  : `Lapangan (${item.distanceMeters}m)`}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {item.approvalReasons.map((reason) => (
-                                <Badge
-                                  key={reason}
-                                  variant="secondary"
-                                  className={
-                                    reason.includes("Terlambat")
-                                      ? "bg-amber-100 text-amber-800 border-amber-200 text-[10px]"
-                                      : reason.includes("Lapangan")
-                                      ? "bg-blue-100 text-blue-800 border-blue-200 text-[10px]"
-                                      : "bg-purple-100 text-purple-800 border-purple-200 text-[10px]"
-                                  }
-                                >
-                                  {reason}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-xs text-xs text-muted-foreground">
-                            {item.note || "-"}
-                            {item.approvalNotes && (
-                              <p className="mt-1 text-xs italic text-slate-500">
-                                Catatan Admin: {item.approvalNotes}
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {item.approvalStatus === "pending" && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-amber-100 text-amber-800 border-amber-200"
-                              >
-                                Menunggu
-                              </Badge>
-                            )}
-                            {item.approvalStatus === "approved" && (
-                              <div>
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-emerald-100 text-emerald-800 border-emerald-200"
-                                >
-                                  Disetujui
-                                </Badge>
-                                {item.approvedByName && (
-                                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                                    oleh {item.approvedByName}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                            {item.approvalStatus === "rejected" && (
-                              <div>
-                                <Badge variant="destructive">Ditolak</Badge>
-                                {item.approvedByName && (
-                                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                                    oleh {item.approvedByName}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.approvalStatus === "pending" ? (
-                              isSelf ? (
-                                <span className="text-xs italic text-muted-foreground">
-                                  🚫 Self-Approval dilarang
-                                </span>
-                              ) : (
-                                <div className="flex justify-end gap-1.5">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-                                    onClick={() =>
-                                      openActionDialog(
-                                        "attendance",
-                                        item.id,
-                                        "approved",
-                                        "Setujui Presensi",
-                                        item.fullName,
-                                      )
-                                    }
-                                  >
-                                    <CheckCircle2 className="size-3.5 mr-1" />
-                                    Setujui
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 text-destructive hover:bg-destructive/10"
-                                    onClick={() =>
-                                      openActionDialog(
-                                        "attendance",
-                                        item.id,
-                                        "rejected",
-                                        "Tolak Presensi",
-                                        item.fullName,
-                                      )
-                                    }
-                                  >
-                                    <XCircle className="size-3.5 mr-1" />
-                                    Tolak
-                                  </Button>
-                                </div>
-                              )
-                            ) : (
-                              <span className="text-xs text-muted-foreground font-medium">
-                                Selesai diproses
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
+              {renderAttendanceContent()}
             </TabsContent>
 
             <TabsContent value="overtime" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Lembur hari kerja dimulai 17:01 WIB setelah check-out presensi harian.
+                Lembur hari kerja dimulai 17:01 WIB setelah check-out presensi
+                harian.
               </div>
               {renderServiceTable(overtimeItems)}
             </TabsContent>
 
             <TabsContent value="leave" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Hak cuti 12 hari/tahun berlaku setelah masa kerja minimal 1 tahun. Hari libur/akhir pekan tidak memotong kuota.
+                Hak cuti 12 hari/tahun berlaku setelah masa kerja minimal 1
+                tahun. Hari libur/akhir pekan tidak memotong kuota.
               </div>
               {renderServiceTable(leaveItems)}
             </TabsContent>
 
             <TabsContent value="permission" className="space-y-2">
               <div className="text-xs text-muted-foreground mb-2">
-                Izin sakit maksimal diajukan H+3. Surat dokter bersifat opsional.
+                Izin sakit maksimal diajukan H+3. Surat dokter bersifat
+                opsional.
               </div>
               {renderServiceTable(permissionItems)}
             </TabsContent>
@@ -592,13 +673,20 @@ export function ApprovalsPage() {
             <DialogHeader>
               <DialogTitle>{confirmDialog.title}</DialogTitle>
               <DialogDescription>
-                Konfirmasi {confirmDialog.action === "approved" ? "persetujuan" : "penolakan"} untuk {confirmDialog.employeeName}.
+                Konfirmasi{" "}
+                {confirmDialog.action === "approved"
+                  ? "persetujuan"
+                  : "penolakan"}{" "}
+                untuk {confirmDialog.employeeName}.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 py-2">
               <Label htmlFor="action-notes">
-                Catatan / Alasan {confirmDialog.action === "rejected" ? "(Wajib/Disarankan)" : "(Opsional)"}
+                Catatan / Alasan{" "}
+                {confirmDialog.action === "rejected"
+                  ? "(Wajib/Disarankan)"
+                  : "(Opsional)"}
               </Label>
               <Input
                 id="action-notes"
@@ -634,20 +722,41 @@ export function ApprovalsPage() {
               </Button>
               <Button
                 type="button"
-                variant={confirmDialog.action === "approved" ? "default" : "destructive"}
+                variant={
+                  confirmDialog.action === "approved"
+                    ? "default"
+                    : "destructive"
+                }
                 disabled={submitting}
                 onClick={handleConfirmAction}
               >
-                {submitting
-                  ? "Memproses..."
-                  : confirmDialog.action === "approved"
-                  ? "Ya, Setujui"
-                  : "Ya, Tolak"}
+                {getConfirmButtonLabel()}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
+      <AttendanceDetailDialog
+        open={Boolean(selectedAttendance)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAttendance(null);
+        }}
+        item={selectedAttendance}
+        currentAdminUid={currentUid}
+        onApprove={(id, name) =>
+          openActionDialog(
+            "attendance",
+            id,
+            "approved",
+            "Setujui Presensi",
+            name,
+          )
+        }
+        onReject={(id, name) =>
+          openActionDialog("attendance", id, "rejected", "Tolak Presensi", name)
+        }
+      />
     </div>
   );
 }

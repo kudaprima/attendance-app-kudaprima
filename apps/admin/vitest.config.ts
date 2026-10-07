@@ -11,8 +11,10 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    maxWorkers: 1,
     pool: "threads",
+    threads: {
+      singleThread: true,
+    },
     testTimeout: 15000,
     setupFiles: ["./src/test/setup.ts"],
   },

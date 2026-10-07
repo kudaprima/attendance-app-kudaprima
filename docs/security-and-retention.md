@@ -21,7 +21,7 @@
 - Foto hanya berasal dari kamera aplikasi; izin photo library tidak diminta.
 - Offline queue maksimum 12 jam dan payload sensitif dienkripsi memakai kunci dari secure storage.
 - Custom claims menentukan role; Security Rules bersifat deny-by-default.
-- Minimal dua akun supervisor/admin diperlukan untuk cross-approval.
+- Minimal dua akun Admin aktif diperlukan untuk cross-approval dan penjagaan tata kelola.
 
 ## Retensi
 
@@ -36,12 +36,12 @@ retensinya berakhir; aksi ini tidak menghapus histori maupun audit.
 ## Keamanan pengelolaan akun
 
 CRUD karyawan memakai callable Functions dengan App Check online serta verifikasi
-akun Auth, profil, klaim admin atau supervisor, email sesi, dan waktu pencabutan sesi. Client tetap
+akun Auth, profil, klaim admin, email sesi, dan waktu pencabutan sesi. Client tetap
 dilarang menulis field perusahaan atau menghapus profil langsung melalui Firestore.
 Kata sandi hanya dikirim ke Firebase Auth melalui backend; tidak disimpan pada
 profil, log, audit, atau penyimpanan browser.
 
-Pendaftaran Gmail oleh admin atau supervisor adalah provisioning tepercaya: pengelola memastikan alamat
+Pendaftaran Gmail oleh admin adalah provisioning tepercaya: pengelola memastikan alamat
 utama tersebut milik karyawan. Backend menandai email hasil provisioning sebagai
 terverifikasi agar login Google pertama mempertahankan provider kata sandi.
 Penanda ini merupakan pernyataan pengelola, bukan bukti verifikasi email otomatis.

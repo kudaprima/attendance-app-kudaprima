@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
   serviceItems: [] as any[],
   submitApproval: vi.fn(),
   updateServiceStatus: vi.fn(),
-  nextAttendance: undefined as undefined | ((items: AttendanceApprovalEntry[]) => void),
+  nextAttendance: undefined as
+    undefined | ((items: AttendanceApprovalEntry[]) => void),
   nextService: undefined as undefined | ((items: any[]) => void),
 }));
 
@@ -99,13 +100,13 @@ describe("ApprovalsPage", () => {
     render(<ApprovalsPage />);
 
     // tech-1 event has action buttons
-    expect(screen.getByRole("button", { name: /Setujui/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Setujui/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Tolak/i })).toBeInTheDocument();
 
     // admin-1 self event has notice
-    expect(
-      screen.getByText(/Self-Approval dilarang/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Self-Approval dilarang/i)).toBeInTheDocument();
   });
 
   it("opens confirmation modal and submits approval for technician", async () => {
@@ -114,9 +115,7 @@ describe("ApprovalsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Setujui/i }));
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Setujui Presensi/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Setujui Presensi/i)).toBeInTheDocument();
 
     const notesInput = screen.getByLabelText(/Catatan \/ Alasan/i);
     fireEvent.change(notesInput, {
@@ -132,5 +131,19 @@ describe("ApprovalsPage", () => {
         notes: "Tugas luar kantor terkonfirmasi",
       }),
     );
+  });
+
+  it("opens attendance detail dialog when Detail button is clicked", () => {
+    render(<ApprovalsPage />);
+
+    const detailButtons = screen.getAllByRole("button", { name: /Detail/i });
+    expect(detailButtons.length).toBeGreaterThanOrEqual(1);
+
+    fireEvent.click(detailButtons[0]);
+
+    expect(screen.getByText("Detail Rekaman Presensi")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Teknisi Lapangan").length,
+    ).toBeGreaterThanOrEqual(2);
   });
 });

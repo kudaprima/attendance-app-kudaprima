@@ -85,7 +85,8 @@ beforeEach(async () => {
     authUid: "manager",
     employeeId: "KP-900002",
     fullName: "Synthetic Manager",
-    role: "supervisor",
+    role: "admin",
+    jobTitle: "Supervisor",
   });
   await database.doc("officeLocations/main").set({
     active: true,
@@ -220,11 +221,11 @@ describe("attendance transactions", () => {
         path,
       );
     await assertSucceeds(getMetadata(photoRef("employee", "technician")));
-    await assertSucceeds(getMetadata(photoRef("manager", "supervisor")));
+    await assertSucceeds(getMetadata(photoRef("manager", "admin")));
     await assertFails(getMetadata(photoRef("manager", "technician")));
     await database.doc("users/employee").update({ active: false });
     await database.doc("users/manager").update({ active: false });
     await assertFails(getMetadata(photoRef("employee", "technician")));
-    await assertFails(getMetadata(photoRef("manager", "supervisor")));
+    await assertFails(getMetadata(photoRef("manager", "admin")));
   });
 });

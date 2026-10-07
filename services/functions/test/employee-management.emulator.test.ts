@@ -34,6 +34,7 @@ const input = (changes = {}) => ({
   password: "SyntheticPass123!",
   active: true,
   role: "technician",
+  jobTitle: "Teknisi Lapangan",
   employmentStatus: "contract",
   employmentStartDate: "2026-09-01",
   ...changes,
@@ -50,6 +51,8 @@ const edit = (uid: string, changes: Record<string, unknown> = {}) =>
       fullName: "Updated Employee",
       email: "updatedemployee@gmail.com",
       active: true,
+      role: "technician",
+      jobTitle: "Teknisi Senior",
       employmentStatus: "permanent",
       ...changes,
     },
@@ -111,6 +114,7 @@ beforeEach(async () => {
     authUid: identity.uid,
     email: "admin@kudaprima.test",
     role: "admin",
+    jobTitle: "Administrator",
     active: true,
     employeeId: "KP-900001",
     revision: 0,
@@ -162,7 +166,7 @@ describe("admin employee lifecycle", () => {
         .sort(),
     ).toEqual(["google.com", "password"]);
   });
-  it.each(["technician", "supervisor", "admin"] as const)(
+  it.each(["technician", "admin"] as const)(
     "creates an account with the selected %s role",
     async (role) => {
       const data = input({ role });
@@ -186,6 +190,7 @@ describe("admin employee lifecycle", () => {
       employmentStatus: "permanent",
       employmentStartDate: data.employmentStartDate,
       role: "technician",
+      jobTitle: "Teknisi Senior",
       revision: 2,
     });
     expect(
@@ -245,7 +250,7 @@ describe("admin employee lifecycle", () => {
     );
     expect((await auth.getUser(second.uid)).disabled).toBe(false);
   });
-  it("allows supervisors and rejects unauthenticated, technician, inactive and stale-claim callers", async () => {
+  it("rejects supervisor, unauthenticated, technician, inactive and stale-claim callers", async () => {
     await expect(
       manageEmployee(database, auth, "create", { data: input() }),
     ).rejects.toMatchObject({ code: "unauthenticated" });
@@ -258,9 +263,12 @@ describe("admin employee lifecycle", () => {
     await auth.setCustomUserClaims(identity.uid, { role: "supervisor" });
     await database.doc(`users/${identity.uid}`).update({ role: "supervisor" });
     identity.token.role = "supervisor";
-    await expect(create(input({ role: "admin" }))).resolves.toMatchObject({
-      employeeId: "KP-000001",
+    await expect(create(input({ role: "admin" }))).rejects.toMatchObject({
+      code: "permission-denied",
     });
+    await auth.setCustomUserClaims(identity.uid, { role: "admin" });
+    await database.doc(`users/${identity.uid}`).update({ role: "admin" });
+    identity.token.role = "admin";
     await database.doc(`users/${identity.uid}`).update({ active: false });
     await expect(create()).rejects.toMatchObject({ code: "permission-denied" });
     await database.doc(`users/${identity.uid}`).update({ active: true });
@@ -271,6 +279,7 @@ describe("admin employee lifecycle", () => {
     for (const data of [
       input({ email: "employee@example.com" }),
       input({ role: "owner" }),
+      input({ role: "supervisor" }),
       input({ employmentStartDate: "2026-02-30" }),
     ]) {
       await expect(create(data)).rejects.toMatchObject({

@@ -5,6 +5,8 @@ import {
   query,
   updateDoc,
   where,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { firestore, functions } from "@/lib/firebase";
@@ -28,6 +30,11 @@ export interface AttendanceApprovalEntry {
   approvedAt?: string | null;
   approvalNotes?: string | null;
   note?: string | null;
+  latitude?: number;
+  longitude?: number;
+  accuracyMeters?: number;
+  photoStoragePath?: string;
+  photoUrl?: string;
 }
 
 export interface ServiceRequestEntry {
@@ -49,6 +56,73 @@ export interface ServiceRequestEntry {
   isOver8Hours?: boolean;
 }
 
+function extractApprovalReasons(data: DocumentData): string[] {
+  const reasons: string[] = Array.isArray(data.approvalReasons)
+    ? [...data.approvalReasons]
+    : [];
+  if (reasons.length === 0) {
+    if (data.status === "late") reasons.push("Terlambat");
+    if (data.status === "early_departure") reasons.push("Pulang Lebih Awal");
+    if (data.status === "non_working_day") reasons.push("Di Luar Hari Kerja");
+    if (data.locationType === "field")
+      reasons.push("Di Luar Lokasi (Lapangan)");
+  }
+  return reasons;
+}
+
+function parseApprovalStatus(
+  rawStatus: unknown,
+): "pending" | "approved" | "rejected" {
+  if (rawStatus === "approved" || rawStatus === "rejected") {
+    return rawStatus;
+  }
+  return "pending";
+}
+
+function mapDocToAttendanceApproval(
+  snapshotDoc: QueryDocumentSnapshot<DocumentData>,
+): AttendanceApprovalEntry {
+  const data = snapshotDoc.data();
+  const reasons = extractApprovalReasons(data);
+  const approvalStatus = parseApprovalStatus(data.approvalStatus);
+
+  return {
+    id: snapshotDoc.id,
+    eventId: typeof data.eventId === "string" ? data.eventId : snapshotDoc.id,
+    userId: typeof data.userId === "string" ? data.userId : "",
+    employeeId:
+      typeof data.employeeId === "string" ? data.employeeId : "KP-000000",
+    fullName: typeof data.fullName === "string" ? data.fullName : "Karyawan",
+    eventType:
+      (data.eventType as AttendanceApprovalEntry["eventType"]) || "check_in",
+    capturedAt: typeof data.capturedAt === "string" ? data.capturedAt : "",
+    locationType:
+      (data.locationType as AttendanceApprovalEntry["locationType"]) ||
+      "office",
+    distanceMeters:
+      typeof data.distanceMeters === "number" ? data.distanceMeters : 0,
+    status: (data.status as AttendanceApprovalEntry["status"]) || "normal",
+    approvalReasons: reasons,
+    approvalStatus,
+    approvedBy: typeof data.approvedBy === "string" ? data.approvedBy : null,
+    approvedByName:
+      typeof data.approvedByName === "string" ? data.approvedByName : null,
+    approvedAt: typeof data.approvedAt === "string" ? data.approvedAt : null,
+    approvalNotes:
+      typeof data.approvalNotes === "string" ? data.approvalNotes : null,
+    note: typeof data.note === "string" ? data.note : null,
+    latitude: typeof data.latitude === "number" ? data.latitude : undefined,
+    longitude: typeof data.longitude === "number" ? data.longitude : undefined,
+    accuracyMeters:
+      typeof data.accuracyMeters === "number" ? data.accuracyMeters : undefined,
+    photoStoragePath:
+      typeof data.photoStoragePath === "string"
+        ? data.photoStoragePath
+        : undefined,
+    photoUrl: typeof data.photoUrl === "string" ? data.photoUrl : undefined,
+  };
+}
+
 export function watchAttendanceApprovals(
   next: (items: AttendanceApprovalEntry[]) => void,
   error: (err: Error) => void,
@@ -61,50 +135,11 @@ export function watchAttendanceApprovals(
   return onSnapshot(
     q,
     (snapshot) => {
-      const items: AttendanceApprovalEntry[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        const reasons: string[] = Array.isArray(data.approvalReasons)
-          ? data.approvalReasons
-          : [];
-        if (reasons.length === 0) {
-          if (data.status === "late") reasons.push("Terlambat");
-          if (data.status === "early_departure") reasons.push("Pulang Lebih Awal");
-          if (data.status === "non_working_day") reasons.push("Di Luar Hari Kerja");
-          if (data.locationType === "field") reasons.push("Di Luar Lokasi (Lapangan)");
-        }
-
-        const rawStatus = data.approvalStatus;
-        const approvalStatus: "pending" | "approved" | "rejected" =
-          rawStatus === "approved" || rawStatus === "rejected"
-            ? rawStatus
-            : "pending";
-
-        return {
-          id: doc.id,
-          eventId: data.eventId || doc.id,
-          userId: data.userId || "",
-          employeeId: data.employeeId || "KP-000000",
-          fullName: data.fullName || "Karyawan",
-          eventType: data.eventType || "check_in",
-          capturedAt: data.capturedAt || "",
-          locationType: data.locationType || "office",
-          distanceMeters: data.distanceMeters ?? 0,
-          status: data.status || "normal",
-          approvalReasons: reasons,
-          approvalStatus,
-          approvedBy: data.approvedBy ?? null,
-          approvedByName: data.approvedByName ?? null,
-          approvedAt: data.approvedAt ?? null,
-          approvalNotes: data.approvalNotes ?? null,
-          note: data.note ?? null,
-        };
-      });
-
-      // Sort descending by capturedAt
+      const items = snapshot.docs.map(mapDocToAttendanceApproval);
       items.sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
       next(items);
     },
-    (err) => error(err),
+    error,
   );
 }
 
@@ -118,6 +153,40 @@ export async function submitAttendanceApproval(
   return callable(command);
 }
 
+function mapDocToServiceRequest(
+  snapshotDoc: QueryDocumentSnapshot<DocumentData>,
+): ServiceRequestEntry {
+  const data = snapshotDoc.data();
+  const rawDate =
+    typeof data.date === "string"
+      ? data.date
+      : typeof data.startDate === "string"
+        ? data.startDate
+        : "";
+
+  return {
+    id: snapshotDoc.id,
+    userId: typeof data.userId === "string" ? data.userId : "",
+    employeeId: typeof data.employeeId === "string" ? data.employeeId : "",
+    fullName: typeof data.fullName === "string" ? data.fullName : "",
+    type: (data.type as ServiceRequestEntry["type"]) || "permission",
+    date: rawDate,
+    startDate: typeof data.startDate === "string" ? data.startDate : undefined,
+    endDate: typeof data.endDate === "string" ? data.endDate : undefined,
+    reason: typeof data.reason === "string" ? data.reason : "",
+    status: (data.status as ServiceRequestEntry["status"]) || "pending",
+    approvedBy: typeof data.approvedBy === "string" ? data.approvedBy : null,
+    approvedByName:
+      typeof data.approvedByName === "string" ? data.approvedByName : null,
+    approvedAt: typeof data.approvedAt === "string" ? data.approvedAt : null,
+    adminNotes: typeof data.adminNotes === "string" ? data.adminNotes : null,
+    durationOrDays:
+      typeof data.durationOrDays === "string" ? data.durationOrDays : undefined,
+    isOver8Hours:
+      typeof data.isOver8Hours === "boolean" ? data.isOver8Hours : undefined,
+  };
+}
+
 export function watchServiceRequests(
   next: (items: ServiceRequestEntry[]) => void,
   error: (err: Error) => void,
@@ -126,31 +195,11 @@ export function watchServiceRequests(
   return onSnapshot(
     q,
     (snapshot) => {
-      const items: ServiceRequestEntry[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          userId: data.userId || "",
-          employeeId: data.employeeId || "",
-          fullName: data.fullName || "",
-          type: data.type || "permission",
-          date: data.date || data.startDate || "",
-          startDate: data.startDate,
-          endDate: data.endDate,
-          reason: data.reason || "",
-          status: data.status || "pending",
-          approvedBy: data.approvedBy,
-          approvedByName: data.approvedByName,
-          approvedAt: data.approvedAt,
-          adminNotes: data.adminNotes,
-          durationOrDays: data.durationOrDays,
-          isOver8Hours: data.isOver8Hours,
-        };
-      });
+      const items = snapshot.docs.map(mapDocToServiceRequest);
       items.sort((a, b) => b.date.localeCompare(a.date));
       next(items);
     },
-    (err) => error(err),
+    error,
   );
 }
 
