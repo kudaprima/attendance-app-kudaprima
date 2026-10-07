@@ -398,15 +398,14 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - Synchronized `origin/main` using `git merge -X ours --no-edit origin/main`, seamlessly merging main's squashed tree into the topic branch and creating merge commit `ef43738`.
   - Cleaned minor package/lockfile duplications in `apps/admin/package.json` and `pnpm-lock.yaml`.
   - Preserved 100% of Attendance Detail features, OpenStreetMap integration, selfie photo parity, and dev/prod compatibility.
-- **Automated Quality Gates Verified Clean**:
-  - `pnpm check:brand`: Passed (brand tokens, Flutter theme, and logo byte-identical).
-  - Contracts Vitest: 23/23 tests passed.
-  - Functions Vitest: 23/23 tests passed.
-  - Admin Vitest: 34/34 tests passed.
-  - Oxlint: 0 warnings, 0 errors across contracts, functions, and admin.
-  - TypeScript Typecheck: Passed cleanly across all packages.
-  - `flutter analyze`: 0 issues found.
-  - `flutter test`: 45/45 tests passed.
-  - Monorepo Total Automated Tests: 125/125 passed.
+- **CI Workflow (web-and-functions) Resolution (2026-10-07 by Antigravity)**:
+  - Root cause of GitHub Actions CI failure:
+    1. In `employee-profile.emulator.test.ts`, `updateDoc(reference, ...)` returns `void` (`undefined`). An assertion `expect(assertSucceeds(updateDoc(...))).resolves.toBeDefined()` failed with `AssertionError: expected undefined to be defined`. Restored canonical `await assertSucceeds(updateDoc(...));`.
+    2. Missing Vitest timeout configuration in `services/functions` caused emulator test suites to occasionally timeout during heavy test initialization (default 5s/10s). Added `services/functions/vitest.config.ts` specifying `testTimeout: 30000` and `hookTimeout: 30000`.
+  - All CI steps locally verified:
+    - `pnpm check`: Passed (brand check, build contracts, linting, typecheck, Vitest 80/80 passed).
+    - `pnpm test:emulator:profile`: 100% Passed (42/42 isolated emulator tests across Auth, Firestore, and Storage).
+    - `pnpm build`: 100% Passed (contracts, functions, and admin production builds).
+    - `flutter analyze` & `flutter test`: 45/45 Passed.
 - **Remaining Action**:
-  - Push branch `feat/reliable-attendance-and-persistent-dev` (including merge commit) to `origin` so the PR on GitHub marks conflicts completely resolved.
+  - Commit CI fix and push to `origin feat/reliable-attendance-and-persistent-dev` so GitHub Actions checks turn all green.

@@ -251,15 +251,13 @@ describe("employee profile Firestore rules", () => {
       .firestore();
     const reference = doc(ownerDatabase, "users/rules-technician");
 
-    await expect(
-      assertSucceeds(
-        updateDoc(reference, {
-          phone: "+628123456789",
-          updatedAt: serverTimestamp(),
-          updatedBy: "rules-technician",
-        }),
-      ),
-    ).resolves.toBeDefined();
+    await assertSucceeds(
+      updateDoc(reference, {
+        phone: "+628123456789",
+        updatedAt: serverTimestamp(),
+        updatedBy: "rules-technician",
+      }),
+    );
     await expect(
       assertFails(updateDoc(reference, { role: "admin" })),
     ).resolves.toBeDefined();
