@@ -109,7 +109,8 @@ service cloud.firestore {
     }
 
     match /officeLocations/{officeId} {
-      allow read: if activeUser() && resource.data.active == true;
+      allow read: if activeUser()
+        && (resource == null || resource.data.active == true);
       allow write: if isManager();
     }
 
