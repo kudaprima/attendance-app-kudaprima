@@ -11,6 +11,15 @@ service firebase.storage {
       allow write: if false;
     }
 
+    match /service-requests/{userId}/{fileName} {
+      allow read: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.active == true
+        && (request.auth.uid == userId
+          || (request.auth.token.role == 'admin'
+            && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == request.auth.token.role));
+      allow write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

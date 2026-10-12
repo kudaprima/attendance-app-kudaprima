@@ -2,13 +2,13 @@
 
 ## Execution gate
 
-- Updated: 2026-10-07
-- Status: `E2E_SIMULATION_COMPLETED_AND_VERIFIED`
-- Current workstream: Attendance Detail with Selfie Photo and OpenStreetMap (Mobile & Web Admin) - Completed & 100% Verified in E2E simulation.
-- Application implementation: Phases 1, 2, and 3 fully implemented, tested, and manually verified end-to-end across Android Emulator (AVD) and Web Admin against persistent Firebase Emulator Suite.
+- Updated: 2026-10-12
+- Status: `M3_WORKFORCE_SERVICE_WORKFLOWS_IMPLEMENTED_AND_VERIFIED`
+- Current workstream: Option A (Milestone M3) — End-to-End Workforce Service & Approval Workflows (Cuti Tahunan, Izin Sakit, Izin Khusus, & Lembur / Overtime) with Glassmorphic Bottom Sheet Mobile UI & Admin Verification Modal.
+- Application implementation: Contracts, Firestore/Storage Rules, Cloud Functions (`submitServiceRequest` & `processServiceApproval`), React Web Admin (`ServiceRequestDetailDialog` + `ApprovalsPage`), and Flutter Mobile (`ServicesTabView` with Glassmorphic Bottom Sheets) implemented and verified across all automated quality gates.
 - Editing owner: Antigravity.
 - Next reader: user / team contributor.
-- Authorized: Implementation, automated verification, E2E bug fixes, plan archival, documentation updates, commit, and push to GitHub origin.
+- Authorized: Implementation, automated verification, and documentation updates on `feat/workforce-service-workflows`.
 
 The current user instruction takes precedence over an older checkpoint. This file
 is a coordination record, not a technical lock or a new authorization.
@@ -409,3 +409,50 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
     - `flutter analyze` & `flutter test`: 45/45 Passed.
 - **Remaining Action**:
   - Commit CI fix and push to `origin feat/reliable-attendance-and-persistent-dev` so GitHub Actions checks turn all green.
+
+## Milestone M3: End-to-End Workforce Service & Approval Workflows (2026-10-12 by Antigravity)
+
+- **Baseline & Branch Hygiene**:
+  - Synchronized local `main` to `origin/main` (`36be42f`, squash merge of PR #12) and created clean feature branch `feat/workforce-service-workflows`.
+- **Phase 1: Contracts, Security Rules, & Cloud Functions**:
+  - `packages/contracts/src/index.ts` & `packages/contracts/test/leave-overtime.test.ts`: Added `serviceRequestTypeSchema`, `submitServiceRequestCommandSchema` (date-range `startDate`–`endDate`, overtime `startedAt`–`endedAt`, `clientOrLocation`, mandatory `selfieBase64` for overtime, optional `attachmentBase64`), and `processServiceApprovalCommandSchema` (28/28 contract unit tests passing).
+  - `firebase/firestore.rules` & `firebase/storage.rules`: Locked direct client writes on `serviceRequests/{requestId}` (`allow write: if false`) and added read access on `service-requests/{userId}/{fileName}` for active owner and active admin.
+  - `services/functions/src/services/service-request-service.ts`, `services/functions/src/index.ts`, & `services/functions/test/service-request.test.ts`: Implemented `submitServiceRequest` and `processServiceApproval` Gen 2 Callables with `calculateWorkingDays` (excluding Saturdays & Sundays), 1-year tenure check, approved-only 12-day annual leave quota validation, overtime mandatory selfie & >8h warning, Storage upload, strict cross-approval (anti self-approval), and immutable `auditLogs/` writes (28/28 function unit tests passing).
+- **Phase 2: Web Admin Portal**:
+  - `apps/admin/src/features/approvals/approval-repository.ts`: Extended `ServiceRequestEntry` with `jobTitle`, `startedAt`, `endedAt`, `clientOrLocation`, `workingDaysCount`, `durationMinutes`, `selfieStoragePath`, `attachmentStoragePath`, `createdAt`, and wired `submitServiceApproval` to `processServiceApproval` Cloud Function.
+  - `apps/admin/src/components/approvals/ServiceRequestDetailDialog.tsx`: Built glassmorphic detail modal with employee identity, period/duration metadata, >8h safety badge, `AttendancePhotoView` Lightbox for both Overtime Selfie and Supporting Attachment (Surat Dokter / SPK), and Approve/Reject actions with self-approval protection.
+  - `apps/admin/src/pages/ApprovalsPage.tsx` & `apps/admin/src/pages/ApprovalsPage.test.tsx`: Added "Detail" button and period/duration badges to service request rows and verified modal flow (35/35 admin unit tests passing).
+- **Phase 3: Mobile Flutter App (Glassmorphic Bottom Sheet UI)**:
+  - `apps/mobile/lib/src/features/services/presentation/services_tab_view.dart` & `apps/mobile/test/features/services/presentation/services_tab_view_test.dart`:
+    - `_GlassAnnualLeaveCard`: Frosted glass card (`BackdropFilter` blur + subtle specular border) displaying remaining quota (`12 - approvedDays`), progress bar, and pending approval badge (pending requests do not deduct quota until Admin approves).
+    - `_LeavePermissionBottomSheet`: Ergonomic `DraggableScrollableSheet` with balanced glassmorphism (`sigma: 14`, `alpha: 0.94`), date-range picker, live effective working days calculation pill (excluding Saturdays/Sundays), optional supporting photo capture, and sticky thumb-zone CTA.
+    - `_OvertimeBottomSheet`: Glassmorphic bottom sheet with date/time pickers supporting cross-midnight (`H+1`), live duration & >8h safety warning pill, client/location & task inputs, mandatory selfie verification capture via `CameraSelfieDialog`, and optional SPK attachment.
+    - `_ServiceRequestDetailBottomSheet`: Full detail view with dual-bucket Storage photo loader and tap-to-zoom Lightbox (`InteractiveViewer`).
+- **Automated Verification Results**:
+  - `pnpm check:brand`: 100% Passed.
+  - `pnpm check`: 100% Passed (0 oxlint errors/warnings, 0 typecheck errors, 93/93 Vitest unit tests passed: 28 contracts, 28 functions, 37 admin).
+  - `pnpm build`: 100% Passed.
+  - `dart format lib test`: 100% Formatted.
+  - `flutter analyze`: 0 issues found.
+  - `flutter test`: 51/51 Passed (including 6 new tests in `services_tab_view_test.dart`).
+  - **Total Automated Tests Passing**: 144/144.
+
+## Web Admin Real-Time Attendance & Service Recap, Official PDF/CSV Exporters, Real APK QR Code & Production Seeding (2026-10-12 by Antigravity)
+
+- **Real-Time Firestore Aggregation (`apps/admin/src/features/reports/report-repository.ts`)**:
+  - Subscribes to `users`, `attendanceEvents`, and `serviceRequests` collections in real time.
+  - Computes per-employee `EmployeePayrollRecap`: `presentDays`, `onTimeDays`, `lateCount`, `lateMinutes` (relative to 08:00 WIB), `earlyDepartureCount`, `fieldDays`, `overtimeMinutes` (approved only), `annualLeaveDays` (approved only), `sickLeaveDays` (approved only), and `permissionDays` (approved only).
+  - Supports filtering by quick month selector (`YYYY-MM`), custom date range (`startDate` to `endDate`), and multi-field employee search (Name, Employee ID, Job Title).
+- **CSV & Vector PDF 1.4 Exporters with Default PT Kuda Prima Logo (`apps/admin/src/features/reports/report-exporters.ts`)**:
+  - `exportReportCsv`: Generates UTF-8 with BOM (`\uFEFF`) CSV files for Excel compatibility across all 3 report views (`recap`, `attendance`, `services`).
+  - `exportReportPdf`: Pure TypeScript A4 Landscape PDF 1.4 vector generator with embedded PT Kuda Prima Logo (`/ImLogo` JPEG XObject) in the official letterhead (`Kop Dokumen Resmi PT Kuda Prima`), `#283989` navy + `#F25923` orange accent stripe, KPI summary bar, multi-page table pagination, and official HR/Admin signature block.
+  - Replaced all `"payroll"` filing terminology with official corporate document filenames: `Rekap_Kehadiran_dan_Layanan_PT_Kuda_Prima_<period>.(pdf|csv)`, `Log_Presensi_Harian_PT_Kuda_Prima_<period>.(pdf|csv)`, and `Log_Cuti_Izin_dan_Lembur_PT_Kuda_Prima_<period>.(pdf|csv)`.
+- **Real, Permanent & Free ISO/IEC 18004 QR Code on APK Distribution Page (`apps/admin/src/lib/qr-code.ts` & `apps/admin/src/pages/DistributionPage.tsx`)**:
+  - Implemented self-contained ISO/IEC 18004 QR Code matrix generator (`generateQrCodeMatrix`, Versions 1–7, Level L, Byte Mode, Reed-Solomon GF(256) & BCH(15,5)) in pure TypeScript—100% offline, permanent, free, and zero external dependencies.
+  - Upgraded `DistributionPage.tsx` (`Version APK`) with a printable `<BrandLogo />` QR poster, real scannable SVG QR Code (`data-testid="real-apk-qr-svg"`), and configurable APK download URL with copy/reset controls.
+- **2-Admin Initial Online Production Seeding (`services/functions/src/development/seed-production-online.ts` & `docs/testing/production-deployment-runbook.md`)**:
+  - Added `pnpm seed:production` script guarded by `CONFIRM_ONLINE_PRODUCTION_SEED=true`.
+  - Seeds strictly **2 initial Admin accounts** (`admin.utama@kudaprima.id` & `admin.operasional@kudaprima.id`, both with `role: "admin"`, zero `supervisor` role or jobTitle) for cross-approval compliance, plus `officeLocations/main`.
+  - Documented complete step-by-step Firebase Online activation, deployment, and seeding guide in `docs/testing/production-deployment-runbook.md`.
+- **Next Bounded Action**:
+  - Follow `docs/testing/production-deployment-runbook.md` when ready to activate Firebase Online, deploy Cloud Functions/Rules/Hosting, and execute `pnpm seed:production`.

@@ -1,16 +1,17 @@
 import {
   collection,
-  doc,
   onSnapshot,
   query,
-  updateDoc,
   where,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { firestore, functions } from "@/lib/firebase";
-import type { ProcessAttendanceApprovalCommand } from "@kuda-prima/contracts";
+import type {
+  ProcessAttendanceApprovalCommand,
+  ProcessServiceApprovalCommand,
+} from "@kuda-prima/contracts";
 
 export interface AttendanceApprovalEntry {
   id: string;
@@ -42,18 +43,27 @@ export interface ServiceRequestEntry {
   userId: string;
   employeeId: string;
   fullName: string;
+  jobTitle?: string;
   type: "overtime" | "annual_leave" | "sick_leave" | "permission";
   date: string;
   startDate?: string;
   endDate?: string;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  clientOrLocation?: string | null;
   reason: string;
   status: "pending" | "approved" | "rejected";
   approvedBy?: string | null;
   approvedByName?: string | null;
   approvedAt?: string | null;
   adminNotes?: string | null;
+  workingDaysCount?: number;
+  durationMinutes?: number | null;
   durationOrDays?: string;
   isOver8Hours?: boolean;
+  selfieStoragePath?: string | null;
+  attachmentStoragePath?: string | null;
+  createdAt?: string;
 }
 
 function extractApprovalReasons(data: DocumentData): string[] {
@@ -169,10 +179,15 @@ function mapDocToServiceRequest(
     userId: typeof data.userId === "string" ? data.userId : "",
     employeeId: typeof data.employeeId === "string" ? data.employeeId : "",
     fullName: typeof data.fullName === "string" ? data.fullName : "",
+    jobTitle: typeof data.jobTitle === "string" ? data.jobTitle : undefined,
     type: (data.type as ServiceRequestEntry["type"]) || "permission",
     date: rawDate,
     startDate: typeof data.startDate === "string" ? data.startDate : undefined,
     endDate: typeof data.endDate === "string" ? data.endDate : undefined,
+    startedAt: typeof data.startedAt === "string" ? data.startedAt : null,
+    endedAt: typeof data.endedAt === "string" ? data.endedAt : null,
+    clientOrLocation:
+      typeof data.clientOrLocation === "string" ? data.clientOrLocation : null,
     reason: typeof data.reason === "string" ? data.reason : "",
     status: (data.status as ServiceRequestEntry["status"]) || "pending",
     approvedBy: typeof data.approvedBy === "string" ? data.approvedBy : null,
@@ -180,10 +195,25 @@ function mapDocToServiceRequest(
       typeof data.approvedByName === "string" ? data.approvedByName : null,
     approvedAt: typeof data.approvedAt === "string" ? data.approvedAt : null,
     adminNotes: typeof data.adminNotes === "string" ? data.adminNotes : null,
+    workingDaysCount:
+      typeof data.workingDaysCount === "number"
+        ? data.workingDaysCount
+        : undefined,
+    durationMinutes:
+      typeof data.durationMinutes === "number" ? data.durationMinutes : null,
     durationOrDays:
       typeof data.durationOrDays === "string" ? data.durationOrDays : undefined,
     isOver8Hours:
       typeof data.isOver8Hours === "boolean" ? data.isOver8Hours : undefined,
+    selfieStoragePath:
+      typeof data.selfieStoragePath === "string"
+        ? data.selfieStoragePath
+        : null,
+    attachmentStoragePath:
+      typeof data.attachmentStoragePath === "string"
+        ? data.attachmentStoragePath
+        : null,
+    createdAt: typeof data.createdAt === "string" ? data.createdAt : undefined,
   };
 }
 
@@ -203,19 +233,26 @@ export function watchServiceRequests(
   );
 }
 
+export async function submitServiceApproval(
+  command: ProcessServiceApprovalCommand,
+) {
+  const callable = httpsCallable<
+    ProcessServiceApprovalCommand,
+    { success: boolean; requestId: string; status: "approved" | "rejected" }
+  >(functions, "processServiceApproval");
+  return callable(command);
+}
+
 export async function updateServiceRequestStatus(
   requestId: string,
   status: "approved" | "rejected",
-  adminUid: string,
-  adminName: string,
+  _adminUid: string,
+  _adminName: string,
   adminNotes?: string,
 ) {
-  const ref = doc(firestore, "serviceRequests", requestId);
-  await updateDoc(ref, {
+  return submitServiceApproval({
+    requestId,
     status,
-    approvedBy: adminUid,
-    approvedByName: adminName,
-    approvedAt: new Date().toISOString(),
-    adminNotes: adminNotes ?? null,
+    notes: adminNotes,
   });
 }

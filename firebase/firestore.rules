@@ -72,9 +72,7 @@ service cloud.firestore {
     match /serviceRequests/{requestId} {
       allow read: if activeUser()
         && (resource.data.userId == request.auth.uid || isManager());
-      allow create: if activeUser()
-        && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isManager();
+      allow write: if false;
     }
 
     match /{document=**} {

@@ -20,6 +20,7 @@
     "emulators:auth:seed": "pnpm build:contracts && pnpm --filter @kuda-prima/functions seed:auth-emulator",
     "emulators:profile": "pnpm build:functions && node scripts/start-persistent-emulators.mjs",
     "emulators:profile:seed": "pnpm build:contracts && pnpm --filter @kuda-prima/functions seed:profile-emulator",
+    "seed:production": "pnpm build:contracts && pnpm --filter @kuda-prima/functions seed:production",
     "test:emulator:profile": "node scripts/test-emulators.mjs",
     "firebase": "firebase",
     "format": "prettier --write .",

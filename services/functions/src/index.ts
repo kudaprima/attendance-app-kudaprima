@@ -52,6 +52,34 @@ export const processAttendanceApproval = onCall(
   },
 );
 
+export const submitServiceRequest = onCall(
+  { enforceAppCheck },
+  async (request) => {
+    const [
+      { getFirestore },
+      { getStorage },
+      { handleSubmitServiceRequest },
+    ] = await Promise.all([
+      import("firebase-admin/firestore"),
+      import("firebase-admin/storage"),
+      import("./services/service-request-service.js"),
+    ]);
+    return handleSubmitServiceRequest(request, getFirestore(), getStorage());
+  },
+);
+
+export const processServiceApproval = onCall(
+  { enforceAppCheck },
+  async (request) => {
+    const [{ getFirestore }, { handleProcessServiceApproval }] =
+      await Promise.all([
+        import("firebase-admin/firestore"),
+        import("./services/service-request-service.js"),
+      ]);
+    return handleProcessServiceApproval(request, getFirestore());
+  },
+);
+
 function employeeCallable(action: "create" | "update" | "delete") {
   return onCall({ enforceAppCheck, timeoutSeconds: 60 }, async (request) => {
     const [{ getAuth }, { getFirestore }, { manageEmployee }] =

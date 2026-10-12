@@ -13,6 +13,7 @@
     "lint": "oxlint src test",
     "seed:auth-emulator": "pnpm build && node lib/development/seed-auth-emulator.js",
     "seed:profile-emulator": "pnpm build && node lib/development/seed-profile-emulator.js",
+    "seed:production": "pnpm build && node lib/development/seed-production-online.js",
     "test": "vitest run --exclude \"test/*.emulator.test.ts\"",
     "test:emulator": "vitest run .emulator.test.ts --no-file-parallelism",
     "typecheck": "tsc -p tsconfig.json --noEmit"

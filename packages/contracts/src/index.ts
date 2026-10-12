@@ -203,6 +203,86 @@ export const overtimeRequestCommandSchema = z.object({
   taskDescription: z.string().trim().min(3).max(500),
 });
 
+export const serviceRequestTypeSchema = z.enum([
+  "annual_leave",
+  "sick_leave",
+  "permission",
+  "overtime",
+]);
+
+export const submitServiceRequestCommandSchema = z
+  .object({
+    idempotencyKey: z.string().uuid(),
+    type: serviceRequestTypeSchema,
+    startDate: calendarDateSchema,
+    endDate: calendarDateSchema.optional(),
+    startedAt: z.string().datetime({ offset: true }).optional(),
+    endedAt: z.string().datetime({ offset: true }).optional(),
+    clientOrLocation: z.string().trim().min(2).max(160).optional(),
+    reason: z
+      .string()
+      .trim()
+      .min(3, "Alasan/deskripsi wajib diisi minimal 3 karakter.")
+      .max(500),
+    selfieBase64: z.string().min(1).max(2_000_000).optional(),
+    attachmentBase64: z.string().min(1).max(2_000_000).optional(),
+  })
+  .superRefine((command, context) => {
+    if (command.type === "overtime") {
+      if (!command.startedAt) {
+        context.addIssue({
+          code: "custom",
+          message: "Waktu mulai lembur wajib diisi.",
+          path: ["startedAt"],
+        });
+      }
+      if (!command.endedAt) {
+        context.addIssue({
+          code: "custom",
+          message: "Waktu selesai lembur wajib diisi.",
+          path: ["endedAt"],
+        });
+      }
+      if (command.startedAt && command.endedAt) {
+        const startMs = new Date(command.startedAt).getTime();
+        const endMs = new Date(command.endedAt).getTime();
+        if (endMs <= startMs) {
+          context.addIssue({
+            code: "custom",
+            message: "Waktu selesai lembur harus setelah waktu mulai.",
+            path: ["endedAt"],
+          });
+        }
+      }
+      if (!command.clientOrLocation) {
+        context.addIssue({
+          code: "custom",
+          message: "Nama klien atau lokasi kerja lembur wajib diisi.",
+          path: ["clientOrLocation"],
+        });
+      }
+      if (!command.selfieBase64) {
+        context.addIssue({
+          code: "custom",
+          message: "Foto selfie verifikasi wajib untuk pengajuan lembur.",
+          path: ["selfieBase64"],
+        });
+      }
+    } else if (command.endDate && command.endDate < command.startDate) {
+      context.addIssue({
+        code: "custom",
+        message: "Tanggal selesai tidak boleh sebelum tanggal mulai.",
+        path: ["endDate"],
+      });
+    }
+  });
+
+export const processServiceApprovalCommandSchema = z.object({
+  requestId: z.string().min(1),
+  status: z.enum(["approved", "rejected"]),
+  notes: z.string().trim().max(500).optional(),
+});
+
 export const updateContactProfileCommandSchema = z.object({
   phone: z.string().trim().max(30).optional().nullable(),
   homeAddress: z.string().trim().max(500).optional().nullable(),
@@ -222,8 +302,15 @@ export type OfficeLocation = z.infer<typeof officeLocationSchema>;
 export type OvertimeRequestCommand = z.infer<
   typeof overtimeRequestCommandSchema
 >;
+export type ProcessServiceApprovalCommand = z.infer<
+  typeof processServiceApprovalCommandSchema
+>;
 export type ProvisionEmployeeProfileCommand = z.infer<
   typeof provisionEmployeeProfileCommandSchema
+>;
+export type ServiceRequestType = z.infer<typeof serviceRequestTypeSchema>;
+export type SubmitServiceRequestCommand = z.infer<
+  typeof submitServiceRequestCommandSchema
 >;
 export type UpdateContactProfileCommand = z.infer<
   typeof updateContactProfileCommandSchema
