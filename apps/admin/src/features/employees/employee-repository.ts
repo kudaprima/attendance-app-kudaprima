@@ -1,4 +1,21 @@
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { deleteApp, initializeApp } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import type {
   CreateEmployeeCommand,
@@ -7,7 +24,12 @@ import type {
   EmploymentStatus,
   UserRole,
 } from "@kuda-prima/contracts";
-import { firestore, functions } from "@/lib/firebase";
+import {
+  auth,
+  firestore,
+  functions,
+  useFirebaseEmulators,
+} from "@/lib/firebase";
 
 export interface EmployeeEntry {
   uid: string;
@@ -22,6 +44,7 @@ export interface EmployeeEntry {
   revision: number;
   managementAction?: "create" | "update" | "delete";
 }
+
 export function watchEmployees(
   next: (employees: EmployeeEntry[]) => void,
   error: () => void,
@@ -30,15 +53,16 @@ export function watchEmployees(
     query(collection(firestore, "users"), orderBy("employeeId")),
     (snapshot) => {
       next(
-        snapshot.docs.map((doc) => {
-          const data = doc.data();
+        snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
           return {
-            uid: doc.id,
+            uid: docSnap.id,
             employeeId: data.employeeId,
             fullName: data.fullName,
             email: data.email,
             role: data.role,
-            jobTitle: typeof data.jobTitle === "string" ? data.jobTitle.trim() : "",
+            jobTitle:
+              typeof data.jobTitle === "string" ? data.jobTitle.trim() : "",
             employmentStatus: data.employmentStatus,
             employmentStartDate: data.employmentStartDate,
             active: data.active === true,
@@ -51,12 +75,238 @@ export function watchEmployees(
     error,
   );
 }
-export const createEmployee = (command: CreateEmployeeCommand) =>
-  httpsCallable(functions, "createEmployee")(command);
-export const updateEmployee = (command: UpdateEmployeeCommand) =>
-  httpsCallable(functions, "updateEmployee")(command);
-export const deleteEmployee = (command: DeleteEmployeeCommand) =>
-  httpsCallable(functions, "deleteEmployee")(command);
+
+function makeFunctionError(code: string, message: string): Error & { code: string } {
+  const err = new Error(message) as Error & { code: string };
+  err.code = code;
+  return err;
+}
+
+export async function createEmployee(command: CreateEmployeeCommand) {
+  if (useFirebaseEmulators) {
+    return httpsCallable(functions, "createEmployee")(command);
+  }
+
+  const adminUser = auth.currentUser;
+  if (!adminUser) {
+    throw makeFunctionError("functions/unauthenticated", "Sesi berakhir.");
+  }
+
+  const secondaryApp = initializeApp(
+    auth.app.options,
+    `spark-create-emp-${Date.now()}`,
+  );
+  const secondaryAuth = getAuth(secondaryApp);
+
+  let createdUid = "";
+  try {
+    const credential = await createUserWithEmailAndPassword(
+      secondaryAuth,
+      command.email.trim().toLowerCase(),
+      command.password,
+    );
+    createdUid = credential.user.uid;
+    await updateProfile(credential.user, {
+      displayName: command.fullName.trim(),
+    });
+    await signOut(secondaryAuth);
+  } catch (err) {
+    const authCode = (err as { code?: string })?.code ?? "";
+    if (authCode === "auth/email-already-in-use") {
+      throw makeFunctionError(
+        "functions/already-exists",
+        "Email sudah terdaftar.",
+      );
+    }
+    throw makeFunctionError(
+      "functions/invalid-argument",
+      "Periksa email dan kata sandi minimal 8 karakter.",
+    );
+  } finally {
+    await deleteApp(secondaryApp).catch(() => undefined);
+  }
+
+  const employeeId = await runTransaction(firestore, async (tx) => {
+    const counterRef = doc(firestore, "systemCounters", "employeeId");
+    const counterSnap = await tx.get(counterRef);
+    const nextSeq = counterSnap.exists()
+      ? Number(counterSnap.data()?.nextSequence ?? 1)
+      : 1;
+    const formattedId = `KP-${String(nextSeq).padStart(6, "0")}`;
+
+    tx.set(
+      counterRef,
+      {
+        nextSequence: nextSeq + 1,
+        updatedAt: serverTimestamp(),
+        updatedBy: adminUser.uid,
+      },
+      { merge: true },
+    );
+
+    const userRef = doc(firestore, "users", createdUid);
+    tx.set(userRef, {
+      authUid: createdUid,
+      employeeId: formattedId,
+      fullName: command.fullName.trim(),
+      email: command.email.trim().toLowerCase(),
+      role: command.role,
+      jobTitle: command.jobTitle.trim() || "Teknisi Operasional",
+      employmentStatus: command.employmentStatus,
+      employmentStartDate: command.employmentStartDate,
+      active: command.active,
+      revision: 1,
+      phone: null,
+      birthDate: null,
+      gender: null,
+      homeAddress: null,
+      createdAt: serverTimestamp(),
+      createdBy: adminUser.uid,
+      updatedAt: serverTimestamp(),
+      updatedBy: adminUser.uid,
+    });
+
+    const auditRef = doc(collection(firestore, "auditLogs"));
+    tx.set(auditRef, {
+      action: "employee_created",
+      actorUid: adminUser.uid,
+      targetUid: createdUid,
+      employeeId: formattedId,
+      role: command.role,
+      createdAt: serverTimestamp(),
+    });
+
+    return formattedId;
+  });
+
+  return { data: { uid: createdUid, employeeId } };
+}
+
+export async function updateEmployee(command: UpdateEmployeeCommand) {
+  if (useFirebaseEmulators) {
+    return httpsCallable(functions, "updateEmployee")(command);
+  }
+
+  const adminUser = auth.currentUser;
+  if (!adminUser) {
+    throw makeFunctionError("functions/unauthenticated", "Sesi berakhir.");
+  }
+
+  if (
+    command.uid === adminUser.uid &&
+    (command.role !== "admin" || !command.active)
+  ) {
+    throw makeFunctionError(
+      "functions/failed-precondition",
+      "Akun sendiri tidak dapat diturunkan atau dinonaktifkan.",
+    );
+  }
+
+  await runTransaction(firestore, async (tx) => {
+    const userRef = doc(firestore, "users", command.uid);
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) {
+      throw makeFunctionError(
+        "functions/not-found",
+        "Karyawan tidak ditemukan.",
+      );
+    }
+
+    const current = snap.data();
+    const currentRevision = Number(current?.revision ?? 0);
+    if (currentRevision !== command.expectedRevision) {
+      throw makeFunctionError(
+        "functions/aborted",
+        "Data telah berubah. Muat ulang form.",
+      );
+    }
+
+    tx.update(userRef, {
+      fullName: command.fullName.trim(),
+      email: command.email.trim().toLowerCase(),
+      role: command.role,
+      jobTitle: command.jobTitle.trim(),
+      employmentStatus: command.employmentStatus,
+      active: command.active,
+      revision: currentRevision + 1,
+      updatedAt: serverTimestamp(),
+      updatedBy: adminUser.uid,
+    });
+
+    const auditRef = doc(collection(firestore, "auditLogs"));
+    tx.set(auditRef, {
+      action: "employee_updated",
+      actorUid: adminUser.uid,
+      targetUid: command.uid,
+      role: command.role,
+      active: command.active,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return { data: { uid: command.uid } };
+}
+
+export async function deleteEmployee(command: DeleteEmployeeCommand) {
+  if (useFirebaseEmulators) {
+    return httpsCallable(functions, "deleteEmployee")(command);
+  }
+
+  const adminUser = auth.currentUser;
+  if (!adminUser) {
+    throw makeFunctionError("functions/unauthenticated", "Sesi berakhir.");
+  }
+
+  if (command.uid === adminUser.uid) {
+    throw makeFunctionError(
+      "functions/failed-precondition",
+      "Akun sendiri tidak dapat dihapus.",
+    );
+  }
+
+  const activeAdminsSnap = await getDocs(
+    query(
+      collection(firestore, "users"),
+      where("role", "==", "admin"),
+      where("active", "==", true),
+    ),
+  );
+  const targetRef = doc(firestore, "users", command.uid);
+
+  await runTransaction(firestore, async (tx) => {
+    const snap = await tx.get(targetRef);
+    if (!snap.exists()) {
+      throw makeFunctionError(
+        "functions/not-found",
+        "Karyawan tidak ditemukan.",
+      );
+    }
+    const data = snap.data();
+    if (
+      data?.role === "admin" &&
+      data?.active === true &&
+      activeAdminsSnap.size <= 2
+    ) {
+      throw makeFunctionError(
+        "functions/failed-precondition",
+        "Harus tersisa minimal dua Admin aktif.",
+      );
+    }
+
+    tx.delete(targetRef);
+
+    const auditRef = doc(collection(firestore, "auditLogs"));
+    tx.set(auditRef, {
+      action: "employee_deleted",
+      actorUid: adminUser.uid,
+      targetUid: command.uid,
+      employeeId: data?.employeeId ?? "",
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return { data: { uid: command.uid } };
+}
 
 export function employeeErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code;

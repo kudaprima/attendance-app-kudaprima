@@ -57,21 +57,33 @@ export function useAdminAuth(): AdminAuthState {
         const token = await currentUser.getIdTokenResult();
         if (current !== generation) return;
         const claim = token.claims.role;
-        const nextRole =
-          claim === "admin" || claim === "technician"
-            ? claim
-            : null;
-        setRole(nextRole);
+        const tokenRole =
+          claim === "admin" || claim === "technician" ? claim : null;
+        setRole(tokenRole);
         unsubscribeProfile = onSnapshot(
           doc(firestore, "users", currentUser.uid),
           (snapshot) => {
             if (current !== generation) return;
             const profile = snapshot.data();
-            setJobTitle(typeof profile?.jobTitle === "string" ? profile.jobTitle.trim() : "");
+            const profileRole =
+              profile?.role === "admin" || profile?.role === "technician"
+                ? (profile.role as UserRole)
+                : null;
+            const effectiveRole = tokenRole ?? profileRole;
+            setRole(effectiveRole);
+            setJobTitle(
+              typeof profile?.jobTitle === "string"
+                ? profile.jobTitle.trim()
+                : "",
+            );
+            const roleMatches =
+              tokenRole !== null
+                ? profile?.role === tokenRole
+                : profileRole !== null;
             setIsActive(
               snapshot.exists() &&
                 profile?.active === true &&
-                profile?.role === nextRole &&
+                roleMatches &&
                 profile?.authUid === currentUser.uid &&
                 profile?.email === currentUser.email,
             );

@@ -1,39 +1,30 @@
-# Panduan Aktivasi Firebase Online, Cloud Deployment & Seeding Awal (2 Akun Admin)
+# Panduan Aktivasi Firebase Online (100% Gratis — Spark Plan), Cloud Deployment & Seeding Awal 2 Akun Admin
 
-Dokumen ini merupakan panduan langkah demi langkah dari nol (untuk pengguna yang belum pernah mengaktifkan layanan Firebase Online sebelumnya) hingga aplikasi **PT Kuda Prima Attendance** berjalan penuh di Cloud disertai **2 Akun Admin Awal** (tanpa role supervisor) dan distribusi APK melalui QR Code permanen.
+Dokumen ini merupakan panduan langkah demi langkah untuk mengaktifkan **PT Kuda Prima Attendance** pada **Firebase Spark Plan (100% Gratis Tanpa Kartu Kredit & Tanpa Deposit Rp 500.000)** beserta **2 Akun Admin Awal** (tanpa role supervisor) dan distribusi APK melalui QR Code permanen.
 
 ---
 
-## Bagian 1: Aktivasi Layanan di Firebase Console (Pertama Kali)
+## Bagian 1: Aktivasi 2 Layanan Gratis di Firebase Console (Spark Plan)
 
-Buka browser dan masuk ke **[Firebase Console](https://console.firebase.google.com/)** menggunakan akun Google pemilik project **`kuda-prima-attandance-dev`**.
+Buka browser dan masuk ke **[Firebase Console](https://console.firebase.google.com/)** pada project **`kuda-prima-attandance-dev`**. Pastikan status di kiri bawah tetap **Spark Plan (Free $0/month)**.
 
-### 1.1. Pastikan Paket Blaze (Pay-as-you-go) & Batas Anggaran Aman
-Firebase Cloud Functions Gen 2 (`nodejs22`) dan Cloud Storage membutuhkan paket **Blaze**:
-1. Di pojok kiri bawah Firebase Console, lihat status paket di samping nama project. Jika masih **Spark**, klik **Upgrade** → pilih **Blaze Plan**.
-2. Masukkan jumlah batas pengingat anggaran (*Budget Alert*), misalnya **$5 USD** (Rp 80.000).
-   > **Catatan Hemat Biaya**: Untuk skala operasional internal (10–100 karyawan), kuota gratis bulanan (*Free Tier*) pada Blaze mencakup 2 juta pemanggilan Cloud Functions, 50.000 pembacaan Firestore/hari, dan 5 GB penyimpanan foto. Tagihan riil bulanan umumnya **$0 (Gratis)**.
-
-### 1.2. Aktifkan Firebase Authentication (Email/Password)
+### 1.1. Aktifkan Firebase Authentication (Email/Password)
 1. Pada menu kiri Firebase Console, klik **Build** → **Authentication**.
 2. Klik tombol **Get started**.
 3. Pada tab **Sign-in method**, pilih **Email/Password**.
 4. Aktifkan sakelar **Enable** pada *Email/Password* (biarkan *Email link / passwordless sign-in* mati), lalu klik **Save**.
 
-### 1.3. Aktifkan Cloud Firestore Database
+### 1.2. Aktifkan Cloud Firestore Database
 1. Pada menu kiri, klik **Build** → **Firestore Database**.
 2. Klik **Create database**.
 3. Pilih lokasi server terdekat: **`asia-southeast2 (Jakarta)`** (atau `asia-southeast1 (Singapore)`), lalu klik **Next**.
 4. Pilih **Start in production mode**, lalu klik **Create**.
 
-### 1.4. Aktifkan Cloud Storage (Penyimpanan Foto Selfie & Lampiran)
-1. Pada menu kiri, klik **Build** → **Storage**.
-2. Klik **Get started** → pilih **Start in production mode** → klik **Next**.
-3. Pastikan lokasi bucket mengikuti lokasi Firestore, lalu klik **Done**.
+> **Catatan Mode Spark-Native**: Anda **tidak perlu** mengaktifkan *Cloud Storage* maupun *Cloud Functions* yang mewajibkan paket Blaze. Aplikasi Mobile dan Web Admin telah dikonfigurasi dalam **Mode Spark-Native** di mana foto selfie presensi/lembur terkompresi (~30 KB) dan transaksi persetujuan/karyawan disimpan langsung secara aman di Firestore dengan perlindungan `firestore.rules`.
 
 ---
 
-## Bagian 2: Konfigurasi Environment Web Admin (`.env.production`)
+## Bagian 2: Konfigurasi Environment Web Admin (`apps/admin/.env.production`)
 
 Agar portal Web Admin terhubung ke Firebase Online (bukan Emulator), ambil konfigurasi Web App dari Firebase Console:
 
@@ -61,9 +52,9 @@ Agar ketika teknisi memindai **QR Code Permanen** di halaman **Distribusi APK** 
 
 ```powershell
 . .\scripts\use-dev-env.ps1
-cd apps/mobile
+Push-Location .\apps\mobile
 flutter build apk --release --dart-define=USE_FIREBASE_EMULATORS=false
-cd ../..
+Pop-Location
 ```
 
 2. Salin hasil APK ke folder publik Web Admin sebelum build hosting:
@@ -75,7 +66,7 @@ Copy-Item "apps/mobile/build/app/outputs/flutter-apk/app-release.apk" -Destinati
 
 ---
 
-## Bagian 4: Login CLI & Deploy ke Firebase Cloud
+## Bagian 4: Login CLI & Deploy ke Firebase Spark Cloud
 
 Jalankan perintah berikut dari root repositori (`d:\KudaPrima\Project Management\daily_attandance`):
 
@@ -86,11 +77,8 @@ Jalankan perintah berikut dari root repositori (`d:\KudaPrima\Project Management
 # 2. Login ke akun Google Firebase Anda (membuka browser)
 pnpm firebase login
 
-# 3. Build seluruh kontrak, Cloud Functions, dan Web Admin (beserta file APK)
-pnpm build
-
-# 4. Deploy Firestore Rules, Storage Rules, Cloud Functions, dan Web Hosting
-pnpm firebase deploy --project kuda-prima-attandance-dev
+# 3. Build dan Deploy khusus layanan Spark (Firestore Rules + Web Hosting)
+pnpm deploy:spark
 ```
 
 Setelah selesai, terminal akan menampilkan URL publik Web Admin Anda:
@@ -114,7 +102,7 @@ Sesuai kebijakan tata kelola **Cross-Approval** PT Kuda Prima (Admin tidak boleh
 . .\scripts\use-dev-env.ps1
 $env:GOOGLE_APPLICATION_CREDENTIALS="D:\kuda-prima-service-account.json"
 $env:CONFIRM_ONLINE_PRODUCTION_SEED="true"
-$env:INITIAL_ADMIN_PASSWORD="PasswordKu4t#2026"
+$env:INITIAL_ADMIN_PASSWORD="PasswordAdminKuat#2026"
 # Opsional: sesuaikan email/nama kedua admin sebelum eksekusi
 $env:ADMIN_1_EMAIL="admin.utama@kudaprima.id"
 $env:ADMIN_1_NAME="Admin Utama PT Kuda Prima"

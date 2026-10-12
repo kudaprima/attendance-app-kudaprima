@@ -1,13 +1,21 @@
 import {
   collection,
+  doc,
   onSnapshot,
   query,
+  runTransaction,
+  serverTimestamp,
   where,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { firestore, functions } from "@/lib/firebase";
+import {
+  auth,
+  firestore,
+  functions,
+  useFirebaseEmulators,
+} from "@/lib/firebase";
 import type {
   ProcessAttendanceApprovalCommand,
   ProcessServiceApprovalCommand,
@@ -156,11 +164,68 @@ export function watchAttendanceApprovals(
 export async function submitAttendanceApproval(
   command: ProcessAttendanceApprovalCommand,
 ) {
-  const callable = httpsCallable<
-    ProcessAttendanceApprovalCommand,
-    { success: boolean }
-  >(functions, "processAttendanceApproval");
-  return callable(command);
+  if (useFirebaseEmulators) {
+    const callable = httpsCallable<
+      ProcessAttendanceApprovalCommand,
+      { success: boolean }
+    >(functions, "processAttendanceApproval");
+    return callable(command);
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Sesi berakhir. Silakan masuk kembali.");
+  }
+
+  await runTransaction(firestore, async (tx) => {
+    const adminRef = doc(firestore, "users", currentUser.uid);
+    const eventRef = doc(firestore, "attendanceEvents", command.eventId);
+    const [adminSnap, eventSnap] = await Promise.all([
+      tx.get(adminRef),
+      tx.get(eventRef),
+    ]);
+
+    const adminData = adminSnap.data();
+    if (!adminSnap.exists() || adminData?.active !== true || adminData?.role !== "admin") {
+      throw new Error("Hanya Admin aktif yang dapat memproses persetujuan.");
+    }
+    if (!eventSnap.exists()) {
+      throw new Error("Data presensi tidak ditemukan.");
+    }
+    const eventData = eventSnap.data();
+    if (eventData?.userId === currentUser.uid) {
+      throw new Error("Cross-approval: Admin tidak dapat menyetujui presensi milik sendiri.");
+    }
+
+    const nowIso = new Date().toISOString();
+    const adminName =
+      typeof adminData.fullName === "string" ? adminData.fullName : "Administrator";
+
+    tx.update(eventRef, {
+      approvalStatus: command.status,
+      approvedBy: currentUser.uid,
+      approvedByName: adminName,
+      approvedAt: nowIso,
+      approvalNotes: command.notes?.trim() || null,
+      updatedAt: nowIso,
+    });
+
+    const auditRef = doc(collection(firestore, "auditLogs"));
+    tx.set(auditRef, {
+      action:
+        command.status === "approved"
+          ? "attendance_approved"
+          : "attendance_rejected",
+      actorUid: currentUser.uid,
+      actorName: adminName,
+      targetEventId: command.eventId,
+      targetUserId: eventData?.userId ?? "",
+      notes: command.notes?.trim() || null,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return { data: { success: true } };
 }
 
 function mapDocToServiceRequest(
@@ -236,11 +301,74 @@ export function watchServiceRequests(
 export async function submitServiceApproval(
   command: ProcessServiceApprovalCommand,
 ) {
-  const callable = httpsCallable<
-    ProcessServiceApprovalCommand,
-    { success: boolean; requestId: string; status: "approved" | "rejected" }
-  >(functions, "processServiceApproval");
-  return callable(command);
+  if (useFirebaseEmulators) {
+    const callable = httpsCallable<
+      ProcessServiceApprovalCommand,
+      { success: boolean; requestId: string; status: "approved" | "rejected" }
+    >(functions, "processServiceApproval");
+    return callable(command);
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Sesi berakhir. Silakan masuk kembali.");
+  }
+
+  await runTransaction(firestore, async (tx) => {
+    const adminRef = doc(firestore, "users", currentUser.uid);
+    const reqRef = doc(firestore, "serviceRequests", command.requestId);
+    const [adminSnap, reqSnap] = await Promise.all([
+      tx.get(adminRef),
+      tx.get(reqRef),
+    ]);
+
+    const adminData = adminSnap.data();
+    if (!adminSnap.exists() || adminData?.active !== true || adminData?.role !== "admin") {
+      throw new Error("Hanya Admin aktif yang dapat memproses persetujuan.");
+    }
+    if (!reqSnap.exists()) {
+      throw new Error("Pengajuan layanan tidak ditemukan.");
+    }
+    const reqData = reqSnap.data();
+    if (reqData?.userId === currentUser.uid) {
+      throw new Error("Cross-approval: Admin tidak dapat menyetujui pengajuan milik sendiri.");
+    }
+
+    const nowIso = new Date().toISOString();
+    const adminName =
+      typeof adminData.fullName === "string" ? adminData.fullName : "Administrator";
+
+    tx.update(reqRef, {
+      status: command.status,
+      approvedBy: currentUser.uid,
+      approvedByName: adminName,
+      approvedAt: nowIso,
+      adminNotes: command.notes?.trim() || null,
+      updatedAt: nowIso,
+    });
+
+    const auditRef = doc(collection(firestore, "auditLogs"));
+    tx.set(auditRef, {
+      action:
+        command.status === "approved"
+          ? "service_request_approved"
+          : "service_request_rejected",
+      actorUid: currentUser.uid,
+      actorName: adminName,
+      targetRequestId: command.requestId,
+      targetUserId: reqData?.userId ?? "",
+      notes: command.notes?.trim() || null,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return {
+    data: {
+      success: true,
+      requestId: command.requestId,
+      status: command.status,
+    },
+  };
 }
 
 export async function updateServiceRequestStatus(

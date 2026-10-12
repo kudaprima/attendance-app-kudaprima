@@ -110,22 +110,27 @@ class _ServicesTabViewState extends State<ServicesTabView> {
     return used;
   }
 
+  String? _toOptionalDataUrl(Object? raw) {
+    if (raw is! String || raw.trim().isEmpty) return null;
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('data:image/')) return trimmed;
+    return 'data:image/jpeg;base64,$trimmed';
+  }
+
   Future<void> _submitServicePayload(Map<String, dynamic> payload) async {
     if (widget.onSubmitOverride != null) {
       await widget.onSubmitOverride!(payload);
       return;
     }
-    if (Firebase.apps.isNotEmpty) {
+    if (Firebase.apps.isNotEmpty && AppConfig.useFirebaseEmulators) {
       try {
         final functions = FirebaseFunctions.instanceFor(
           region: AppConfig.firebaseRegion,
         );
-        if (AppConfig.useFirebaseEmulators) {
-          functions.useFunctionsEmulator(
-            AppConfig.firebaseEmulatorHost,
-            AppConfig.functionsEmulatorPort,
-          );
-        }
+        functions.useFunctionsEmulator(
+          AppConfig.firebaseEmulatorHost,
+          AppConfig.functionsEmulatorPort,
+        );
         final callable = functions.httpsCallable('submitServiceRequest');
         await callable.call<Map<dynamic, dynamic>>(payload);
         return;
@@ -135,6 +140,9 @@ class _ServicesTabViewState extends State<ServicesTabView> {
         // Fallback for isolated widget tests without Functions emulator
       }
     }
+
+    final selfieDataUrl = _toOptionalDataUrl(payload['selfieBase64']);
+    final attachmentDataUrl = _toOptionalDataUrl(payload['attachmentBase64']);
 
     await FirebaseFirestore.instance.collection('serviceRequests').add({
       'userId': widget.profile.uid,
@@ -153,6 +161,8 @@ class _ServicesTabViewState extends State<ServicesTabView> {
       'workingDaysCount': payload['workingDaysCount'],
       'durationMinutes': payload['durationMinutes'],
       'isOver8Hours': payload['isOver8Hours'] ?? false,
+      if (selfieDataUrl != null) 'selfieStoragePath': selfieDataUrl,
+      if (attachmentDataUrl != null) 'attachmentStoragePath': attachmentDataUrl,
       'status': 'pending',
       'createdAt': DateTime.now().toIso8601String(),
     });
@@ -1534,8 +1544,43 @@ class _ServiceRequestDetailBottomSheetState
     _loadMediaUrls();
   }
 
+  Uint8List? _decodeDataUrl(String url) {
+    if (!url.startsWith('data:image/')) return null;
+    final commaIdx = url.indexOf(',');
+    if (commaIdx < 0) return null;
+    try {
+      return base64Decode(url.substring(commaIdx + 1));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildMediaWidget(String url) {
+    final bytes = _decodeDataUrl(url);
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        height: 190,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+    }
+    return Image.network(
+      url,
+      height: 190,
+      width: double.infinity,
+      fit: BoxFit.cover,
+    );
+  }
+
   Future<String?> _resolveStoragePath(String? path) async {
-    if (path == null || path.isEmpty || Firebase.apps.isEmpty) return null;
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('data:image/') ||
+        path.startsWith('http://') ||
+        path.startsWith('https://')) {
+      return path;
+    }
+    if (Firebase.apps.isEmpty) return null;
     try {
       return await FirebaseStorage.instance.ref(path).getDownloadURL();
     } catch (_) {
@@ -1676,12 +1721,7 @@ class _ServiceRequestDetailBottomSheetState
                           const SizedBox(height: 8),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: Image.network(
-                              _selfieUrl!,
-                              height: 190,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                            child: _buildMediaWidget(_selfieUrl!),
                           ),
                         ],
                         if (_attachmentUrl != null) ...[
@@ -1693,12 +1733,7 @@ class _ServiceRequestDetailBottomSheetState
                           const SizedBox(height: 8),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(14),
-                            child: Image.network(
-                              _attachmentUrl!,
-                              height: 190,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                            child: _buildMediaWidget(_attachmentUrl!),
                           ),
                         ],
                       ],
