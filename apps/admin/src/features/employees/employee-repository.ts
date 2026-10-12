@@ -2,6 +2,7 @@ import { deleteApp, initializeApp } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
   getAuth,
+  signInWithEmailAndPassword,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -92,6 +93,7 @@ export async function createEmployee(command: CreateEmployeeCommand) {
     throw makeFunctionError("functions/unauthenticated", "Sesi berakhir.");
   }
 
+  const normalizedEmail = command.email.trim().toLowerCase();
   const secondaryApp = initializeApp(
     auth.app.options,
     `spark-create-emp-${Date.now()}`,
@@ -100,33 +102,61 @@ export async function createEmployee(command: CreateEmployeeCommand) {
 
   let createdUid = "";
   try {
-    const credential = await createUserWithEmailAndPassword(
-      secondaryAuth,
-      command.email.trim().toLowerCase(),
-      command.password,
-    );
-    createdUid = credential.user.uid;
-    await updateProfile(credential.user, {
-      displayName: command.fullName.trim(),
-    });
-    await signOut(secondaryAuth);
-  } catch (err) {
-    const authCode = (err as { code?: string })?.code ?? "";
-    if (authCode === "auth/email-already-in-use") {
-      throw makeFunctionError(
-        "functions/already-exists",
-        "Email sudah terdaftar.",
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        secondaryAuth,
+        normalizedEmail,
+        command.password,
       );
+      createdUid = credential.user.uid;
+      await updateProfile(credential.user, {
+        displayName: command.fullName.trim(),
+      });
+    } catch (err) {
+      const authCode = (err as { code?: string })?.code ?? "";
+      const errMessage = (err as { message?: string })?.message ?? "";
+      if (
+        authCode === "auth/email-already-in-use" ||
+        errMessage.includes("EMAIL_EXISTS")
+      ) {
+        try {
+          const recoveredCred = await signInWithEmailAndPassword(
+            secondaryAuth,
+            normalizedEmail,
+            command.password,
+          );
+          createdUid = recoveredCred.user.uid;
+          await updateProfile(recoveredCred.user, {
+            displayName: command.fullName.trim(),
+          });
+        } catch {
+          throw makeFunctionError(
+            "functions/already-exists",
+            "Email sudah terdaftar.",
+          );
+        }
+      } else {
+        throw makeFunctionError(
+          "functions/invalid-argument",
+          "Periksa email dan kata sandi minimal 8 karakter.",
+        );
+      }
     }
-    throw makeFunctionError(
-      "functions/invalid-argument",
-      "Periksa email dan kata sandi minimal 8 karakter.",
-    );
+    await signOut(secondaryAuth);
   } finally {
     await deleteApp(secondaryApp).catch(() => undefined);
   }
 
   const employeeId = await runTransaction(firestore, async (tx) => {
+    const userRef = doc(firestore, "users", createdUid);
+    const existingUserSnap = await tx.get(userRef);
+    if (existingUserSnap.exists()) {
+      throw makeFunctionError(
+        "functions/already-exists",
+        "Email sudah terdaftar.",
+      );
+    }
+
     const counterRef = doc(firestore, "systemCounters", "employeeId");
     const counterSnap = await tx.get(counterRef);
     const nextSeq = counterSnap.exists()
@@ -144,12 +174,11 @@ export async function createEmployee(command: CreateEmployeeCommand) {
       { merge: true },
     );
 
-    const userRef = doc(firestore, "users", createdUid);
     tx.set(userRef, {
       authUid: createdUid,
       employeeId: formattedId,
       fullName: command.fullName.trim(),
-      email: command.email.trim().toLowerCase(),
+      email: normalizedEmail,
       role: command.role,
       jobTitle: command.jobTitle.trim() || "Teknisi Operasional",
       employmentStatus: command.employmentStatus,

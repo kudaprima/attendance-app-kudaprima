@@ -6,15 +6,25 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function activeUser() {
       return signedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+        && (isBootstrapAdmin() || callerProfile().active == true);
     }
 
     function isManager() {
-      return activeUser()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-        && (!('role' in request.auth.token) || request.auth.token.role == 'admin');
+      return signedIn()
+        && (
+          isBootstrapAdmin()
+          || (
+            callerProfile().active == true
+            && callerProfile().role == 'admin'
+            && (!('role' in request.auth.token) || request.auth.token.role == 'admin')
+          )
+        );
     }
 
     function validOptionalString(value, maximumLength) {
