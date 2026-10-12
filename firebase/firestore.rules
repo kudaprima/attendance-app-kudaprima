@@ -70,11 +70,23 @@ service cloud.firestore {
         && request.resource.data.approvalStatus in ['approved', 'rejected'];
     }
 
+    function isBootstrapAdmin() {
+      return signedIn()
+        && request.auth.token.email in [
+          'admin.utama@kudaprima.id',
+          'admin.operasional@kudaprima.id'
+        ];
+    }
+
     match /users/{userId} {
       allow read: if signedIn()
         && (request.auth.uid == userId || isManager());
       allow update: if validOwnProfileUpdate(userId) || isManager();
-      allow create: if isManager();
+      allow create: if isManager()
+        || (isBootstrapAdmin()
+            && request.auth.uid == userId
+            && request.resource.data.role == 'admin'
+            && request.resource.data.active == true);
       allow delete: if isManager() && request.auth.uid != userId;
     }
 
