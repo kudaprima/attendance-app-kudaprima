@@ -454,5 +454,17 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - Added `pnpm seed:production` script guarded by `CONFIRM_ONLINE_PRODUCTION_SEED=true`.
   - Seeds strictly **2 initial Admin accounts** (`admin.utama@kudaprima.id` & `admin.operasional@kudaprima.id`, both with `role: "admin"`, zero `supervisor` role or jobTitle) for cross-approval compliance, plus `officeLocations/main`.
   - Documented complete step-by-step Firebase Online activation, deployment, and seeding guide in `docs/testing/production-deployment-runbook.md`.
+
+## Spark-Native Cloud Deployment, Online Seeding & Hosted APK Release (2026-10-12 by Antigravity)
+
+- **Spark-Native Architecture (100% Free Rp 0 / No Blaze Prepayment Required)**:
+  - Upgraded `firebase/firestore.rules`, Web Admin (`employee-repository.ts`, `approval-repository.ts`, `use-admin-auth.ts`, `AttendancePhotoView.tsx`), and Flutter Mobile (`firebase_attendance_submission_repository.dart`, `services_tab_view.dart`, `attendance_detail_bottom_sheet.dart`) to operate seamlessly on Firebase Spark Plan when `USE_FIREBASE_EMULATORS=false` while preserving full Cloud Functions & Storage Emulator workflows locally.
+  - Resolved Dart analyzer lint `use_null_aware_elements` (`'selfieStoragePath': ?selfieDataUrl, 'attachmentStoragePath': ?attachmentDataUrl`) in `apps/mobile/lib/src/features/services/presentation/services_tab_view.dart`.
+- **Firebase Online Deployment & Initial 2-Admin Seeding**:
+  - Deployed `firestore.rules`, `firestore.indexes.json`, and Web Admin Portal to `https://kuda-prima-attandance-dev.web.app`.
+  - Executed online seeding (`pnpm seed:production`): created strictly 2 Admin accounts (`KP-000001` `admin.utama@kudaprima.id` & `KP-000002` `admin.operasional@kudaprima.id`, both `role: "admin"`, zero `supervisor` role/jobTitle), `officeLocations/main`, and `systemCounters/employeeId` (`nextSequence: 3`).
+- **Production Android Release APK & Spark-Compatible Hosting Delivery**:
+  - Built 64-bit production Release APK (`flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false`, 27.4 MB).
+  - Hosted APK package on Firebase Hosting CDN and added `PublicApkDownloadPage` (`apps/admin/src/pages/DistributionPage.tsx` & `apps/admin/src/App.tsx`) so scanning the permanent QR Code (`https://kuda-prima-attandance-dev.web.app/download/kudaprima-attendance.apk`) or clicking **Unduh APK** automatically streams and saves `kudaprima-attendance.apk` (`application/vnd.android.package-archive`).
 - **Next Bounded Action**:
-  - Follow `docs/testing/production-deployment-runbook.md` when ready to activate Firebase Online, deploy Cloud Functions/Rules/Hosting, and execute `pnpm seed:production`.
+  - System is live on `https://kuda-prima-attandance-dev.web.app` with 2 seeded Admin accounts and downloadable Release APK via QR Code.

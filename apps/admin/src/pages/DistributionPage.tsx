@@ -1,15 +1,17 @@
 import {
   Check,
+  CheckCircle2,
   Copy,
   Download,
   FileCheck,
   Link2,
+  Loader2,
   Printer,
   QrCode,
   RotateCcw,
   Smartphone,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,8 @@ import { Label } from "@/components/ui/label";
 import { generateQrCodeMatrix } from "@/lib/qr-code";
 
 const QUIET_ZONE_MODULES = 4;
+const HOSTED_APK_PACKAGE_PATH = "/download/kudaprima-attendance.zip";
+const APK_DOWNLOAD_FILENAME = "kudaprima-attendance.apk";
 
 function getDefaultDownloadUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
@@ -34,10 +38,173 @@ function getDefaultDownloadUrl(): string {
   return "https://kuda-prima-attandance-dev.web.app/download/kudaprima-attendance.apk";
 }
 
+async function downloadHostedApkFile(): Promise<void> {
+  const response = await fetch(HOSTED_APK_PACKAGE_PATH);
+  if (!response.ok) {
+    throw new Error(`Gagal mengunduh paket APK (HTTP ${response.status}).`);
+  }
+  const buffer = await response.arrayBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.android.package-archive",
+  });
+  const blobUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = blobUrl;
+  anchor.download = APK_DOWNLOAD_FILENAME;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+}
+
+function getDownloadStatusText(
+  downloading: boolean,
+  completed: boolean,
+  error: string | null,
+): string {
+  if (error) {
+    return error;
+  }
+  if (downloading) {
+    return "Mengunduh paket instalasi kudaprima-attendance.apk (27,4 MB)... Mohon tunggu beberapa detik.";
+  }
+  if (completed) {
+    return "File kudaprima-attendance.apk berhasil disiapkan. Silakan buka file dari notifikasi browser Android Anda untuk mulai memasang.";
+  }
+  return "Menyiapkan unduhan aplikasi resmi PT Kuda Prima...";
+}
+
+function getPublicDownloadButtonLabel(
+  downloading: boolean,
+  completed: boolean,
+): string {
+  if (downloading) {
+    return "Sedang Mengunduh APK (27,4 MB)...";
+  }
+  if (completed) {
+    return "Unduh Ulang kudaprima-attendance.apk";
+  }
+  return "Unduh kudaprima-attendance.apk (27,4 MB)";
+}
+
+export function PublicApkDownloadPage() {
+  const [downloading, setDownloading] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleStartDownload = useCallback(async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      await downloadHostedApkFile();
+      setCompleted(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mengunduh file APK. Silakan tekan tombol di bawah untuk mencoba lagi.",
+      );
+    } finally {
+      setDownloading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (import.meta.env.MODE === "test") {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void handleStartDownload();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [handleStartDownload]);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4 dark:bg-slate-950">
+      <Card className="w-full max-w-lg border-2 border-primary/20 shadow-lg">
+        <CardHeader className="text-center pb-3">
+          <div className="mx-auto mb-3 flex justify-center">
+            <BrandLogo className="w-36" />
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mb-2">
+            <Badge variant="secondary">Android 10+ (ARM64)</Badge>
+            <Badge
+              variant="outline"
+              className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+            >
+              Rilis Resmi v1.0.0
+            </Badge>
+          </div>
+          <CardTitle className="text-xl">
+            Unduh Aplikasi Presensi PT Kuda Prima
+          </CardTitle>
+          <CardDescription>
+            Paket instalasi Android resmi untuk karyawan & teknisi operasional
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <output
+            aria-live="polite"
+            className="block rounded-xl border bg-muted/40 p-4 text-center text-sm"
+          >
+            <div className="mb-2 flex justify-center">
+              {downloading ? (
+                <Loader2 className="size-6 animate-spin text-primary" />
+              ) : (
+                <CheckCircle2 className="size-6 text-emerald-600" />
+              )}
+            </div>
+            <p className="font-medium text-foreground">
+              {getDownloadStatusText(downloading, completed, error)}
+            </p>
+          </output>
+
+          <Button
+            type="button"
+            className="w-full gap-2 h-11 text-base"
+            disabled={downloading}
+            onClick={() => {
+              void handleStartDownload();
+            }}
+          >
+            {downloading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {getPublicDownloadButtonLabel(downloading, completed)}
+          </Button>
+
+          <div className="space-y-2.5 rounded-xl border bg-background p-4 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">
+              Panduan Singkat Pemasangan:
+            </p>
+            <p>
+              1. Jika muncul peringatan Chrome{" "}
+              <em>&quot;File mungkin berbahaya&quot;</em>, pilih{" "}
+              <strong>Tetap Download</strong>.
+            </p>
+            <p>
+              2. Buka file <strong>kudaprima-attendance.apk</strong> yang telah
+              diunduh, lalu izinkan opsi{" "}
+              <strong>&quot;Izinkan dari sumber ini&quot;</strong>.
+            </p>
+            <p>
+              3. Tekan <strong>Install / Pasang</strong> dan masuk menggunakan
+              akun email kerja PT Kuda Prima Anda.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
+
 export function DistributionPage() {
   const defaultUrl = useMemo(() => getDefaultDownloadUrl(), []);
   const [targetUrl, setTargetUrl] = useState<string>(defaultUrl);
   const [copied, setCopied] = useState(false);
+  const [downloadingApk, setDownloadingApk] = useState(false);
 
   const effectiveUrl = targetUrl.trim() || defaultUrl;
   const qrMatrix = useMemo(
@@ -67,6 +234,19 @@ export function DistributionPage() {
     setTargetUrl(defaultUrl);
   };
 
+  const handleDirectDownload = async () => {
+    if (effectiveUrl !== defaultUrl) {
+      window.open(effectiveUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setDownloadingApk(true);
+    try {
+      await downloadHostedApkFile();
+    } finally {
+      setDownloadingApk(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between print:hidden">
@@ -89,11 +269,20 @@ export function DistributionPage() {
             <Printer className="size-4" />
             Cetak Poster QR
           </Button>
-          <Button asChild className="gap-2">
-            <a href={effectiveUrl} download="kudaprima-attendance.apk">
+          <Button
+            type="button"
+            className="gap-2"
+            disabled={downloadingApk}
+            onClick={() => {
+              void handleDirectDownload();
+            }}
+          >
+            {downloadingApk ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
               <Download className="size-4" />
-              Unduh APK
-            </a>
+            )}
+            {downloadingApk ? "Mengunduh APK..." : "Unduh APK"}
           </Button>
         </div>
       </div>

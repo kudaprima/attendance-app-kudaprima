@@ -151,24 +151,21 @@ class FirebaseAttendanceSubmissionRepository
         .where('userId', isEqualTo: uid)
         .get();
 
-    final todayEvents = existingSnap.docs
-        .map((d) => d.data())
-        .where((data) {
-          final docWibDate = data['wibDate'] as String?;
-          if (docWibDate != null) return docWibDate == wibDate;
-          final cap = data['capturedAt'] as String?;
-          if (cap == null) return false;
-          final parsed = DateTime.tryParse(cap)?.toUtc().add(
-            const Duration(hours: 7),
-          );
-          if (parsed == null) return false;
-          final dateStr =
-              '${parsed.year.toString().padLeft(4, '0')}-'
-              '${parsed.month.toString().padLeft(2, '0')}-'
-              '${parsed.day.toString().padLeft(2, '0')}';
-          return dateStr == wibDate;
-        })
-        .toList();
+    final todayEvents = existingSnap.docs.map((d) => d.data()).where((data) {
+      final docWibDate = data['wibDate'] as String?;
+      if (docWibDate != null) return docWibDate == wibDate;
+      final cap = data['capturedAt'] as String?;
+      if (cap == null) return false;
+      final parsed = DateTime.tryParse(cap)
+          ?.toUtc()
+          .add(const Duration(hours: 7));
+      if (parsed == null) return false;
+      final dateStr =
+          '${parsed.year.toString().padLeft(4, '0')}-'
+          '${parsed.month.toString().padLeft(2, '0')}-'
+          '${parsed.day.toString().padLeft(2, '0')}';
+      return dateStr == wibDate;
+    }).toList();
 
     for (final existing in todayEvents) {
       if (existing['idempotencyKey'] == command.idempotencyKey) {
@@ -180,13 +177,19 @@ class FirebaseAttendanceSubmissionRepository
     final hasCheckOut = todayEvents.any((e) => e['eventType'] == 'check_out');
 
     if (command.eventType == 'check_in' && hasCheckIn) {
-      throw StateError('Urutan presensi tidak valid: Absen Masuk sudah tercatat hari ini.');
+      throw StateError(
+        'Urutan presensi tidak valid: Absen Masuk sudah tercatat hari ini.',
+      );
     }
     if (command.eventType == 'check_out' && !hasCheckIn) {
-      throw StateError('Urutan presensi tidak valid: Lakukan Absen Masuk terlebih dahulu.');
+      throw StateError(
+        'Urutan presensi tidak valid: Lakukan Absen Masuk terlebih dahulu.',
+      );
     }
     if (command.eventType == 'check_out' && hasCheckOut) {
-      throw StateError('Urutan presensi tidak valid: Absen Pulang sudah tercatat hari ini.');
+      throw StateError(
+        'Urutan presensi tidak valid: Absen Pulang sudah tercatat hari ini.',
+      );
     }
 
     final eventRef = firestore.collection('attendanceEvents').doc();

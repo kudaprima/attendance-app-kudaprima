@@ -161,8 +161,8 @@ class _ServicesTabViewState extends State<ServicesTabView> {
       'workingDaysCount': payload['workingDaysCount'],
       'durationMinutes': payload['durationMinutes'],
       'isOver8Hours': payload['isOver8Hours'] ?? false,
-      if (selfieDataUrl != null) 'selfieStoragePath': selfieDataUrl,
-      if (attachmentDataUrl != null) 'attachmentStoragePath': attachmentDataUrl,
+      'selfieStoragePath': ?selfieDataUrl,
+      'attachmentStoragePath': ?attachmentDataUrl,
       'status': 'pending',
       'createdAt': DateTime.now().toIso8601String(),
     });

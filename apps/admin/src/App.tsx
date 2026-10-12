@@ -51,7 +51,10 @@ import {
 import { useCurrentAdminAuth, type UserRole } from "@/hooks/use-admin-auth";
 import { useAttendanceLiveFeed } from "@/hooks/use-attendance-live";
 import { ApprovalsPage } from "@/pages/ApprovalsPage";
-import { DistributionPage } from "@/pages/DistributionPage";
+import {
+  DistributionPage,
+  PublicApkDownloadPage,
+} from "@/pages/DistributionPage";
 import { EmployeesPage } from "@/pages/EmployeesPage";
 import { ReportsPage } from "@/pages/ReportsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -471,7 +474,18 @@ interface AppProps {
   readonly bypassAuth?: boolean;
 }
 
+function isPublicApkDownloadRoute(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.location.pathname.startsWith("/download/");
+}
+
 export default function App({ bypassAuth = false }: Readonly<AppProps>) {
+  if (isPublicApkDownloadRoute()) {
+    return <PublicApkDownloadPage />;
+  }
+
   if (bypassAuth || import.meta.env.MODE === "test") {
     return <AdminDashboard jobTitle="Administrator Sistem" role="admin" />;
   }
