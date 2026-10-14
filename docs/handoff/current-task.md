@@ -485,5 +485,10 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
     - Verified all 97 monorepo unit tests (`pnpm check`: 28 contracts, 30 functions, 39 admin) passed 100%.
     - Verified Flutter mobile app: `dart format` clean, `flutter analyze` 0 issues, and all 51 mobile widget/unit tests passed.
     - Built production Release APK (27.4 MB, 28,692,063 bytes) and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+- **Editable Employment Start Date in Web Admin User Management (2026-10-14 by Antigravity)**:
+  - Added optional `employmentStartDate: calendarDateSchema.optional()` to `updateEmployeeCommandSchema` in `packages/contracts/src/index.ts`.
+  - Updated `employee-repository.ts` and `employee-management-service.ts` to persist `employmentStartDate` during employee updates.
+  - Upgraded `EmployeesPage.tsx` edit modal so Admin can edit `Tanggal mulai bekerja` for any existing user (e.g., retroactively adjusting hire dates for employees who self-registered via Google), ensuring accurate tenure and annual leave quota calculations.
+  - Verified with 97/97 tests passing in `pnpm check` and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
 - **Next Bounded Action**:
-  - Live production testing with updated APK. User can install via Web Admin QR Code or direct APK download.
+  - Web Admin is updated in production. Admin can refresh Web Admin portal to edit Tanggal Mulai Bekerja on any user.

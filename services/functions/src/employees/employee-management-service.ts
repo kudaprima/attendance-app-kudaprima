@@ -295,6 +295,9 @@ async function manageEmployeeLocked(
           employmentStatus: edit.employmentStatus,
           role: edit.role,
           jobTitle: edit.jobTitle,
+          ...(edit.employmentStartDate
+            ? { employmentStartDate: edit.employmentStartDate }
+            : {}),
           revision: (profile!.revision ?? 0) + 1,
           updatedBy: actorUid,
           updatedAt: FieldValue.serverTimestamp(),

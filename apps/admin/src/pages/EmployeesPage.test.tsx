@@ -132,18 +132,21 @@ describe("employee management UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tambah Karyawan" }));
     expect(screen.getByLabelText("Kata sandi")).toHaveValue("");
   });
-  it("edits permitted fields and omits a blank password and employment start date", async () => {
+  it("edits permitted fields including employment start date and omits a blank password", async () => {
     render(<EmployeesPage />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Karyawan Uji" }));
     expect(
-      screen.queryByLabelText("Tanggal mulai bekerja"),
-    ).not.toBeInTheDocument();
+      screen.getByLabelText("Tanggal mulai bekerja"),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Kata sandi baru (opsional)")).toHaveValue("");
     expect(screen.getByLabelText("Status akun")).toHaveClass(
       "text-accent-foreground",
     );
     fireEvent.change(screen.getByLabelText("Nama lengkap"), {
       target: { value: "Nama Baru" },
+    });
+    fireEvent.change(screen.getByLabelText("Tanggal mulai bekerja"), {
+      target: { value: "2024-01-15" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     await waitFor(() => expect(mocks.update).toHaveBeenCalled());
@@ -153,9 +156,9 @@ describe("employee management UI", () => {
       fullName: "Nama Baru",
       active: false,
       expectedRevision: 4,
+      employmentStartDate: "2024-01-15",
     });
     expect(data).not.toHaveProperty("password");
-    expect(data).not.toHaveProperty("employmentStartDate");
   });
   it("opens role choices below the trigger and saves the selected role", async () => {
     render(<EmployeesPage />);

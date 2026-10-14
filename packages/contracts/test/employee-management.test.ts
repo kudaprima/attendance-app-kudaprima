@@ -81,7 +81,7 @@ describe("employee management commands", () => {
       }).success,
     ).toBe(false);
   });
-  it("allows keeping a password and forbids start date changes on edit", () => {
+  it("allows keeping or updating a password and allows start date changes on edit", () => {
     const {
       password: _password,
       employmentStartDate: _start,
@@ -90,18 +90,24 @@ describe("employee management commands", () => {
     const edit = { ...editableFields, uid: "employee", expectedRevision: 0 };
     expect(updateEmployeeCommandSchema.safeParse(edit).success).toBe(true);
     expect(
+      updateEmployeeCommandSchema.safeParse({
+        ...edit,
+        employmentStartDate: "2024-01-15",
+      }).success,
+    ).toBe(true);
+    expect(
+      updateEmployeeCommandSchema.safeParse({
+        ...edit,
+        employmentStartDate: "2026-02-30",
+      }).success,
+    ).toBe(false);
+    expect(
       updateEmployeeCommandSchema.safeParse({ ...edit, password: "" }).success,
     ).toBe(false);
     expect(
       updateEmployeeCommandSchema.safeParse({
         ...edit,
         role: "supervisor",
-      }).success,
-    ).toBe(false);
-    expect(
-      updateEmployeeCommandSchema.safeParse({
-        ...edit,
-        employmentStartDate: "2026-01-01",
       }).success,
     ).toBe(false);
   });

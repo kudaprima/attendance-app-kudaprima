@@ -130,6 +130,7 @@ function EmployeeForm({
           uid: employee.uid,
           expectedRevision: employee.revision,
           ...(password ? { password } : {}),
+          ...(startDate ? { employmentStartDate: startDate } : {}),
         })
       : createEmployeeCommandSchema.safeParse({
           ...fields,
@@ -352,18 +353,21 @@ function EmployeeForm({
               </label>
             )}
             {isSelf && <p className="text-sm text-muted-foreground md:col-span-2">Hak Akses dan status akun sendiri tidak dapat diubah.</p>}
-            {!employee && (
-              <div className="space-y-2">
-                <Label htmlFor="employee-start">Tanggal mulai bekerja</Label>
-                <Input
-                  id="employee-start"
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="employee-start">Tanggal mulai bekerja</Label>
+              <Input
+                id="employee-start"
+                type="date"
+                required
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              {employee && (
+                <p className="text-xs text-muted-foreground">
+                  Tanggal mulai bekerja menentukan kelayakan kuota cuti tahunan (minimal 1 tahun masa kerja).
+                </p>
+              )}
+            </div>
           </fieldset>
           {error && (
             <p role="alert" className="text-sm text-destructive">

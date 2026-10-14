@@ -88,6 +88,7 @@ export const updateEmployeeCommandSchema = z
       .regex(/^[^/]+$/),
     expectedRevision: z.number().int().nonnegative(),
     password: employeePasswordSchema.optional(),
+    employmentStartDate: calendarDateSchema.optional(),
   })
   .strict();
 export const deleteEmployeeCommandSchema = z

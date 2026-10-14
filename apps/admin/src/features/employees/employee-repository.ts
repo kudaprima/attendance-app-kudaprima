@@ -257,6 +257,9 @@ export async function updateEmployee(command: UpdateEmployeeCommand) {
       jobTitle: command.jobTitle.trim(),
       employmentStatus: command.employmentStatus,
       active: command.active,
+      ...(command.employmentStartDate
+        ? { employmentStartDate: command.employmentStartDate }
+        : {}),
       revision: currentRevision + 1,
       updatedAt: serverTimestamp(),
       updatedBy: adminUser.uid,
