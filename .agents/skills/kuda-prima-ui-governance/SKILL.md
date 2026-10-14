@@ -25,6 +25,20 @@ branding assets, Flutter themes, or shadcn/Tailwind styling.
 7. When a UI decision or workflow changes, update its ADR/docs, this skill, affected repository
    instructions, and testing runbook in the same change. Do not churn unrelated governance
    files when their behavior remains accurate; state not applicable in the PR instead.
+8. Enforce modern TypeScript, React 19, DOM, and accessibility standards:
+   - **Component Props Readonly (SonarQube `typescript:S6759`)**: Every React component props
+     interface must declare all properties as `readonly`, and the component signature must wrap
+     the props parameter in `Readonly<Props>` (e.g. `function Component({ prop }: Readonly<ComponentProps>)`).
+   - **No Deprecated React Types**: Do not use deprecated types such as `FormEvent` (deprecated in
+     React 19 / `@types/react` v19). Use `SyntheticEvent<HTMLFormElement>` or specific event handlers.
+   - **Semantic Live Status & Output (SonarQube `typescript:S6844`)**: Do not use `<div role="status">`
+     or `<p role="status">`. Use the native semantic `<output>` element (with `className="block ..."`
+     where needed) for live loading states and notices to guarantee cross-device accessibility.
+   - **Modern DOM API**: Use `childNode.remove()` instead of `parentNode.removeChild(childNode)`
+     (e.g., when cleaning up programmatic file download anchors).
+   - **Tailwind CSS v4 IDE Compatibility**: Preserve `"css.lint.unknownAtRules": "ignore"` in
+     `.vscode/settings.json` so native Tailwind CSS v4 at-rules (`@custom-variant`, `@theme`) are
+     linted without false-positive IDE warnings.
 
 Never trade legibility, contrast, touch-target size, error clarity, or platform accessibility
 for literal palette percentages.

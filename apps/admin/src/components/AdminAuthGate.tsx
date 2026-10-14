@@ -6,10 +6,10 @@ import { AccessDeniedPage } from "@/pages/AccessDeniedPage";
 import { LoginPage } from "@/pages/LoginPage";
 
 interface AdminAuthGateProps {
-  children: ReactNode;
+  readonly children: ReactNode;
 }
 
-export function AdminAuthGate({ children }: AdminAuthGateProps) {
+export function AdminAuthGate({ children }: Readonly<AdminAuthGateProps>) {
   const authState = useAdminAuth();
   const { user, role, isActive, loading, error, login, signOut } = authState;
 

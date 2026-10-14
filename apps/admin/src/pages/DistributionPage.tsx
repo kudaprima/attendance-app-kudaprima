@@ -53,7 +53,7 @@ async function downloadHostedApkFile(): Promise<void> {
   anchor.download = APK_DOWNLOAD_FILENAME;
   document.body.appendChild(anchor);
   anchor.click();
-  document.body.removeChild(anchor);
+  anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
 }
 

@@ -184,7 +184,7 @@ function triggerFileDownload(
   link.setAttribute("download", filename);
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  link.remove();
 
   if (hasCreateObjectUrl && typeof URL.revokeObjectURL === "function") {
     window.setTimeout(() => URL.revokeObjectURL(href), 1_000);

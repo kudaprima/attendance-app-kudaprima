@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { Eye, EyeOff, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import {
   createEmployeeCommandSchema,
@@ -68,15 +68,17 @@ const roleLabels: Record<UserRole, string> = {
   technician: "Teknisi",
 };
 
+interface EmployeeFormProps {
+  readonly employee: EmployeeEntry | null;
+  readonly onClose: () => void;
+  readonly onSaved: (message: string) => void;
+}
+
 function EmployeeForm({
   employee,
   onClose,
   onSaved,
-}: {
-  employee: EmployeeEntry | null;
-  onClose: () => void;
-  onSaved: (message: string) => void;
-}) {
+}: Readonly<EmployeeFormProps>) {
   const { user } = useCurrentAdminAuth();
   const isSelf = employee?.uid === user?.uid;
   const [jobTitle, setJobTitle] = useState(employee?.jobTitle ?? "");
@@ -99,7 +101,7 @@ function EmployeeForm({
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  async function submit(event: FormEvent) {
+  async function submit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     const values = JSON.stringify({
@@ -393,15 +395,17 @@ function EmployeeForm({
   );
 }
 
+interface DeleteEmployeeDialogProps {
+  readonly employee: EmployeeEntry;
+  readonly onClose: () => void;
+  readonly onDeleted: () => void;
+}
+
 function DeleteEmployeeDialog({
   employee,
   onClose,
   onDeleted,
-}: {
-  employee: EmployeeEntry;
-  onClose: () => void;
-  onDeleted: () => void;
-}) {
+}: Readonly<DeleteEmployeeDialogProps>) {
   const [requestId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
@@ -526,9 +530,9 @@ export function EmployeesPage() {
         )}
       </div>
       {notice && (
-        <p role="status" className="rounded-lg border bg-muted p-3 text-sm">
+        <output className="block rounded-lg border bg-muted p-3 text-sm">
           {notice}
-        </p>
+        </output>
       )}
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -551,7 +555,7 @@ export function EmployeesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p role="status">Memuat karyawan...</p>
+            <output className="block text-muted-foreground">Memuat karyawan...</output>
           ) : loadError ? (
             <div role="alert" className="space-y-3">
               <p>

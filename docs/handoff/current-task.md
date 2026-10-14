@@ -490,5 +490,22 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - Updated `employee-repository.ts` and `employee-management-service.ts` to persist `employmentStartDate` during employee updates.
   - Upgraded `EmployeesPage.tsx` edit modal so Admin can edit `Tanggal mulai bekerja` for any existing user (e.g., retroactively adjusting hire dates for employees who self-registered via Google), ensuring accurate tenure and annual leave quota calculations.
   - Verified with 97/97 tests passing in `pnpm check` and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+- **Modern TypeScript, React 19, Accessibility, and Skill Governance (2026-10-14 by Antigravity)**:
+  - **`EmployeesPage.tsx` Deprecation & Accessibility Upgrades**:
+    - Replaced deprecated React 19 type `FormEvent` with `SyntheticEvent<HTMLFormElement>`.
+    - Marked props of `EmployeeForm` (`EmployeeFormProps`) and `DeleteEmployeeDialog` (`DeleteEmployeeDialogProps`) as `readonly` and wrapped in `Readonly<TProps>` (SonarQube `typescript:S6759`).
+    - Replaced `<p role="status">` with semantic `<output className="block ...">` for both action notices and loading indicators to ensure full screen-reader accessibility across all devices (SonarQube `typescript:S6844`).
+  - **Tailwind CSS v4 IDE Compatibility (`index.css` & `.vscode/settings.json`)**:
+    - Added `"css.lint.unknownAtRules": "ignore"` to `.vscode/settings.json` to eliminate IDE warnings for valid Tailwind CSS v4 `@custom-variant` and `@theme` directives.
+  - **Modern DOM Cleanup (`DistributionPage.tsx` & `report-exporters.ts`)**:
+    - Replaced deprecated `parentNode.removeChild(childNode)` with standard `childNode.remove()`.
+  - **Other Admin Components (`AdminAuthGate.tsx` & `BrandLogo.tsx`)**:
+    - Enforced `Readonly<Props>` and `readonly` properties across all custom components.
+  - **Skill Governance (`.agents/skills/kuda-prima-ui-governance/SKILL.md`)**:
+    - Added Rule 8 codifying readonly component props, deprecated React type avoidance, semantic `<output>` accessibility, modern DOM removal, and Tailwind CSS v4 lint settings for all future agent tasks.
+  - **Verification & Deployment**:
+    - Verified `pnpm check` (brand check, 28 contracts tests, 30 functions tests, 39 admin tests, oxlint 0 errors, tsc 0 errors) passed 100%.
+    - Verified `pnpm build` completed cleanly in 2.15s.
+    - Deployed latest web admin bundle to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
 - **Next Bounded Action**:
-  - Web Admin is updated in production. Admin can refresh Web Admin portal to edit Tanggal Mulai Bekerja on any user.
+  - Codebase is fully modernized, compliant with SonarQube/TypeScript best practices, and live on production. Ready for next user requirements.

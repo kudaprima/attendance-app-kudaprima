@@ -69,5 +69,6 @@
     "editor.defaultFormatter": "Dart-Code.dart-code",
     "editor.formatOnSave": true,
     "editor.formatOnType": true
-  }
+  },
+  "css.lint.unknownAtRules": "ignore"
 }
