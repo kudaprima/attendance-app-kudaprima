@@ -1,9 +1,25 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+
+Future<Uint8List> _optimizePhotoBytes(Uint8List rawBytes) async {
+  if (rawBytes.lengthInBytes <= 60 * 1024) return rawBytes;
+  try {
+    final codec = await ui.instantiateImageCodec(rawBytes, targetWidth: 400);
+    final frame = await codec.getNextFrame();
+    final byteData = await frame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    if (byteData != null) {
+      return byteData.buffer.asUint8List();
+    }
+  } catch (_) {}
+  return rawBytes;
+}
 
 class CameraSelfieDialog extends StatefulWidget {
   const CameraSelfieDialog({this.cameraLoader, super.key});
@@ -50,7 +66,7 @@ class _CameraSelfieDialogState extends State<CameraSelfieDialog>
       );
       controller = CameraController(
         camera,
-        ResolutionPreset.medium,
+        ResolutionPreset.low,
         enableAudio: false,
       );
       await controller.initialize();
@@ -196,9 +212,16 @@ class _CameraSelfieDialogState extends State<CameraSelfieDialog>
                             Expanded(
                               child: FilledButton(
                                 key: const Key('confirm-photo-button'),
-                                onPressed: () =>
-                                    Navigator.of(context)
-                                        .pop(base64Encode(_photo!)),
+                                onPressed: () async {
+                                  final bytes = _photo;
+                                  if (bytes == null) return;
+                                  final optimized = await _optimizePhotoBytes(
+                                    bytes,
+                                  );
+                                  if (!context.mounted) return;
+                                  Navigator.of(context)
+                                      .pop(base64Encode(optimized));
+                                },
                                 child: const Text('Gunakan Foto'),
                               ),
                             ),

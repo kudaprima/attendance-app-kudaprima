@@ -74,6 +74,55 @@ final class FirebaseAuthRepository implements AuthRepository {
       return (role: null, fullName: null);
     }
 
+    // Check if an employee document was already created by Admin with this email
+    Map<String, dynamic>? preRegisteredData;
+    String? preRegisteredDocId;
+    try {
+      final emailSnap = await firestore
+          .collection('users')
+          .where('email', isEqualTo: email.toLowerCase())
+          .limit(1)
+          .get();
+      if (emailSnap.docs.isNotEmpty) {
+        preRegisteredData = emailSnap.docs.first.data();
+        preRegisteredDocId = emailSnap.docs.first.id;
+      }
+    } catch (_) {
+      // Ignore query error, will fallback to new auto-provisioning
+    }
+
+    if (preRegisteredData != null) {
+      // Admin has pre-registered this email! Link to user.uid and preserve active status.
+      final active = preRegisteredData['active'] == true;
+      final roleStr = preRegisteredData['role'] as String? ?? 'technician';
+      final role = UserRole.fromClaim(roleStr) ?? UserRole.technician;
+      final fullName =
+          (preRegisteredData['fullName'] as String?)?.trim() ??
+          (user.displayName?.trim().isNotEmpty == true
+              ? user.displayName!.trim()
+              : email.split('@').first);
+
+      await userRef.set({
+        ...preRegisteredData,
+        'authUid': user.uid,
+        'email': email.toLowerCase(),
+        'fullName': fullName,
+        'active': active,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      }, SetOptions(merge: true));
+
+      if (preRegisteredDocId != null && preRegisteredDocId != user.uid) {
+        try {
+          await firestore.collection('users').doc(preRegisteredDocId).delete();
+        } catch (_) {}
+      }
+
+      return (role: role, fullName: fullName);
+    }
+
+    // Email not pre-registered by admin. User is self-registering via Google.
+    // Provision with active: false (Menunggu Persetujuan Admin).
     var provisionedName = (user.displayName?.trim().isNotEmpty == true)
         ? user.displayName!.trim()
         : email.split('@').first;
@@ -115,7 +164,7 @@ final class FirebaseAuthRepository implements AuthRepository {
         'jobTitle': 'Teknisi Operasional',
         'employmentStatus': 'permanent',
         'employmentStartDate': startDate,
-        'active': true,
+        'active': false, // Self-registered accounts require Admin approval!
         'revision': 1,
         'phone': null,
         'birthDate': null,

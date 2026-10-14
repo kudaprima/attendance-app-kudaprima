@@ -110,12 +110,9 @@ class FirebaseAttendanceSubmissionRepository
         ? 'office'
         : 'field';
 
-    if (resolvedLocationType == 'field' &&
-        (command.note == null || command.note!.trim().isEmpty)) {
-      throw StateError(
-        'Catatan wajib diisi ketika melakukan presensi di luar kantor (lapangan).',
-      );
-    }
+    final resolvedNote = (command.note == null || command.note!.trim().isEmpty)
+        ? (resolvedLocationType == 'field' ? 'Presensi lapangan' : null)
+        : command.note!.trim();
 
     final capturedUtc = command.capturedAt.toUtc();
     final wibTime = capturedUtc.add(const Duration(hours: 7));
@@ -222,25 +219,27 @@ class FirebaseAttendanceSubmissionRepository
       'idempotencyKey': command.idempotencyKey,
       'photoUrl': photoDataUrl,
       'photoStoragePath': photoDataUrl,
-      if (command.note != null && command.note!.trim().isNotEmpty)
-        'note': command.note!.trim(),
+      'note': ?resolvedNote,
       'message': message,
       'createdAt': FieldValue.serverTimestamp(),
     };
 
-    final batch = firestore.batch();
-    batch.set(eventRef, eventPayload);
-    final auditRef = firestore.collection('auditLogs').doc();
-    batch.set(auditRef, {
-      'action': 'attendance_${command.eventType}',
-      'actorUid': uid,
-      'eventId': eventId,
-      'status': statusStr,
-      'locationType': resolvedLocationType,
-      'requiresApproval': requiresApproval,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    await batch.commit();
+    await eventRef.set(eventPayload);
+
+    try {
+      final auditRef = firestore.collection('auditLogs').doc();
+      await auditRef.set({
+        'action': 'attendance_${command.eventType}',
+        'actorUid': uid,
+        'eventId': eventId,
+        'status': statusStr,
+        'locationType': resolvedLocationType,
+        'requiresApproval': requiresApproval,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Non-blocking audit log
+    }
 
     return AttendanceSubmissionResult.fromJson(eventPayload);
   }

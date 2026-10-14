@@ -471,5 +471,19 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - Supports all official corporate and partner domains (`@kudaprima.com`, `@kudaprima.co.id`, `@sadikun.com`, `@mutiaraepc.com`, dsb.) and personal emails while strictly enforcing standard email syntax.
   - Updated Web Admin form helpers and error handling in `EmployeesPage.tsx`, `LoginPage.tsx`, and `employee-repository.ts`.
   - Re-deployed updated Web Admin Portal and Release APK to `https://kuda-prima-attandance-dev.web.app`.
+- **Hybrid Google Sign-In Approval & Attendance Submission Hardening (2026-10-14 by Antigravity)**:
+  - **Hybrid Google Sign-In Workflow**:
+    - Pre-registered accounts: When Admin has already added an employee email in Web Admin, Google Sign-in links directly and preserves active status (`active: true`), giving instant access without waiting.
+    - Self-registered accounts: When a user signs in with a Google account not yet registered by Admin, the profile is provisioned with `active: false` (Menunggu Persetujuan Admin).
+    - Mobile UI: `EmployeeProfileGate` displays informative pending approval view with employee email, status refresh button (`Periksa Status Akun`), and sign-out option.
+    - Firestore Security Rules: Updated `match /users/{userId}` to allow email lookup for pre-registration and allow `request.resource.data.active in [true, false]`.
+  - **Attendance Submission Hardening & Photo Compression**:
+    - `CameraSelfieDialog`: Configured `ResolutionPreset.low` (240p) and added `_optimizePhotoBytes` using `dart:ui.instantiateImageCodec(rawBytes, targetWidth: 400)`, guaranteeing selfie JPEG size is ~25-40 KB (far below Firestore's 1 MB limit) and uploads in milliseconds.
+    - `_submitAttendanceSpark`: Added fallback for empty field note to `'Presensi lapangan'`, separated `eventRef.set(eventPayload)` from `auditLogs` to ensure audit logging never blocks core attendance writes, and used null-aware element `'note': ?resolvedNote`.
+    - `attendance_home_page.dart`: Unmasked exception handling to surface genuine errors from `FirebaseException` and `StateError` to the user rather than generic connection errors.
+  - **Verification & Deployment**:
+    - Verified all 97 monorepo unit tests (`pnpm check`: 28 contracts, 30 functions, 39 admin) passed 100%.
+    - Verified Flutter mobile app: `dart format` clean, `flutter analyze` 0 issues, and all 51 mobile widget/unit tests passed.
+    - Built production Release APK (27.4 MB, 28,692,063 bytes) and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
 - **Next Bounded Action**:
-  - System is live with full corporate email domain support and auto-registration on `https://kuda-prima-attandance-dev.web.app`.
+  - Live production testing with updated APK. User can install via Web Admin QR Code or direct APK download.

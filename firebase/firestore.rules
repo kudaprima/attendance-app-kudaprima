@@ -90,7 +90,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn()
-        && (request.auth.uid == userId || isManager());
+        && (request.auth.uid == userId || isManager() || (resource != null && resource.data.email == request.auth.token.email));
       allow update: if validOwnProfileUpdate(userId) || isManager();
       allow create: if isManager()
         || (isBootstrapAdmin()
@@ -103,7 +103,7 @@ service cloud.firestore {
             && request.resource.data.authUid == userId
             && request.resource.data.createdBy == userId
             && request.resource.data.role == 'technician'
-            && request.resource.data.active == true);
+            && request.resource.data.active in [true, false]);
       allow delete: if isManager() && request.auth.uid != userId;
     }
 
