@@ -466,5 +466,10 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
 - **Production Android Release APK & Spark-Compatible Hosting Delivery**:
   - Built 64-bit production Release APK (`flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false`, 27.4 MB).
   - Hosted APK package on Firebase Hosting CDN and added `PublicApkDownloadPage` (`apps/admin/src/pages/DistributionPage.tsx` & `apps/admin/src/App.tsx`) so scanning the permanent QR Code (`https://kuda-prima-attandance-dev.web.app/download/kudaprima-attendance.apk`) or clicking **Unduh APK** automatically streams and saves `kudaprima-attendance.apk` (`application/vnd.android.package-archive`).
+- **Corporate & Multi-Organization Email Domain Support (2026-10-14 by Antigravity)**:
+  - Removed restrictive `@gmail.com` validation refine in `packages/contracts/src/index.ts` (`employeeEmailSchema`).
+  - Supports all official corporate and partner domains (`@kudaprima.com`, `@kudaprima.co.id`, `@sadikun.com`, `@mutiaraepc.com`, dsb.) and personal emails while strictly enforcing standard email syntax.
+  - Updated Web Admin form helpers and error handling in `EmployeesPage.tsx`, `LoginPage.tsx`, and `employee-repository.ts`.
+  - Re-deployed updated Web Admin Portal and Release APK to `https://kuda-prima-attandance-dev.web.app`.
 - **Next Bounded Action**:
-  - System is live on `https://kuda-prima-attandance-dev.web.app` with 2 seeded Admin accounts and downloadable Release APK via QR Code.
+  - System is live with full corporate email domain support and auto-registration on `https://kuda-prima-attandance-dev.web.app`.
