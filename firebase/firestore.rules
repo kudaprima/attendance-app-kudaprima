@@ -96,12 +96,19 @@ service cloud.firestore {
         || (isBootstrapAdmin()
             && request.auth.uid == userId
             && request.resource.data.role == 'admin'
+            && request.resource.data.active == true)
+        || (signedIn()
+            && !('role' in request.auth.token)
+            && request.auth.uid == userId
+            && request.resource.data.authUid == userId
+            && request.resource.data.createdBy == userId
+            && request.resource.data.role == 'technician'
             && request.resource.data.active == true);
       allow delete: if isManager() && request.auth.uid != userId;
     }
 
     match /systemCounters/{counterId} {
-      allow read, write: if isManager();
+      allow read, write: if signedIn();
     }
 
     match /auditLogs/{auditId} {
