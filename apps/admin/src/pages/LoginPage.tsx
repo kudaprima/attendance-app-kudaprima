@@ -99,7 +99,7 @@ export function LoginPage({
                         id="email"
                         type="email"
                         autoComplete="email"
-                        placeholder="nama@gmail.com"
+                        placeholder="admin@kudaprima.id atau nama@kudaprima.com"
                         className="h-12 bg-background pl-10 text-base"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}

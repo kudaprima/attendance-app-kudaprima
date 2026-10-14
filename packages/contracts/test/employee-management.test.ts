@@ -15,21 +15,42 @@ const create = {
   employmentStartDate: "2026-09-01",
 };
 describe("employee management commands", () => {
-  it("normalizes Gmail and accepts all requested employment statuses", () => {
+  it("normalizes corporate, organizational, and personal emails and accepts all requested employment statuses", () => {
     for (const employmentStatus of ["intern", "contract", "permanent"]) {
       expect(
         createEmployeeCommandSchema.parse({
           ...create,
           employmentStatus,
-          email: " Sample@GMAIL.COM ",
+          email: " Banu_Aziz@KudaPrima.COM ",
         }).email,
-      ).toBe("sample@gmail.com");
+      ).toBe("banu_aziz@kudaprima.com");
+      expect(
+        createEmployeeCommandSchema.parse({
+          ...create,
+          employmentStatus,
+          email: " poppy@kudaprima.co.id ",
+        }).email,
+      ).toBe("poppy@kudaprima.co.id");
+      expect(
+        createEmployeeCommandSchema.parse({
+          ...create,
+          employmentStatus,
+          email: " teknisi@sadikun.com ",
+        }).email,
+      ).toBe("teknisi@sadikun.com");
+      expect(
+        createEmployeeCommandSchema.parse({
+          ...create,
+          employmentStatus,
+          email: " project@mutiaraepc.com ",
+        }).email,
+      ).toBe("project@mutiaraepc.com");
     }
   });
-  it("rejects non-Gmail addresses, malformed dates and short passwords", () => {
+  it("rejects invalid email formats, malformed dates and short passwords", () => {
     for (const change of [
-      { email: "sample@example.com" },
-      { email: "x@gmail.com.evil.test" },
+      { email: "not-an-email" },
+      { email: "invalid@" },
       { employmentStartDate: "2026-02-30" },
       { password: "short" },
       { active: "true" },

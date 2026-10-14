@@ -350,7 +350,7 @@ export function employeeErrorMessage(error: unknown): string {
   if (code === "functions/not-found")
     return "Karyawan tidak ditemukan. Muat ulang daftar.";
   if (code === "functions/invalid-argument")
-    return "Periksa alamat Gmail, Hak Akses, Jabatan, kata sandi minimal 8 karakter, dan kolom wajib.";
+    return "Periksa alamat email, Hak Akses, Jabatan, kata sandi minimal 8 karakter, dan kolom wajib.";
   if (code === "functions/failed-precondition")
     return "Operasi tidak dapat dilakukan. Selesaikan perubahan tertunda; akun sendiri tidak dapat diturunkan, dinonaktifkan, atau dihapus dan harus tersisa minimal dua Admin aktif.";
   return "Perubahan belum terkonfirmasi. Periksa koneksi lalu coba kembali.";

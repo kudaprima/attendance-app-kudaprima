@@ -49,19 +49,19 @@ export const provisionEmployeeProfileCommandSchema = z.object({
   employmentStartDate: calendarDateSchema,
 });
 
-export const employeeGmailSchema = z
+export const employeeEmailSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .pipe(z.email())
-  .refine((email) => email.endsWith("@gmail.com"), "Gunakan alamat gmail.com.");
+  .pipe(z.email("Format email tidak valid."));
+export const employeeGmailSchema = employeeEmailSchema;
 const employeePasswordSchema = z
   .string()
   .min(8, "Kata sandi minimal 8 karakter.")
   .max(128);
 const managedEmployeeFields = {
   fullName: z.string().trim().min(2).max(120),
-  email: employeeGmailSchema,
+  email: employeeEmailSchema,
   active: z.boolean(),
   employmentStatus: employmentStatusSchema,
 };

@@ -60,7 +60,7 @@ async function manageEmployeeLocked(
   if (!parsed.success)
     throw new HttpsError(
       "invalid-argument",
-      "Data tidak valid. Periksa Gmail, Hak Akses, Jabatan, kata sandi, dan kolom wajib.",
+      "Data tidak valid. Periksa alamat email, Hak Akses, Jabatan, kata sandi, dan kolom wajib.",
     );
   const command: Command = parsed.data;
   const uid = "uid" in command ? command.uid : `employee-${command.requestId}`;

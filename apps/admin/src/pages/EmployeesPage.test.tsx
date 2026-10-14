@@ -105,19 +105,18 @@ describe("employee management UI", () => {
       screen.getByRole("button", { name: "Sembunyikan kata sandi" }),
     );
     expect(passwordInput).toHaveAttribute("type", "password");
-    fillCreate("wrong@example.com");
+    fillCreate("newemployee@kudaprima.com");
+    fireEvent.change(passwordInput, { target: { value: "short" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     expect(mocks.create).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Email"), {
-      target: { value: "newemployee@gmail.com" },
-    });
+    fireEvent.change(passwordInput, { target: { value: "SyntheticPass123!" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
     await waitFor(() =>
       expect(mocks.create).toHaveBeenCalledWith(
         expect.objectContaining({
           fullName: "Karyawan Baru",
-          email: "newemployee@gmail.com",
+          email: "newemployee@kudaprima.com",
           password: "SyntheticPass123!",
           active: true,
           role: "technician",

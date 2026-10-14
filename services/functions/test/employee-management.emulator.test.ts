@@ -275,9 +275,9 @@ describe("admin employee lifecycle", () => {
     await auth.setCustomUserClaims(identity.uid, { role: "technician" });
     await expect(create()).rejects.toMatchObject({ code: "permission-denied" });
   });
-  it("rejects non-Gmail, unknown roles and malformed dates at the backend", async () => {
+  it("rejects invalid email, unknown roles and malformed dates at the backend", async () => {
     for (const data of [
-      input({ email: "employee@example.com" }),
+      input({ email: "not-an-email" }),
       input({ role: "owner" }),
       input({ role: "supervisor" }),
       input({ employmentStartDate: "2026-02-30" }),

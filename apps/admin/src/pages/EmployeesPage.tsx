@@ -139,7 +139,7 @@ function EmployeeForm({
         });
     if (!result.success) {
       setError(
-        "Lengkapi nama, Gmail, Hak Akses, Jabatan (2–100 karakter), status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
+        "Lengkapi nama, email valid, Hak Akses, Jabatan (2–100 karakter), status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
       );
       return;
     }
@@ -212,12 +212,11 @@ function EmployeeForm({
                 maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@gmail.com"
+                placeholder="nama@kudaprima.com atau nama@gmail.com"
                 autoComplete="off"
               />
               <p className="text-xs text-muted-foreground">
-                Gunakan alamat email akun Google milik karyawan atau alamat
-                email lainnya.
+                Gunakan alamat email resmi perusahaan (@kudaprima.com, @kudaprima.co.id) atau email organisasi/karyawan lainnya.
               </p>
             </div>
             <div className="space-y-2 md:col-span-2">
