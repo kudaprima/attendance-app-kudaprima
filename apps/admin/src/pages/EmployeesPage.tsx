@@ -506,6 +506,137 @@ export function EmployeesPage() {
       },
     );
   }, [reload, user?.uid]);
+  function renderContent() {
+    if (loading) {
+      return (
+        <output className="block text-muted-foreground">
+          Memuat karyawan...
+        </output>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <div role="alert" className="space-y-3">
+          <p>
+            Data karyawan belum dapat dimuat. Periksa koneksi dan hak akses.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDirectory({
+                uid: user?.uid,
+                rows: [],
+                loading: true,
+                error: false,
+              });
+              setReload((value) => value + 1);
+            }}
+          >
+            Coba Lagi
+          </Button>
+        </div>
+      );
+    }
+
+    if (employees.length === 0) {
+      return <p>Belum ada karyawan terdaftar.</p>;
+    }
+
+    if (filteredEmployees.length === 0) {
+      return (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          Tidak ada karyawan yang cocok dengan pencarian &quot;{searchQuery}&quot;.
+        </p>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {[
+              "Employee ID",
+              "Nama Lengkap",
+              "Email",
+              "Jabatan",
+              "Status Karyawan",
+              "Mulai Kerja",
+              "Status Akun",
+            ].map((label) => (
+              <TableHead key={label}>{label}</TableHead>
+            ))}
+            {canManageEmployees && (
+              <TableHead className="text-right">Aksi</TableHead>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredEmployees.map((employee) => (
+            <TableRow key={employee.uid}>
+              <TableCell className="font-mono text-xs">
+                {employee.employeeId}
+              </TableCell>
+              <TableCell className="font-medium">
+                {employee.fullName}
+              </TableCell>
+              <TableCell>{employee.email}</TableCell>
+              <TableCell>{employee.jobTitle?.trim() || "Belum diisi"}</TableCell>
+              <TableCell>
+                {statusLabels[employee.employmentStatus]}
+              </TableCell>
+              <TableCell>{employee.employmentStartDate}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={employee.active ? "default" : "secondary"}
+                  className={
+                    employee.active
+                      ? undefined
+                      : "bg-accent text-accent-foreground"
+                  }
+                >
+                  {employee.active ? "Aktif" : "Nonaktif"}
+                </Badge>
+                {employee.managementAction && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Proses belum selesai
+                  </p>
+                )}
+              </TableCell>
+              {canManageEmployees && (
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={employee.managementAction === "delete"}
+                      aria-label={`Edit ${employee.fullName}`}
+                      onClick={() => setEditor({ employee })}
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive"
+                      disabled={employee.uid === user?.uid}
+                      aria-label={`Hapus ${employee.fullName}`}
+                      onClick={() => setDeleting(employee)}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Hapus
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -554,118 +685,7 @@ export function EmployeesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <output className="block text-muted-foreground">Memuat karyawan...</output>
-          ) : loadError ? (
-            <div role="alert" className="space-y-3">
-              <p>
-                Data karyawan belum dapat dimuat. Periksa koneksi dan hak akses.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDirectory({
-                    uid: user?.uid,
-                    rows: [],
-                    loading: true,
-                    error: false,
-                  });
-                  setReload((value) => value + 1);
-                }}
-              >
-                Coba Lagi
-              </Button>
-            </div>
-          ) : employees.length === 0 ? (
-            <p>Belum ada karyawan terdaftar.</p>
-          ) : filteredEmployees.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Tidak ada karyawan yang cocok dengan pencarian &quot;{searchQuery}&quot;.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {[
-                    "Employee ID",
-                    "Nama Lengkap",
-                    "Email",
-                    "Jabatan",
-                    "Status Karyawan",
-                    "Mulai Kerja",
-                    "Status Akun",
-                  ].map((label) => (
-                    <TableHead key={label}>{label}</TableHead>
-                  ))}
-                  {canManageEmployees && (
-                    <TableHead className="text-right">Aksi</TableHead>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.uid}>
-                    <TableCell className="font-mono text-xs">
-                      {employee.employeeId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {employee.fullName}
-                    </TableCell>
-                    <TableCell>{employee.email}</TableCell>
-                    <TableCell>{employee.jobTitle?.trim() || "Belum diisi"}</TableCell>
-                    <TableCell>
-                      {statusLabels[employee.employmentStatus]}
-                    </TableCell>
-                    <TableCell>{employee.employmentStartDate}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={employee.active ? "default" : "secondary"}
-                        className={
-                          employee.active
-                            ? undefined
-                            : "bg-accent text-accent-foreground"
-                        }
-                      >
-                        {employee.active ? "Aktif" : "Nonaktif"}
-                      </Badge>
-                      {employee.managementAction && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Proses belum selesai
-                        </p>
-                      )}
-                    </TableCell>
-                    {canManageEmployees && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={employee.managementAction === "delete"}
-                            aria-label={`Edit ${employee.fullName}`}
-                            onClick={() => setEditor({ employee })}
-                          >
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            disabled={employee.uid === user?.uid}
-                            aria-label={`Hapus ${employee.fullName}`}
-                            onClick={() => setDeleting(employee)}
-                          >
-                            <Trash2 className="size-3.5" />
-                            Hapus
-                          </Button>
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          {renderContent()}
         </CardContent>
       </Card>
       {canManageEmployees && editor && (
