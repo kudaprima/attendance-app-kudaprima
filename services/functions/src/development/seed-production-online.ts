@@ -78,7 +78,7 @@ async function main(): Promise<void> {
     process.env.FIREBASE_API_KEY?.trim() ||
     "AIzaSyCHBQ1Wzk3F9WIqVVaGRwxcXWXTNv-YmN0";
   const initialPassword =
-    process.env.INITIAL_ADMIN_PASSWORD?.trim() || "KudaPrima#Admin2026";
+    process.env.INITIAL_ADMIN_PASSWORD?.trim() || "PasswordAdminKuat#2026";
 
   if (initialPassword.length < 8) {
     throw new Error("INITIAL_ADMIN_PASSWORD minimal harus 8 karakter.");

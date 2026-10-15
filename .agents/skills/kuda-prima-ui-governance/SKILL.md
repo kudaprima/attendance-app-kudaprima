@@ -36,9 +36,17 @@ branding assets, Flutter themes, or shadcn/Tailwind styling.
      where needed) for live loading states and notices to guarantee cross-device accessibility.
    - **Modern DOM API**: Use `childNode.remove()` instead of `parentNode.removeChild(childNode)`
      (e.g., when cleaning up programmatic file download anchors).
-   - **Tailwind CSS v4 IDE Compatibility**: Preserve `"css.lint.unknownAtRules": "ignore"` in
-     `.vscode/settings.json` so native Tailwind CSS v4 at-rules (`@custom-variant`, `@theme`) are
-     linted without false-positive IDE warnings.
+   - **Tailwind CSS v4 IDE Compatibility & Canonical Classes**: Preserve `"css.lint.unknownAtRules": "ignore"`
+     in `.vscode/settings.json` so native Tailwind CSS v4 at-rules (`@custom-variant`, `@theme`) are
+     linted cleanly. Always prefer canonical Tailwind classes (e.g., `max-w-55` instead of `max-w-[220px]`,
+     `lg:w-145` instead of `lg:w-[580px]`) that match the continuous 4px / 0.25rem scale, and enforce
+     `"tailwindCSS.lint.suggestCanonicalClasses": "warning"` in workspace settings.
+   - **Mobile Login UI Standards**: The mobile login screen must feature:
+     1. The canonical company logo in the header card.
+     2. An application version badge (`AppConfig.appVersion` / `v1.0.0`) in the top-left corner (`Positioned(top: 14, left: 18)`).
+     3. An official 4-color vector Google logo (`_GoogleLogoPainter`) on the "Masuk dengan Google" `OutlinedButton.icon`.
+     4. A dynamic corporate copyright notice (`© ${DateTime.now().year} ${AppConfig.companyName}. Seluruh hak cipta dilindungi.`) centered below the card.
+   - **Spark-Compliant APK Hosting & Cache Prevention**: Due to Firebase Hosting Spark plan restrictions on direct `.apk` executables, store release payloads as `.zip` packages (e.g. `kudaprima-attendance-v2.zip`) in `apps/admin/public/download/`. Stream them as `application/vnd.android.package-archive` via Blob download. Enforce `Cache-Control: no-cache, no-store, must-revalidate` in `firebase.json` for `/download/**` and append timestamp queries (`?t=${Date.now()}`) to client-side fetches so browser caches never deliver stale APK builds to mobile devices.
 
 Never trade legibility, contrast, touch-target size, error clarity, or platform accessibility
 for literal palette percentages.

@@ -239,7 +239,7 @@ function AttendanceLogTable({ items }: Readonly<AttendanceLogTableProps>) {
                 {formatApprovalStatusLabel(ev.approvalStatus)}
               </Badge>
             </TableCell>
-            <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
+            <TableCell className="max-w-55 truncate text-xs text-muted-foreground">
               {ev.note || "-"}
             </TableCell>
           </TableRow>
@@ -302,7 +302,7 @@ function ServiceRequestsLogTable({
               <TableCell className="text-xs">
                 {sr.clientOrLocation || "-"}
               </TableCell>
-              <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
+              <TableCell className="max-w-55 truncate text-xs text-muted-foreground">
                 {sr.reason || "-"}
               </TableCell>
               <TableCell>
@@ -324,8 +324,7 @@ export function ReportsPage() {
   const [startDate, setStartDate] = useState(initialBounds.startDate);
   const [endDate, setEndDate] = useState(initialBounds.endDate);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] =
-    useState<ReportTabMode>("rekap_kehadiran");
+  const [activeTab, setActiveTab] = useState<ReportTabMode>("rekap_kehadiran");
 
   const [employees, setEmployees] = useState<RawEmployeeRecord[]>([]);
   const [attendanceEvents, setAttendanceEvents] = useState<
@@ -434,9 +433,9 @@ export function ReportsPage() {
               Laporan Rekapitulasi Kehadiran & Layanan
             </h1>
             <p className="text-sm text-muted-foreground">
-              Rekapitulasi real-time kehadiran, keterlambatan, lembur, serta cuti
-              dan izin karyawan beserta ekspor CSV (Excel) & PDF Resmi berlogo PT
-              Kuda Prima.
+              Rekapitulasi real-time kehadiran, keterlambatan, lembur, serta
+              cuti dan izin karyawan beserta ekspor CSV (Excel) & PDF Resmi
+              berlogo PT Kuda Prima.
             </p>
           </div>
         </div>
@@ -618,7 +617,7 @@ export function ReportsPage() {
         onValueChange={(val) => setActiveTab(val as ReportTabMode)}
         className="space-y-4"
       >
-        <TabsList className="grid w-full grid-cols-3 lg:w-[580px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-145">
           <TabsTrigger value="rekap_kehadiran">
             Rekap Kehadiran ({aggregate.recaps.length})
           </TabsTrigger>
@@ -662,8 +661,8 @@ export function ReportsPage() {
               </CardTitle>
               <CardDescription>
                 Daftar seluruh event presensi masuk dan pulang pada periode
-                terpilih. Klik tombol Ekspor CSV atau PDF di atas untuk mengunduh
-                rincian log ini.
+                terpilih. Klik tombol Ekspor CSV atau PDF di atas untuk
+                mengunduh rincian log ini.
               </CardDescription>
             </CardHeader>
             <CardContent>

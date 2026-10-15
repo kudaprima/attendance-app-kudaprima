@@ -28,8 +28,8 @@ import { Label } from "@/components/ui/label";
 import { generateQrCodeMatrix } from "@/lib/qr-code";
 
 const QUIET_ZONE_MODULES = 4;
-const HOSTED_APK_PACKAGE_PATH = "/download/kudaprima-attendance.zip";
-const APK_DOWNLOAD_FILENAME = "kudaprima-attendance.apk";
+const HOSTED_APK_PACKAGE_PATH = "/download/kudaprima-attendance-v2.zip";
+const APK_DOWNLOAD_FILENAME = "kudaprima-attendance-v2.apk";
 
 function getDefaultDownloadUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
@@ -39,7 +39,8 @@ function getDefaultDownloadUrl(): string {
 }
 
 async function downloadHostedApkFile(): Promise<void> {
-  const response = await fetch(HOSTED_APK_PACKAGE_PATH);
+  const downloadUrl = `${HOSTED_APK_PACKAGE_PATH}?t=${Date.now()}`;
+  const response = await fetch(downloadUrl, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Gagal mengunduh paket APK (HTTP ${response.status}).`);
   }
@@ -66,12 +67,12 @@ function getDownloadStatusText(
     return error;
   }
   if (downloading) {
-    return "Mengunduh paket instalasi kudaprima-attendance.apk (27,4 MB)... Mohon tunggu beberapa detik.";
+    return "Mengunduh paket instalasi kudaprima-attendance-v2.apk (Build 2, 27,4 MB)... Mohon tunggu beberapa detik.";
   }
   if (completed) {
-    return "File kudaprima-attendance.apk berhasil disiapkan. Silakan buka file dari notifikasi browser Android Anda untuk mulai memasang.";
+    return "File kudaprima-attendance-v2.apk (Build 2) berhasil disiapkan. Silakan buka file dari notifikasi browser Android Anda untuk mulai memasang.";
   }
-  return "Menyiapkan unduhan aplikasi resmi PT Kuda Prima...";
+  return "Menyiapkan unduhan aplikasi resmi PT Kuda Prima (Build 2)...";
 }
 
 function getPublicDownloadButtonLabel(
@@ -79,12 +80,12 @@ function getPublicDownloadButtonLabel(
   completed: boolean,
 ): string {
   if (downloading) {
-    return "Sedang Mengunduh APK (27,4 MB)...";
+    return "Sedang Mengunduh APK Build 2 (27,4 MB)...";
   }
   if (completed) {
-    return "Unduh Ulang kudaprima-attendance.apk";
+    return "Unduh Ulang kudaprima-attendance-v2.apk (Build 2)";
   }
-  return "Unduh kudaprima-attendance.apk (27,4 MB)";
+  return "Unduh kudaprima-attendance-v2.apk (Build 2)";
 }
 
 export function PublicApkDownloadPage() {
@@ -132,7 +133,7 @@ export function PublicApkDownloadPage() {
               variant="outline"
               className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
             >
-              Rilis Resmi v1.0.0
+              Rilis Resmi v1.0.0 (Build 2)
             </Badge>
           </div>
           <CardTitle className="text-xl">
@@ -282,7 +283,7 @@ export function DistributionPage() {
             ) : (
               <Download className="size-4" />
             )}
-            {downloadingApk ? "Mengunduh APK..." : "Unduh APK"}
+            {downloadingApk ? "Mengunduh APK..." : "Unduh APK (Build 2)"}
           </Button>
         </div>
       </div>
@@ -408,7 +409,7 @@ export function DistributionPage() {
                 {effectiveUrl}
               </p>
               <p className="mt-1.5 text-xs font-medium text-emerald-600">
-                ● Rilis Terkini: v1.0.0-production (Build 1) • Bebas Kedaluwarsa
+                ● Rilis Terkini: v1.0.0-production (Build 2) • Bebas Kedaluwarsa
               </p>
             </div>
           </CardContent>
@@ -481,6 +482,12 @@ export function DistributionPage() {
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">Nama Paket:</span>
                 <span className="font-mono">com.kudaprima.attendance</span>
+              </div>
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-muted-foreground">Versi Rilis:</span>
+                <span className="font-semibold text-emerald-600">
+                  v1.0.0 (Build 2)
+                </span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">Target Platform:</span>

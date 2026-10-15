@@ -99,4 +99,16 @@ void main() {
       expect(auth.password, isNull);
     },
   );
+
+  testWidgets(
+    'displays Google logo icon, app version in top-left, and company copyright',
+    (tester) async {
+      await showLogin(tester);
+      expect(find.byKey(const Key('login-app-version')), findsOneWidget);
+      expect(find.text('v1.0.0'), findsOneWidget);
+      expect(find.byKey(const Key('google-logo-icon')), findsOneWidget);
+      expect(find.byKey(const Key('login-copyright-text')), findsOneWidget);
+      expect(find.textContaining('PT Kuda Prima'), findsOneWidget);
+    },
+  );
 }

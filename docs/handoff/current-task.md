@@ -215,7 +215,6 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - **Poin 4 (Employee Table & Instant Search)**: "Hak Akses" column removed from the main employee directory table (retained in Add/Edit modals). Multi-field instant search bar implemented in `EmployeesPage.tsx` filtering by Full Name, Employee ID, Email, and Job Title.
   - **Poin 5 (Tenure-Based Leave & Service Requests)**: Mobile `ServicesTabView` checks `employmentStartDate` (tenure >= 1 year gets 12-day annual leave quota; tenure < 1 year / intern gets informative dialog). Leave, sick, permission, and overtime submissions write to Firestore `serviceRequests` collection with real-time status cards shown to the user.
 
-
 ## Deprecated Code Cleanup & Quality Gate Verification (2026-10-06 by Antigravity)
 
 - **Root Cause & Fix for Emulator Suite**:
@@ -297,7 +296,7 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - `pnpm check:brand`: 100% passed.
 
 ## Phase 2: Web Admin Attendance Detail Dialog & OpenStreetMap (2026-10-06 by Antigravity)
- 
+
 - **Dependencies (`apps/admin/package.json`)**:
   - Installed `leaflet: 1.9.4` and `@types/leaflet: 1.9.22`.
   - Imported Leaflet standard styles (`leaflet/dist/leaflet.css`) in `apps/admin/src/index.css`.
@@ -506,6 +505,41 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - **Verification & Deployment**:
     - Verified `pnpm check` (brand check, 28 contracts tests, 30 functions tests, 39 admin tests, oxlint 0 errors, tsc 0 errors) passed 100%.
     - Verified `pnpm build` completed cleanly in 2.15s.
-    - Deployed latest web admin bundle to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+- **Tailwind CSS v4 Canonical Classes Refinement (2026-10-15 by Antigravity)**:
+  - **`ReportsPage.tsx` Canonical Classes Upgrade**:
+    - Replaced non-canonical arbitrary spacing `max-w-[220px]` with canonical design-system class `max-w-55` across attendance log and service request log table cells (220px = 55 × 4px / 0.25rem scale).
+    - Replaced `lg:w-[580px]` with canonical `lg:w-145` on the report tab list (580px = 145 × 4px / 0.25rem scale).
+  - **IDE & Tailwind CSS IntelliSense Governance (`.vscode/settings.json`)**:
+    - Configured `"tailwindCSS.lint.suggestCanonicalClasses": "warning"` to consistently enforce and suggest canonical class shorthands whenever arbitrary values match Tailwind v4's continuous scale.
+    - Added recommended Tailwind linting guardrails: `invalidApply: "error"`, `invalidScreen: "error"`, `invalidVariant: "error"`, `invalidConfigPath: "error"`, `invalidTailwindDirective: "error"`, `recommendedVariantOrder: "warning"`, plus `experimental.classRegex` for `cn`, `cva`, and `cx` utility extraction.
+  - **Verification**:
+    - `pnpm prettier --check`: Clean formatting across all modified files.
+    - `pnpm check`: 100% Passed (brand check, oxlint 0 errors, tsc 0 errors, Vitest 97/97 tests passed).
+- **Production Admin Initial Password Synchronization (2026-10-15 by Antigravity)**:
+  - **Penyebab**: Saat eksekusi online seeding sebelumnya, akun `admin.utama@kudaprima.id` dan `admin.operasional@kudaprima.id` dibuat dengan kata sandi default kode lama (`KudaPrima#Admin2026`), sedangkan panduan di `production-deployment-runbook.md` mencantumkan `PasswordAdminKuat#2026`.
+  - **Perbaikan**:
+    - Berhasil memperbarui kata sandi kedua akun Admin online (`admin.utama@kudaprima.id` & `admin.operasional@kudaprima.id`) langsung di Firebase Authentication menjadi `PasswordAdminKuat#2026`.
+    - Memperbarui fallback default `initialPassword` di `services/functions/src/development/seed-production-online.ts` menjadi `"PasswordAdminKuat#2026"`.
+  - **Catatan Lingkungan Lokal vs Online**:
+    - **Online (`https://kuda-prima-attandance-dev.web.app`)**: Gunakan `admin.utama@kudaprima.id` dengan kata sandi `PasswordAdminKuat#2026`.
+    - **Lokal Dev (`localhost:5173` via `pnpm dev:admin`)**: Karena terhubung ke Emulator Auth lokal (`127.0.0.1:9099`), gunakan akun uji emulator `admin.dev@kudaprima.test` dengan kata sandi `KudaPrimaDev2026#`.
+- **Mobile Login Page UI Refinements (2026-10-15 by Antigravity)**:
+  - **Pembaruan Visual & Branding**:
+    - **Google Brand Icon**: Menambahkan icon 4-warna vektor Google ("G") berbasis `CustomPainter` murni pada tombol `OutlinedButton.icon` ("Masuk dengan Google").
+    - **Versi Aplikasi**: Menampilkan badge versi (`AppConfig.appVersion` = `v1.0.0`) di pojok kiri atas layar login dengan border lembut dan kontras aksesibel.
+    - **Copyright Perusahaan**: Menampilkan teks copyright resmi di bagian tengah bawah (`© ${year} PT Kuda Prima. Seluruh hak cipta dilindungi.`).
+  - **Verifikasi**:
+    - `dart format`: 100% rapi dan terformat.
+    - `flutter analyze`: 0 issues found.
+    - `flutter test`: 52/52 mobile tests lulus (termasuk verifikasi widget Google logo, version badge, dan copyright text).
+    - `pnpm check:brand`: 100% lulus.
+  - **Build APK Release & Deployment ke Firebase Hosting**:
+    - Meningkatkan nomor versi di `apps/mobile/pubspec.yaml` menjadi `1.0.0+2` (`versionCode: 2`).
+    - Mengompilasi APK release Android 64-bit: `flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false` (27.4 MB).
+    - Memperbarui paket unduhan publik `apps/admin/public/download/kudaprima-attendance.zip`.
+    - Membangun kembali web admin dan men-deploy ke Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+    - File APK release terbaru sudah live dan diverifikasi langsung dari server Firebase CDN (`package: name='com.kudaprima.attendance' versionCode='2' versionName='1.0.0'`).
+    - Ditambahkan konfigurasi `Cache-Control: no-cache, no-store, must-revalidate` di `firebase.json` dan parameter query `?t=${Date.now()}` di `DistributionPage.tsx` agar unduhan di ponsel tidak pernah tertahan cache browser lama.
+    - Menyelaraskan teks dan badge di `DistributionPage.tsx` agar menampilkan secara eksplisit **Rilis Resmi v1.0.0 (Build 2)** dan merilis file paket baru `kudaprima-attendance-v2.apk` (via `kudaprima-attendance-v2.zip`) untuk memintas total kemungkinan cache pada perangkat pengguna.
 - **Next Bounded Action**:
-  - Codebase is fully modernized, compliant with SonarQube/TypeScript best practices, and live on production. Ready for next user requirements.
+  - Pandu pengguna untuk menghapus (uninstall) instalasi lama di HP dan memasang file Build 2 baru `kudaprima-attendance-v2.apk`, kemudian selaraskan alur lupa kata sandi.
