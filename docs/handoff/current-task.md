@@ -541,5 +541,30 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
     - File APK release terbaru sudah live dan diverifikasi langsung dari server Firebase CDN (`package: name='com.kudaprima.attendance' versionCode='2' versionName='1.0.0'`).
     - Ditambahkan konfigurasi `Cache-Control: no-cache, no-store, must-revalidate` di `firebase.json` dan parameter query `?t=${Date.now()}` di `DistributionPage.tsx` agar unduhan di ponsel tidak pernah tertahan cache browser lama.
     - Menyelaraskan teks dan badge di `DistributionPage.tsx` agar menampilkan secara eksplisit **Rilis Resmi v1.0.0 (Build 2)** dan merilis file paket baru `kudaprima-attendance-v2.apk` (via `kudaprima-attendance-v2.zip`) untuk memintas total kemungkinan cache pada perangkat pengguna.
+- **Universal Hybrid Password Reset Workflow Implementation (2026-10-15 by Antigravity)**:
+  - **Penyelarasan Desain & Sistem Bawaan Firebase**:
+    - Alur reset password memanfaatkan sistem bawaan Firebase: Firebase Auth mengeksekusi `sendPasswordResetEmail(email)` dan menyediakan antarmuka web reset kata sandi resmi saat tautan di email dibuka oleh pengguna.
+    - Pada aplikasi mobile ([login_page.dart](file:///d:/KudaPrima/Project%20Management/daily_attandance/apps/mobile/lib/src/features/auth/presentation/login_page.dart)), tombol *Lupa Kata Sandi* memvalidasi format email, mengirimkan email reset ke Firebase Auth untuk semua jenis domain (baik Gmail maupun domain korporat/internal), kemudian menampilkan dialog pesan universal yang singkat, jelas, dan tepat:
+      > **Pengaturan Ulang Kata Sandi**
+      >
+      > Petunjuk reset kata sandi telah dikirim ke [email]. Silakan periksa kotak masuk (inbox) atau folder spam email Anda.
+      >
+      > *Catatan: Jika akun Anda menggunakan email internal yang tidak memiliki kotak masuk aktif, silakan hubungi Administrator HR untuk bantuan pengaturan ulang kata sandi.*
+    - Pada portal web admin ([LoginPage.tsx](file:///d:/KudaPrima/Project%20Management/daily_attandance/apps/admin/src/pages/LoginPage.tsx)), pesan notifikasi pada aksi lupa kata sandi diselaraskan secara konsisten dengan pesan universal di atas.
+  - **Verifikasi Kualitas & Otomasi**:
+    - Unit test mobile ([login_page_test.dart](file:///d:/KudaPrima/Project%20Management/daily_attandance/apps/mobile/test/features/auth/presentation/login_page_test.dart)): Ditambahkan pengujian widget untuk validasi pemanggilan `sendPasswordResetEmail`, verifikasi kemunculan dialog pesan universal, pengecekan teks bantuan Administrator HR, dan penutupan dialog melalui tombol "Mengerti". 4/4 tes login mobile lulus.
+    - `dart format`: 100% rapi dan terformat.
+    - `flutter analyze`: 0 issues found (ran in 127.0s).
+    - `flutter test`: 52/52 mobile widget/unit tests lulus 100%.
+    - `pnpm check`: 100% lulus (brand check lulus, oxlint 0 error/warning, tsc 0 error, 97/97 tests monorepo lulus: 28 contracts, 30 functions, 39 admin).
+    - `pnpm build`: 100% lulus (contracts, functions, dan admin web bundle).
+  - **Build 3 APK Production Release & Deployment ke Firebase Hosting**:
+    - Nomor versi di `apps/mobile/pubspec.yaml` dinaikkan ke `1.0.0+3` (`versionCode: 3`).
+    - Mengompilasi APK rilis 64-bit: `flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false` (27.4 MB).
+    - Memperbarui paket unduhan di `apps/admin/public/download/kudaprima-attendance-v3.zip` dan `kudaprima-attendance.zip`.
+    - Menyesuaikan label dan tombol di `DistributionPage.tsx` menjadi **Rilis Resmi v1.0.0 (Build 3)**.
+    - Membangun kembali web admin (`pnpm --filter @kuda-prima/admin build`) dan men-deploy ke Firebase Hosting (`pnpm exec firebase deploy --only hosting --project kuda-prima-attandance-dev`).
+    - Berhasil di-deploy ke live CDN: `https://kuda-prima-attandance-dev.web.app` (HTTP 200, `Cache-Control: no-cache, no-store, must-revalidate`).
 - **Next Bounded Action**:
-  - Pandu pengguna untuk menghapus (uninstall) instalasi lama di HP dan memasang file Build 2 baru `kudaprima-attendance-v2.apk`, kemudian selaraskan alur lupa kata sandi.
+  - Pandu pengguna untuk memasang file Build 3 baru `kudaprima-attendance-v3.apk` dan mencoba fitur reset kata sandi universal.
+

@@ -167,7 +167,7 @@ export function LoginPage({
                             throw new Error("Masukkan email terlebih dahulu.");
                           await onResetPassword(email.trim());
                           setNotice(
-                            "Jika email terdaftar, petunjuk reset akan dikirim.",
+                            "Petunjuk reset kata sandi telah dikirim ke email Anda. Silakan periksa kotak masuk atau spam. Jika akun menggunakan email internal tanpa inbox aktif, silakan hubungi Administrator.",
                           );
                         })
                       }

@@ -28,8 +28,8 @@ import { Label } from "@/components/ui/label";
 import { generateQrCodeMatrix } from "@/lib/qr-code";
 
 const QUIET_ZONE_MODULES = 4;
-const HOSTED_APK_PACKAGE_PATH = "/download/kudaprima-attendance-v2.zip";
-const APK_DOWNLOAD_FILENAME = "kudaprima-attendance-v2.apk";
+const HOSTED_APK_PACKAGE_PATH = "/download/kudaprima-attendance-v3.zip";
+const APK_DOWNLOAD_FILENAME = "kudaprima-attendance-v3.apk";
 
 function getDefaultDownloadUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
@@ -67,12 +67,12 @@ function getDownloadStatusText(
     return error;
   }
   if (downloading) {
-    return "Mengunduh paket instalasi kudaprima-attendance-v2.apk (Build 2, 27,4 MB)... Mohon tunggu beberapa detik.";
+    return "Mengunduh paket instalasi kudaprima-attendance-v3.apk (Build 3, 27,4 MB)... Mohon tunggu beberapa detik.";
   }
   if (completed) {
-    return "File kudaprima-attendance-v2.apk (Build 2) berhasil disiapkan. Silakan buka file dari notifikasi browser Android Anda untuk mulai memasang.";
+    return "File kudaprima-attendance-v3.apk (Build 3) berhasil disiapkan. Silakan buka file dari notifikasi browser Android Anda untuk mulai memasang.";
   }
-  return "Menyiapkan unduhan aplikasi resmi PT Kuda Prima (Build 2)...";
+  return "Menyiapkan unduhan aplikasi resmi PT Kuda Prima (Build 3)...";
 }
 
 function getPublicDownloadButtonLabel(
@@ -80,12 +80,12 @@ function getPublicDownloadButtonLabel(
   completed: boolean,
 ): string {
   if (downloading) {
-    return "Sedang Mengunduh APK Build 2 (27,4 MB)...";
+    return "Sedang Mengunduh APK Build 3 (27,4 MB)...";
   }
   if (completed) {
-    return "Unduh Ulang kudaprima-attendance-v2.apk (Build 2)";
+    return "Unduh Ulang kudaprima-attendance-v3.apk (Build 3)";
   }
-  return "Unduh kudaprima-attendance-v2.apk (Build 2)";
+  return "Unduh kudaprima-attendance-v3.apk (Build 3)";
 }
 
 export function PublicApkDownloadPage() {
@@ -133,7 +133,7 @@ export function PublicApkDownloadPage() {
               variant="outline"
               className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
             >
-              Rilis Resmi v1.0.0 (Build 2)
+              Rilis Resmi v1.0.0 (Build 3)
             </Badge>
           </div>
           <CardTitle className="text-xl">
@@ -283,7 +283,7 @@ export function DistributionPage() {
             ) : (
               <Download className="size-4" />
             )}
-            {downloadingApk ? "Mengunduh APK..." : "Unduh APK (Build 2)"}
+            {downloadingApk ? "Mengunduh APK..." : "Unduh APK (Build 3)"}
           </Button>
         </div>
       </div>
@@ -409,7 +409,7 @@ export function DistributionPage() {
                 {effectiveUrl}
               </p>
               <p className="mt-1.5 text-xs font-medium text-emerald-600">
-                ● Rilis Terkini: v1.0.0-production (Build 2) • Bebas Kedaluwarsa
+                ● Rilis Terkini: v1.0.0-production (Build 3) • Bebas Kedaluwarsa
               </p>
             </div>
           </CardContent>
@@ -486,7 +486,7 @@ export function DistributionPage() {
               <div className="flex justify-between border-b pb-2">
                 <span className="text-muted-foreground">Versi Rilis:</span>
                 <span className="font-semibold text-emerald-600">
-                  v1.0.0 (Build 2)
+                  v1.0.0 (Build 3)
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2">
