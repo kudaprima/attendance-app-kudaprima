@@ -57,6 +57,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
     if (!_validEmail) {
       _message(
         'Masukkan Email terlebih dahulu untuk mengatur ulang kata sandi.',
@@ -64,14 +65,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
     await _run(() async {
-      await ref
-          .read(authRepositoryProvider)
-          .sendPasswordResetEmail(_emailController.text.trim());
+      await ref.read(authRepositoryProvider).sendPasswordResetEmail(email);
       if (!mounted) return;
-      _message(
-        AppConfig.useFirebaseEmulators
-            ? 'Permintaan reset dibuat. Tautan uji tersedia di Auth Emulator; email tidak dikirim.'
-            : 'Jika email terdaftar, petunjuk pengaturan ulang kata sandi akan dikirim.',
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Pengaturan Ulang Kata Sandi'),
+          content: Text(
+            'Petunjuk reset kata sandi telah dikirim ke $email. '
+            'Silakan periksa kotak masuk (inbox) atau folder spam email Anda.\n\n'
+            'Catatan: Jika akun Anda menggunakan email internal yang tidak memiliki kotak masuk aktif, '
+            'silakan hubungi Administrator HR untuk bantuan pengaturan ulang kata sandi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Mengerti'),
+            ),
+          ],
+        ),
       );
     });
   }

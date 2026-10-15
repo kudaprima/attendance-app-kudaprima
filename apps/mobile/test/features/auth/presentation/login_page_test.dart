@@ -82,7 +82,7 @@ void main() {
     expect(auth.googleCalls, 1);
   });
   testWidgets(
-    'password reset validates email and does not require a password',
+    'password reset validates email and displays universal info dialog',
     (tester) async {
       final auth = await showLogin(tester);
       await tester.tap(find.text('Lupa Kata Sandi'));
@@ -97,6 +97,30 @@ void main() {
       await tester.pumpAndSettle();
       expect(auth.resetEmail, 'user@kudaprima.test');
       expect(auth.password, isNull);
+      expect(find.text('Pengaturan Ulang Kata Sandi'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.textContaining('user@kudaprima.test'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Administrator HR'), findsOneWidget);
+      await tester.tap(find.text('Mengerti'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pengaturan Ulang Kata Sandi'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'displays Google logo icon, app version in top-left, and company copyright',
+    (tester) async {
+      await showLogin(tester);
+      expect(find.byKey(const Key('login-app-version')), findsOneWidget);
+      expect(find.text('v1.0.0'), findsOneWidget);
+      expect(find.byKey(const Key('google-logo-icon')), findsOneWidget);
+      expect(find.byKey(const Key('login-copyright-text')), findsOneWidget);
+      expect(find.textContaining('PT Kuda Prima'), findsOneWidget);
     },
   );
 
