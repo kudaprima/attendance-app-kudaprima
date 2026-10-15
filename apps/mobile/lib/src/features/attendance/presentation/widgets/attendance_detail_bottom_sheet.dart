@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:attendance/src/core/theme/app_colors.dart';
@@ -38,6 +40,29 @@ class _AttendanceDetailBottomSheetState
   bool _isLoadingPhoto = true;
   bool _isPhotoArchived = false;
 
+  Uint8List? _decodeDataUrl(String url) {
+    if (!url.startsWith('data:image/')) return null;
+    final commaIdx = url.indexOf(',');
+    if (commaIdx < 0) return null;
+    try {
+      return base64Decode(url.substring(commaIdx + 1));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildResolvedImage(
+    String url, {
+    required BoxFit fit,
+    required Widget Function(BuildContext, Object, StackTrace?) errorBuilder,
+  }) {
+    final memoryBytes = _decodeDataUrl(url);
+    if (memoryBytes != null) {
+      return Image.memory(memoryBytes, fit: fit, errorBuilder: errorBuilder);
+    }
+    return Image.network(url, fit: fit, errorBuilder: errorBuilder);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +87,18 @@ class _AttendanceDetailBottomSheetState
         setState(() {
           _isLoadingPhoto = false;
           _isPhotoArchived = true;
+        });
+      }
+      return;
+    }
+
+    if (path.startsWith('data:image/') ||
+        path.startsWith('http://') ||
+        path.startsWith('https://')) {
+      if (mounted) {
+        setState(() {
+          _resolvedPhotoUrl = path;
+          _isLoadingPhoto = false;
         });
       }
       return;
@@ -141,7 +178,7 @@ class _AttendanceDetailBottomSheetState
                   child: InteractiveViewer(
                     minScale: 0.8,
                     maxScale: 4.0,
-                    child: Image.network(
+                    child: _buildResolvedImage(
                       imageUrl,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) =>
@@ -468,7 +505,7 @@ class _AttendanceDetailBottomSheetState
                 border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Image.network(
+              child: _buildResolvedImage(
                 _resolvedPhotoUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(

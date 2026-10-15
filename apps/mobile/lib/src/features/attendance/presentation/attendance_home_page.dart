@@ -16,6 +16,7 @@ import 'package:attendance/src/features/profile/presentation/profile_tab_view.da
 import 'package:attendance/src/features/services/presentation/services_tab_view.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -551,22 +552,34 @@ class _AttendanceHomePageState extends ConsumerState<AttendanceHomePage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final rejected =
-          e is FirebaseFunctionsException &&
-          [
-            'invalid-argument',
-            'failed-precondition',
-            'permission-denied',
-          ].contains(e.code);
-      if (rejected) _pendingCommand = null;
+      String errorMsg =
+          'Absen belum terkonfirmasi. Periksa koneksi lalu ketuk tombol absen untuk mencoba kiriman yang sama.';
+      var shouldReset = false;
+      if (e is FirebaseFunctionsException) {
+        errorMsg =
+            e.message ?? 'Absen ditolak. Periksa data lalu coba kembali.';
+        shouldReset = [
+          'invalid-argument',
+          'failed-precondition',
+          'permission-denied',
+        ].contains(e.code);
+      } else if (e is FirebaseException) {
+        errorMsg = e.message ?? e.code;
+        shouldReset = [
+          'permission-denied',
+          'invalid-argument',
+        ].contains(e.code);
+      } else if (e is StateError) {
+        errorMsg = e.message;
+        shouldReset = true;
+      } else if (e is Exception) {
+        errorMsg = e.toString().replaceFirst('Exception: ', '');
+      }
+
+      if (shouldReset) _pendingCommand = null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            rejected
-                ? (e.message ??
-                      'Absen ditolak. Periksa data lalu coba kembali.')
-                : 'Absen belum terkonfirmasi. Periksa koneksi lalu ketuk tombol absen untuk mencoba kiriman yang sama.',
-          ),
+          content: Text(errorMsg),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

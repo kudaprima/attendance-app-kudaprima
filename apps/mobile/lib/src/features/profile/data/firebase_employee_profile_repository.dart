@@ -34,7 +34,7 @@ final class FirebaseEmployeeProfileRepository
     final phone = data['phone'] as String?;
     final homeAddress = data['homeAddress'] as String?;
 
-    if (authUid != uid ||
+    if ((authUid is String && authUid != uid) ||
         employeeId is! String ||
         !RegExp(r'^KP-\d{6}$').hasMatch(employeeId) ||
         email is! String ||
@@ -44,11 +44,16 @@ final class FirebaseEmployeeProfileRepository
         role == null ||
         employmentStatus == null ||
         employmentStartDate is! String ||
-        active is! bool ||
-        createdAt is! Timestamp ||
-        updatedAt is! Timestamp) {
+        active is! bool) {
       throw const InvalidEmployeeProfileException();
     }
+
+    final resolvedCreatedAt = createdAt is Timestamp
+        ? createdAt.toDate().toUtc()
+        : DateTime.now().toUtc();
+    final resolvedUpdatedAt = updatedAt is Timestamp
+        ? updatedAt.toDate().toUtc()
+        : DateTime.now().toUtc();
 
     return EmployeeProfile(
       uid: uid,
@@ -62,8 +67,8 @@ final class FirebaseEmployeeProfileRepository
       employmentStatus: employmentStatus,
       employmentStartDate: employmentStartDate,
       active: active,
-      createdAt: createdAt.toDate().toUtc(),
-      updatedAt: updatedAt.toDate().toUtc(),
+      createdAt: resolvedCreatedAt,
+      updatedAt: resolvedUpdatedAt,
       phone: phone,
       homeAddress: homeAddress,
     );

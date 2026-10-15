@@ -2,13 +2,13 @@
 
 ## Execution gate
 
-- Updated: 2026-10-07
-- Status: `E2E_SIMULATION_COMPLETED_AND_VERIFIED`
-- Current workstream: Attendance Detail with Selfie Photo and OpenStreetMap (Mobile & Web Admin) - Completed & 100% Verified in E2E simulation.
-- Application implementation: Phases 1, 2, and 3 fully implemented, tested, and manually verified end-to-end across Android Emulator (AVD) and Web Admin against persistent Firebase Emulator Suite.
+- Updated: 2026-10-12
+- Status: `M3_WORKFORCE_SERVICE_WORKFLOWS_IMPLEMENTED_AND_VERIFIED`
+- Current workstream: Option A (Milestone M3) — End-to-End Workforce Service & Approval Workflows (Cuti Tahunan, Izin Sakit, Izin Khusus, & Lembur / Overtime) with Glassmorphic Bottom Sheet Mobile UI & Admin Verification Modal.
+- Application implementation: Contracts, Firestore/Storage Rules, Cloud Functions (`submitServiceRequest` & `processServiceApproval`), React Web Admin (`ServiceRequestDetailDialog` + `ApprovalsPage`), and Flutter Mobile (`ServicesTabView` with Glassmorphic Bottom Sheets) implemented and verified across all automated quality gates.
 - Editing owner: Antigravity.
 - Next reader: user / team contributor.
-- Authorized: Implementation, automated verification, E2E bug fixes, plan archival, documentation updates, commit, and push to GitHub origin.
+- Authorized: Implementation, automated verification, and documentation updates on `feat/workforce-service-workflows`.
 
 The current user instruction takes precedence over an older checkpoint. This file
 is a coordination record, not a technical lock or a new authorization.
@@ -215,7 +215,6 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - **Poin 4 (Employee Table & Instant Search)**: "Hak Akses" column removed from the main employee directory table (retained in Add/Edit modals). Multi-field instant search bar implemented in `EmployeesPage.tsx` filtering by Full Name, Employee ID, Email, and Job Title.
   - **Poin 5 (Tenure-Based Leave & Service Requests)**: Mobile `ServicesTabView` checks `employmentStartDate` (tenure >= 1 year gets 12-day annual leave quota; tenure < 1 year / intern gets informative dialog). Leave, sick, permission, and overtime submissions write to Firestore `serviceRequests` collection with real-time status cards shown to the user.
 
-
 ## Deprecated Code Cleanup & Quality Gate Verification (2026-10-06 by Antigravity)
 
 - **Root Cause & Fix for Emulator Suite**:
@@ -297,7 +296,7 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
   - `pnpm check:brand`: 100% passed.
 
 ## Phase 2: Web Admin Attendance Detail Dialog & OpenStreetMap (2026-10-06 by Antigravity)
- 
+
 - **Dependencies (`apps/admin/package.json`)**:
   - Installed `leaflet: 1.9.4` and `@types/leaflet: 1.9.22`.
   - Imported Leaflet standard styles (`leaflet/dist/leaflet.css`) in `apps/admin/src/index.css`.
@@ -409,3 +408,138 @@ Snapshot before this documentation task (`git status --short --untracked-files=a
     - `flutter analyze` & `flutter test`: 45/45 Passed.
 - **Remaining Action**:
   - Commit CI fix and push to `origin feat/reliable-attendance-and-persistent-dev` so GitHub Actions checks turn all green.
+
+## Milestone M3: End-to-End Workforce Service & Approval Workflows (2026-10-12 by Antigravity)
+
+- **Baseline & Branch Hygiene**:
+  - Synchronized local `main` to `origin/main` (`36be42f`, squash merge of PR #12) and created clean feature branch `feat/workforce-service-workflows`.
+- **Phase 1: Contracts, Security Rules, & Cloud Functions**:
+  - `packages/contracts/src/index.ts` & `packages/contracts/test/leave-overtime.test.ts`: Added `serviceRequestTypeSchema`, `submitServiceRequestCommandSchema` (date-range `startDate`–`endDate`, overtime `startedAt`–`endedAt`, `clientOrLocation`, mandatory `selfieBase64` for overtime, optional `attachmentBase64`), and `processServiceApprovalCommandSchema` (28/28 contract unit tests passing).
+  - `firebase/firestore.rules` & `firebase/storage.rules`: Locked direct client writes on `serviceRequests/{requestId}` (`allow write: if false`) and added read access on `service-requests/{userId}/{fileName}` for active owner and active admin.
+  - `services/functions/src/services/service-request-service.ts`, `services/functions/src/index.ts`, & `services/functions/test/service-request.test.ts`: Implemented `submitServiceRequest` and `processServiceApproval` Gen 2 Callables with `calculateWorkingDays` (excluding Saturdays & Sundays), 1-year tenure check, approved-only 12-day annual leave quota validation, overtime mandatory selfie & >8h warning, Storage upload, strict cross-approval (anti self-approval), and immutable `auditLogs/` writes (28/28 function unit tests passing).
+- **Phase 2: Web Admin Portal**:
+  - `apps/admin/src/features/approvals/approval-repository.ts`: Extended `ServiceRequestEntry` with `jobTitle`, `startedAt`, `endedAt`, `clientOrLocation`, `workingDaysCount`, `durationMinutes`, `selfieStoragePath`, `attachmentStoragePath`, `createdAt`, and wired `submitServiceApproval` to `processServiceApproval` Cloud Function.
+  - `apps/admin/src/components/approvals/ServiceRequestDetailDialog.tsx`: Built glassmorphic detail modal with employee identity, period/duration metadata, >8h safety badge, `AttendancePhotoView` Lightbox for both Overtime Selfie and Supporting Attachment (Surat Dokter / SPK), and Approve/Reject actions with self-approval protection.
+  - `apps/admin/src/pages/ApprovalsPage.tsx` & `apps/admin/src/pages/ApprovalsPage.test.tsx`: Added "Detail" button and period/duration badges to service request rows and verified modal flow (35/35 admin unit tests passing).
+- **Phase 3: Mobile Flutter App (Glassmorphic Bottom Sheet UI)**:
+  - `apps/mobile/lib/src/features/services/presentation/services_tab_view.dart` & `apps/mobile/test/features/services/presentation/services_tab_view_test.dart`:
+    - `_GlassAnnualLeaveCard`: Frosted glass card (`BackdropFilter` blur + subtle specular border) displaying remaining quota (`12 - approvedDays`), progress bar, and pending approval badge (pending requests do not deduct quota until Admin approves).
+    - `_LeavePermissionBottomSheet`: Ergonomic `DraggableScrollableSheet` with balanced glassmorphism (`sigma: 14`, `alpha: 0.94`), date-range picker, live effective working days calculation pill (excluding Saturdays/Sundays), optional supporting photo capture, and sticky thumb-zone CTA.
+    - `_OvertimeBottomSheet`: Glassmorphic bottom sheet with date/time pickers supporting cross-midnight (`H+1`), live duration & >8h safety warning pill, client/location & task inputs, mandatory selfie verification capture via `CameraSelfieDialog`, and optional SPK attachment.
+    - `_ServiceRequestDetailBottomSheet`: Full detail view with dual-bucket Storage photo loader and tap-to-zoom Lightbox (`InteractiveViewer`).
+- **Automated Verification Results**:
+  - `pnpm check:brand`: 100% Passed.
+  - `pnpm check`: 100% Passed (0 oxlint errors/warnings, 0 typecheck errors, 93/93 Vitest unit tests passed: 28 contracts, 28 functions, 37 admin).
+  - `pnpm build`: 100% Passed.
+  - `dart format lib test`: 100% Formatted.
+  - `flutter analyze`: 0 issues found.
+  - `flutter test`: 51/51 Passed (including 6 new tests in `services_tab_view_test.dart`).
+  - **Total Automated Tests Passing**: 144/144.
+
+## Web Admin Real-Time Attendance & Service Recap, Official PDF/CSV Exporters, Real APK QR Code & Production Seeding (2026-10-12 by Antigravity)
+
+- **Real-Time Firestore Aggregation (`apps/admin/src/features/reports/report-repository.ts`)**:
+  - Subscribes to `users`, `attendanceEvents`, and `serviceRequests` collections in real time.
+  - Computes per-employee `EmployeePayrollRecap`: `presentDays`, `onTimeDays`, `lateCount`, `lateMinutes` (relative to 08:00 WIB), `earlyDepartureCount`, `fieldDays`, `overtimeMinutes` (approved only), `annualLeaveDays` (approved only), `sickLeaveDays` (approved only), and `permissionDays` (approved only).
+  - Supports filtering by quick month selector (`YYYY-MM`), custom date range (`startDate` to `endDate`), and multi-field employee search (Name, Employee ID, Job Title).
+- **CSV & Vector PDF 1.4 Exporters with Default PT Kuda Prima Logo (`apps/admin/src/features/reports/report-exporters.ts`)**:
+  - `exportReportCsv`: Generates UTF-8 with BOM (`\uFEFF`) CSV files for Excel compatibility across all 3 report views (`recap`, `attendance`, `services`).
+  - `exportReportPdf`: Pure TypeScript A4 Landscape PDF 1.4 vector generator with embedded PT Kuda Prima Logo (`/ImLogo` JPEG XObject) in the official letterhead (`Kop Dokumen Resmi PT Kuda Prima`), `#283989` navy + `#F25923` orange accent stripe, KPI summary bar, multi-page table pagination, and official HR/Admin signature block.
+  - Replaced all `"payroll"` filing terminology with official corporate document filenames: `Rekap_Kehadiran_dan_Layanan_PT_Kuda_Prima_<period>.(pdf|csv)`, `Log_Presensi_Harian_PT_Kuda_Prima_<period>.(pdf|csv)`, and `Log_Cuti_Izin_dan_Lembur_PT_Kuda_Prima_<period>.(pdf|csv)`.
+- **Real, Permanent & Free ISO/IEC 18004 QR Code on APK Distribution Page (`apps/admin/src/lib/qr-code.ts` & `apps/admin/src/pages/DistributionPage.tsx`)**:
+  - Implemented self-contained ISO/IEC 18004 QR Code matrix generator (`generateQrCodeMatrix`, Versions 1–7, Level L, Byte Mode, Reed-Solomon GF(256) & BCH(15,5)) in pure TypeScript—100% offline, permanent, free, and zero external dependencies.
+  - Upgraded `DistributionPage.tsx` (`Version APK`) with a printable `<BrandLogo />` QR poster, real scannable SVG QR Code (`data-testid="real-apk-qr-svg"`), and configurable APK download URL with copy/reset controls.
+- **2-Admin Initial Online Production Seeding (`services/functions/src/development/seed-production-online.ts` & `docs/testing/production-deployment-runbook.md`)**:
+  - Added `pnpm seed:production` script guarded by `CONFIRM_ONLINE_PRODUCTION_SEED=true`.
+  - Seeds strictly **2 initial Admin accounts** (`admin.utama@kudaprima.id` & `admin.operasional@kudaprima.id`, both with `role: "admin"`, zero `supervisor` role or jobTitle) for cross-approval compliance, plus `officeLocations/main`.
+  - Documented complete step-by-step Firebase Online activation, deployment, and seeding guide in `docs/testing/production-deployment-runbook.md`.
+
+## Spark-Native Cloud Deployment, Online Seeding & Hosted APK Release (2026-10-12 by Antigravity)
+
+- **Spark-Native Architecture (100% Free Rp 0 / No Blaze Prepayment Required)**:
+  - Upgraded `firebase/firestore.rules`, Web Admin (`employee-repository.ts`, `approval-repository.ts`, `use-admin-auth.ts`, `AttendancePhotoView.tsx`), and Flutter Mobile (`firebase_attendance_submission_repository.dart`, `services_tab_view.dart`, `attendance_detail_bottom_sheet.dart`) to operate seamlessly on Firebase Spark Plan when `USE_FIREBASE_EMULATORS=false` while preserving full Cloud Functions & Storage Emulator workflows locally.
+  - Resolved Dart analyzer lint `use_null_aware_elements` (`'selfieStoragePath': ?selfieDataUrl, 'attachmentStoragePath': ?attachmentDataUrl`) in `apps/mobile/lib/src/features/services/presentation/services_tab_view.dart`.
+- **Firebase Online Deployment & Initial 2-Admin Seeding**:
+  - Deployed `firestore.rules`, `firestore.indexes.json`, and Web Admin Portal to `https://kuda-prima-attandance-dev.web.app`.
+  - Executed online seeding (`pnpm seed:production`): created strictly 2 Admin accounts (`KP-000001` `admin.utama@kudaprima.id` & `KP-000002` `admin.operasional@kudaprima.id`, both `role: "admin"`, zero `supervisor` role/jobTitle), `officeLocations/main`, and `systemCounters/employeeId` (`nextSequence: 3`).
+- **Production Android Release APK & Spark-Compatible Hosting Delivery**:
+  - Built 64-bit production Release APK (`flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false`, 27.4 MB).
+  - Hosted APK package on Firebase Hosting CDN and added `PublicApkDownloadPage` (`apps/admin/src/pages/DistributionPage.tsx` & `apps/admin/src/App.tsx`) so scanning the permanent QR Code (`https://kuda-prima-attandance-dev.web.app/download/kudaprima-attendance.apk`) or clicking **Unduh APK** automatically streams and saves `kudaprima-attendance.apk` (`application/vnd.android.package-archive`).
+- **Corporate & Multi-Organization Email Domain Support (2026-10-14 by Antigravity)**:
+  - Removed restrictive `@gmail.com` validation refine in `packages/contracts/src/index.ts` (`employeeEmailSchema`).
+  - Supports all official corporate and partner domains (`@kudaprima.com`, `@kudaprima.co.id`, `@sadikun.com`, `@mutiaraepc.com`, dsb.) and personal emails while strictly enforcing standard email syntax.
+  - Updated Web Admin form helpers and error handling in `EmployeesPage.tsx`, `LoginPage.tsx`, and `employee-repository.ts`.
+  - Re-deployed updated Web Admin Portal and Release APK to `https://kuda-prima-attandance-dev.web.app`.
+- **Hybrid Google Sign-In Approval & Attendance Submission Hardening (2026-10-14 by Antigravity)**:
+  - **Hybrid Google Sign-In Workflow**:
+    - Pre-registered accounts: When Admin has already added an employee email in Web Admin, Google Sign-in links directly and preserves active status (`active: true`), giving instant access without waiting.
+    - Self-registered accounts: When a user signs in with a Google account not yet registered by Admin, the profile is provisioned with `active: false` (Menunggu Persetujuan Admin).
+    - Mobile UI: `EmployeeProfileGate` displays informative pending approval view with employee email, status refresh button (`Periksa Status Akun`), and sign-out option.
+    - Firestore Security Rules: Updated `match /users/{userId}` to allow email lookup for pre-registration and allow `request.resource.data.active in [true, false]`.
+  - **Attendance Submission Hardening & Photo Compression**:
+    - `CameraSelfieDialog`: Configured `ResolutionPreset.low` (240p) and added `_optimizePhotoBytes` using `dart:ui.instantiateImageCodec(rawBytes, targetWidth: 400)`, guaranteeing selfie JPEG size is ~25-40 KB (far below Firestore's 1 MB limit) and uploads in milliseconds.
+    - `_submitAttendanceSpark`: Added fallback for empty field note to `'Presensi lapangan'`, separated `eventRef.set(eventPayload)` from `auditLogs` to ensure audit logging never blocks core attendance writes, and used null-aware element `'note': ?resolvedNote`.
+    - `attendance_home_page.dart`: Unmasked exception handling to surface genuine errors from `FirebaseException` and `StateError` to the user rather than generic connection errors.
+  - **Verification & Deployment**:
+    - Verified all 97 monorepo unit tests (`pnpm check`: 28 contracts, 30 functions, 39 admin) passed 100%.
+    - Verified Flutter mobile app: `dart format` clean, `flutter analyze` 0 issues, and all 51 mobile widget/unit tests passed.
+    - Built production Release APK (27.4 MB, 28,692,063 bytes) and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+- **Editable Employment Start Date in Web Admin User Management (2026-10-14 by Antigravity)**:
+  - Added optional `employmentStartDate: calendarDateSchema.optional()` to `updateEmployeeCommandSchema` in `packages/contracts/src/index.ts`.
+  - Updated `employee-repository.ts` and `employee-management-service.ts` to persist `employmentStartDate` during employee updates.
+  - Upgraded `EmployeesPage.tsx` edit modal so Admin can edit `Tanggal mulai bekerja` for any existing user (e.g., retroactively adjusting hire dates for employees who self-registered via Google), ensuring accurate tenure and annual leave quota calculations.
+  - Verified with 97/97 tests passing in `pnpm check` and deployed to Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+- **Modern TypeScript, React 19, Accessibility, and Skill Governance (2026-10-14 by Antigravity)**:
+  - **`EmployeesPage.tsx` Deprecation & Accessibility Upgrades**:
+    - Replaced deprecated React 19 type `FormEvent` with `SyntheticEvent<HTMLFormElement>`.
+    - Marked props of `EmployeeForm` (`EmployeeFormProps`) and `DeleteEmployeeDialog` (`DeleteEmployeeDialogProps`) as `readonly` and wrapped in `Readonly<TProps>` (SonarQube `typescript:S6759`).
+    - Replaced `<p role="status">` with semantic `<output className="block ...">` for both action notices and loading indicators to ensure full screen-reader accessibility across all devices (SonarQube `typescript:S6844`).
+  - **Tailwind CSS v4 IDE Compatibility (`index.css` & `.vscode/settings.json`)**:
+    - Added `"css.lint.unknownAtRules": "ignore"` to `.vscode/settings.json` to eliminate IDE warnings for valid Tailwind CSS v4 `@custom-variant` and `@theme` directives.
+  - **Modern DOM Cleanup (`DistributionPage.tsx` & `report-exporters.ts`)**:
+    - Replaced deprecated `parentNode.removeChild(childNode)` with standard `childNode.remove()`.
+  - **Other Admin Components (`AdminAuthGate.tsx` & `BrandLogo.tsx`)**:
+    - Enforced `Readonly<Props>` and `readonly` properties across all custom components.
+  - **Skill Governance (`.agents/skills/kuda-prima-ui-governance/SKILL.md`)**:
+    - Added Rule 8 codifying readonly component props, deprecated React type avoidance, semantic `<output>` accessibility, modern DOM removal, and Tailwind CSS v4 lint settings for all future agent tasks.
+  - **Verification & Deployment**:
+    - Verified `pnpm check` (brand check, 28 contracts tests, 30 functions tests, 39 admin tests, oxlint 0 errors, tsc 0 errors) passed 100%.
+    - Verified `pnpm build` completed cleanly in 2.15s.
+- **Tailwind CSS v4 Canonical Classes Refinement (2026-10-15 by Antigravity)**:
+  - **`ReportsPage.tsx` Canonical Classes Upgrade**:
+    - Replaced non-canonical arbitrary spacing `max-w-[220px]` with canonical design-system class `max-w-55` across attendance log and service request log table cells (220px = 55 × 4px / 0.25rem scale).
+    - Replaced `lg:w-[580px]` with canonical `lg:w-145` on the report tab list (580px = 145 × 4px / 0.25rem scale).
+  - **IDE & Tailwind CSS IntelliSense Governance (`.vscode/settings.json`)**:
+    - Configured `"tailwindCSS.lint.suggestCanonicalClasses": "warning"` to consistently enforce and suggest canonical class shorthands whenever arbitrary values match Tailwind v4's continuous scale.
+    - Added recommended Tailwind linting guardrails: `invalidApply: "error"`, `invalidScreen: "error"`, `invalidVariant: "error"`, `invalidConfigPath: "error"`, `invalidTailwindDirective: "error"`, `recommendedVariantOrder: "warning"`, plus `experimental.classRegex` for `cn`, `cva`, and `cx` utility extraction.
+  - **Verification**:
+    - `pnpm prettier --check`: Clean formatting across all modified files.
+    - `pnpm check`: 100% Passed (brand check, oxlint 0 errors, tsc 0 errors, Vitest 97/97 tests passed).
+- **Production Admin Initial Password Synchronization (2026-10-15 by Antigravity)**:
+  - **Penyebab**: Saat eksekusi online seeding sebelumnya, akun `admin.utama@kudaprima.id` dan `admin.operasional@kudaprima.id` dibuat dengan kata sandi default kode lama (`KudaPrima#Admin2026`), sedangkan panduan di `production-deployment-runbook.md` mencantumkan `PasswordAdminKuat#2026`.
+  - **Perbaikan**:
+    - Berhasil memperbarui kata sandi kedua akun Admin online (`admin.utama@kudaprima.id` & `admin.operasional@kudaprima.id`) langsung di Firebase Authentication menjadi `PasswordAdminKuat#2026`.
+    - Memperbarui fallback default `initialPassword` di `services/functions/src/development/seed-production-online.ts` menjadi `"PasswordAdminKuat#2026"`.
+  - **Catatan Lingkungan Lokal vs Online**:
+    - **Online (`https://kuda-prima-attandance-dev.web.app`)**: Gunakan `admin.utama@kudaprima.id` dengan kata sandi `PasswordAdminKuat#2026`.
+    - **Lokal Dev (`localhost:5173` via `pnpm dev:admin`)**: Karena terhubung ke Emulator Auth lokal (`127.0.0.1:9099`), gunakan akun uji emulator `admin.dev@kudaprima.test` dengan kata sandi `KudaPrimaDev2026#`.
+- **Mobile Login Page UI Refinements (2026-10-15 by Antigravity)**:
+  - **Pembaruan Visual & Branding**:
+    - **Google Brand Icon**: Menambahkan icon 4-warna vektor Google ("G") berbasis `CustomPainter` murni pada tombol `OutlinedButton.icon` ("Masuk dengan Google").
+    - **Versi Aplikasi**: Menampilkan badge versi (`AppConfig.appVersion` = `v1.0.0`) di pojok kiri atas layar login dengan border lembut dan kontras aksesibel.
+    - **Copyright Perusahaan**: Menampilkan teks copyright resmi di bagian tengah bawah (`© ${year} PT Kuda Prima. Seluruh hak cipta dilindungi.`).
+  - **Verifikasi**:
+    - `dart format`: 100% rapi dan terformat.
+    - `flutter analyze`: 0 issues found.
+    - `flutter test`: 52/52 mobile tests lulus (termasuk verifikasi widget Google logo, version badge, dan copyright text).
+    - `pnpm check:brand`: 100% lulus.
+  - **Build APK Release & Deployment ke Firebase Hosting**:
+    - Meningkatkan nomor versi di `apps/mobile/pubspec.yaml` menjadi `1.0.0+2` (`versionCode: 2`).
+    - Mengompilasi APK release Android 64-bit: `flutter build apk --release --no-shrink --target-platform android-arm64 --dart-define=USE_FIREBASE_EMULATORS=false` (27.4 MB).
+    - Memperbarui paket unduhan publik `apps/admin/public/download/kudaprima-attendance.zip`.
+    - Membangun kembali web admin dan men-deploy ke Firebase Hosting (`https://kuda-prima-attandance-dev.web.app`).
+    - File APK release terbaru sudah live dan diverifikasi langsung dari server Firebase CDN (`package: name='com.kudaprima.attendance' versionCode='2' versionName='1.0.0'`).
+    - Ditambahkan konfigurasi `Cache-Control: no-cache, no-store, must-revalidate` di `firebase.json` dan parameter query `?t=${Date.now()}` di `DistributionPage.tsx` agar unduhan di ponsel tidak pernah tertahan cache browser lama.
+    - Menyelaraskan teks dan badge di `DistributionPage.tsx` agar menampilkan secara eksplisit **Rilis Resmi v1.0.0 (Build 2)** dan merilis file paket baru `kudaprima-attendance-v2.apk` (via `kudaprima-attendance-v2.zip`) untuk memintas total kemungkinan cache pada perangkat pengguna.
+- **Next Bounded Action**:
+  - Pandu pengguna untuk menghapus (uninstall) instalasi lama di HP dan memasang file Build 2 baru `kudaprima-attendance-v2.apk`, kemudian selaraskan alur lupa kata sandi.

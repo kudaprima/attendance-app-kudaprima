@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { Eye, EyeOff, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import {
   createEmployeeCommandSchema,
@@ -68,15 +68,17 @@ const roleLabels: Record<UserRole, string> = {
   technician: "Teknisi",
 };
 
+interface EmployeeFormProps {
+  readonly employee: EmployeeEntry | null;
+  readonly onClose: () => void;
+  readonly onSaved: (message: string) => void;
+}
+
 function EmployeeForm({
   employee,
   onClose,
   onSaved,
-}: {
-  employee: EmployeeEntry | null;
-  onClose: () => void;
-  onSaved: (message: string) => void;
-}) {
+}: Readonly<EmployeeFormProps>) {
   const { user } = useCurrentAdminAuth();
   const isSelf = employee?.uid === user?.uid;
   const [jobTitle, setJobTitle] = useState(employee?.jobTitle ?? "");
@@ -99,7 +101,7 @@ function EmployeeForm({
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  async function submit(event: FormEvent) {
+  async function submit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     const values = JSON.stringify({
@@ -130,6 +132,7 @@ function EmployeeForm({
           uid: employee.uid,
           expectedRevision: employee.revision,
           ...(password ? { password } : {}),
+          ...(startDate ? { employmentStartDate: startDate } : {}),
         })
       : createEmployeeCommandSchema.safeParse({
           ...fields,
@@ -139,7 +142,7 @@ function EmployeeForm({
         });
     if (!result.success) {
       setError(
-        "Lengkapi nama, Gmail, Hak Akses, Jabatan (2–100 karakter), status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
+        "Lengkapi nama, email valid, Hak Akses, Jabatan (2–100 karakter), status, tanggal mulai kerja, dan kata sandi minimal 8 karakter.",
       );
       return;
     }
@@ -212,12 +215,11 @@ function EmployeeForm({
                 maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@gmail.com"
+                placeholder="nama@kudaprima.com atau nama@gmail.com"
                 autoComplete="off"
               />
               <p className="text-xs text-muted-foreground">
-                Gunakan alamat email akun Google milik karyawan atau alamat
-                email lainnya.
+                Gunakan alamat email resmi perusahaan (@kudaprima.com, @kudaprima.co.id) atau email organisasi/karyawan lainnya.
               </p>
             </div>
             <div className="space-y-2 md:col-span-2">
@@ -353,18 +355,21 @@ function EmployeeForm({
               </label>
             )}
             {isSelf && <p className="text-sm text-muted-foreground md:col-span-2">Hak Akses dan status akun sendiri tidak dapat diubah.</p>}
-            {!employee && (
-              <div className="space-y-2">
-                <Label htmlFor="employee-start">Tanggal mulai bekerja</Label>
-                <Input
-                  id="employee-start"
-                  type="date"
-                  required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="employee-start">Tanggal mulai bekerja</Label>
+              <Input
+                id="employee-start"
+                type="date"
+                required
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              {employee && (
+                <p className="text-xs text-muted-foreground">
+                  Tanggal mulai bekerja menentukan kelayakan kuota cuti tahunan (minimal 1 tahun masa kerja).
+                </p>
+              )}
+            </div>
           </fieldset>
           {error && (
             <p role="alert" className="text-sm text-destructive">
@@ -390,15 +395,17 @@ function EmployeeForm({
   );
 }
 
+interface DeleteEmployeeDialogProps {
+  readonly employee: EmployeeEntry;
+  readonly onClose: () => void;
+  readonly onDeleted: () => void;
+}
+
 function DeleteEmployeeDialog({
   employee,
   onClose,
   onDeleted,
-}: {
-  employee: EmployeeEntry;
-  onClose: () => void;
-  onDeleted: () => void;
-}) {
+}: Readonly<DeleteEmployeeDialogProps>) {
   const [requestId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
@@ -499,6 +506,137 @@ export function EmployeesPage() {
       },
     );
   }, [reload, user?.uid]);
+  function renderContent() {
+    if (loading) {
+      return (
+        <output className="block text-muted-foreground">
+          Memuat karyawan...
+        </output>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <div role="alert" className="space-y-3">
+          <p>
+            Data karyawan belum dapat dimuat. Periksa koneksi dan hak akses.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDirectory({
+                uid: user?.uid,
+                rows: [],
+                loading: true,
+                error: false,
+              });
+              setReload((value) => value + 1);
+            }}
+          >
+            Coba Lagi
+          </Button>
+        </div>
+      );
+    }
+
+    if (employees.length === 0) {
+      return <p>Belum ada karyawan terdaftar.</p>;
+    }
+
+    if (filteredEmployees.length === 0) {
+      return (
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          Tidak ada karyawan yang cocok dengan pencarian &quot;{searchQuery}&quot;.
+        </p>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {[
+              "Employee ID",
+              "Nama Lengkap",
+              "Email",
+              "Jabatan",
+              "Status Karyawan",
+              "Mulai Kerja",
+              "Status Akun",
+            ].map((label) => (
+              <TableHead key={label}>{label}</TableHead>
+            ))}
+            {canManageEmployees && (
+              <TableHead className="text-right">Aksi</TableHead>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredEmployees.map((employee) => (
+            <TableRow key={employee.uid}>
+              <TableCell className="font-mono text-xs">
+                {employee.employeeId}
+              </TableCell>
+              <TableCell className="font-medium">
+                {employee.fullName}
+              </TableCell>
+              <TableCell>{employee.email}</TableCell>
+              <TableCell>{employee.jobTitle?.trim() || "Belum diisi"}</TableCell>
+              <TableCell>
+                {statusLabels[employee.employmentStatus]}
+              </TableCell>
+              <TableCell>{employee.employmentStartDate}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={employee.active ? "default" : "secondary"}
+                  className={
+                    employee.active
+                      ? undefined
+                      : "bg-accent text-accent-foreground"
+                  }
+                >
+                  {employee.active ? "Aktif" : "Nonaktif"}
+                </Badge>
+                {employee.managementAction && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Proses belum selesai
+                  </p>
+                )}
+              </TableCell>
+              {canManageEmployees && (
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={employee.managementAction === "delete"}
+                      aria-label={`Edit ${employee.fullName}`}
+                      onClick={() => setEditor({ employee })}
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive"
+                      disabled={employee.uid === user?.uid}
+                      aria-label={`Hapus ${employee.fullName}`}
+                      onClick={() => setDeleting(employee)}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Hapus
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -523,9 +661,9 @@ export function EmployeesPage() {
         )}
       </div>
       {notice && (
-        <p role="status" className="rounded-lg border bg-muted p-3 text-sm">
+        <output className="block rounded-lg border bg-muted p-3 text-sm">
           {notice}
-        </p>
+        </output>
       )}
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -547,118 +685,7 @@ export function EmployeesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p role="status">Memuat karyawan...</p>
-          ) : loadError ? (
-            <div role="alert" className="space-y-3">
-              <p>
-                Data karyawan belum dapat dimuat. Periksa koneksi dan hak akses.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDirectory({
-                    uid: user?.uid,
-                    rows: [],
-                    loading: true,
-                    error: false,
-                  });
-                  setReload((value) => value + 1);
-                }}
-              >
-                Coba Lagi
-              </Button>
-            </div>
-          ) : employees.length === 0 ? (
-            <p>Belum ada karyawan terdaftar.</p>
-          ) : filteredEmployees.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Tidak ada karyawan yang cocok dengan pencarian &quot;{searchQuery}&quot;.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {[
-                    "Employee ID",
-                    "Nama Lengkap",
-                    "Email",
-                    "Jabatan",
-                    "Status Karyawan",
-                    "Mulai Kerja",
-                    "Status Akun",
-                  ].map((label) => (
-                    <TableHead key={label}>{label}</TableHead>
-                  ))}
-                  {canManageEmployees && (
-                    <TableHead className="text-right">Aksi</TableHead>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.uid}>
-                    <TableCell className="font-mono text-xs">
-                      {employee.employeeId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {employee.fullName}
-                    </TableCell>
-                    <TableCell>{employee.email}</TableCell>
-                    <TableCell>{employee.jobTitle?.trim() || "Belum diisi"}</TableCell>
-                    <TableCell>
-                      {statusLabels[employee.employmentStatus]}
-                    </TableCell>
-                    <TableCell>{employee.employmentStartDate}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={employee.active ? "default" : "secondary"}
-                        className={
-                          employee.active
-                            ? undefined
-                            : "bg-accent text-accent-foreground"
-                        }
-                      >
-                        {employee.active ? "Aktif" : "Nonaktif"}
-                      </Badge>
-                      {employee.managementAction && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Proses belum selesai
-                        </p>
-                      )}
-                    </TableCell>
-                    {canManageEmployees && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={employee.managementAction === "delete"}
-                            aria-label={`Edit ${employee.fullName}`}
-                            onClick={() => setEditor({ employee })}
-                          >
-                            <Pencil className="size-3.5" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive"
-                            disabled={employee.uid === user?.uid}
-                            aria-label={`Hapus ${employee.fullName}`}
-                            onClick={() => setDeleting(employee)}
-                          >
-                            <Trash2 className="size-3.5" />
-                            Hapus
-                          </Button>
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          {renderContent()}
         </CardContent>
       </Card>
       {canManageEmployees && editor && (

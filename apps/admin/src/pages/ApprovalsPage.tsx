@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { ServiceRequestDetailDialog } from "@/components/approvals/ServiceRequestDetailDialog";
 import { AttendanceDetailDialog } from "@/components/attendance/AttendanceDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,8 @@ export function ApprovalsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedAttendance, setSelectedAttendance] =
     useState<AttendanceApprovalEntry | null>(null);
+  const [selectedService, setSelectedService] =
+    useState<ServiceRequestEntry | null>(null);
 
   useEffect(() => {
     const unsubAttendance = watchAttendanceApprovals(
@@ -201,10 +204,13 @@ export function ApprovalsPage() {
     (i) => i.type === "sick_leave" || i.type === "permission",
   );
 
-  const renderServiceAction = (item: ServiceRequestEntry, isSelf: boolean) => {
+  const renderServiceStatusOrButtons = (
+    item: ServiceRequestEntry,
+    isSelf: boolean,
+  ) => {
     if (item.status !== "pending") {
       return (
-        <span className="text-xs text-muted-foreground font-medium">
+        <span className="text-xs text-muted-foreground font-medium pl-1">
           Selesai diproses
         </span>
       );
@@ -212,14 +218,14 @@ export function ApprovalsPage() {
 
     if (isSelf) {
       return (
-        <span className="text-xs italic text-muted-foreground">
+        <span className="text-xs italic text-muted-foreground pl-1">
           🚫 Self-Approval dilarang
         </span>
       );
     }
 
     return (
-      <div className="flex justify-end gap-1.5">
+      <div className="flex items-center gap-1.5">
         <Button
           size="sm"
           variant="outline"
@@ -254,6 +260,23 @@ export function ApprovalsPage() {
           <XCircle className="size-3.5 mr-1" />
           Tolak
         </Button>
+      </div>
+    );
+  };
+
+  const renderServiceAction = (item: ServiceRequestEntry, isSelf: boolean) => {
+    return (
+      <div className="flex items-center justify-end gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => setSelectedService(item)}
+        >
+          <Eye className="size-3.5 mr-1" />
+          Detail
+        </Button>
+        {renderServiceStatusOrButtons(item, isSelf)}
       </div>
     );
   };
@@ -338,6 +361,13 @@ export function ApprovalsPage() {
     );
   };
 
+  const formatServicePeriod = (item: ServiceRequestEntry) => {
+    const start = item.startDate || item.date;
+    const end = item.endDate || start;
+    if (start === end) return start;
+    return `${start} s/d ${end}`;
+  };
+
   const renderServiceTable = (items: ServiceRequestEntry[]) => {
     if (items.length === 0) {
       return (
@@ -369,16 +399,31 @@ export function ApprovalsPage() {
                     {item.employeeId}
                   </p>
                 </TableCell>
-                <TableCell className="text-sm">
-                  <span>{item.date}</span>
-                  {item.isOver8Hours && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-2 gap-1 text-[10px]"
-                    >
-                      <AlertTriangle className="size-3" /> &gt;8 Jam
-                    </Badge>
-                  )}
+                <TableCell className="text-xs">
+                  <div className="font-medium">{formatServicePeriod(item)}</div>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                    {item.durationOrDays && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] font-medium px-1.5 py-0"
+                      >
+                        {item.durationOrDays}
+                      </Badge>
+                    )}
+                    {item.clientOrLocation && (
+                      <span className="text-[11px] text-muted-foreground">
+                        • {item.clientOrLocation}
+                      </span>
+                    )}
+                    {item.isOver8Hours && (
+                      <Badge
+                        variant="destructive"
+                        className="gap-1 text-[10px]"
+                      >
+                        <AlertTriangle className="size-3" /> &gt;8 Jam
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="max-w-xs text-xs text-muted-foreground">
                   {item.reason}
@@ -398,15 +443,29 @@ export function ApprovalsPage() {
                     </Badge>
                   )}
                   {item.status === "approved" && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-emerald-100 text-emerald-800 border-emerald-200"
-                    >
-                      Disetujui
-                    </Badge>
+                    <div>
+                      <Badge
+                        variant="secondary"
+                        className="bg-emerald-100 text-emerald-800 border-emerald-200"
+                      >
+                        Disetujui
+                      </Badge>
+                      {item.approvedByName && (
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          oleh {item.approvedByName}
+                        </p>
+                      )}
+                    </div>
                   )}
                   {item.status === "rejected" && (
-                    <Badge variant="destructive">Ditolak</Badge>
+                    <div>
+                      <Badge variant="destructive">Ditolak</Badge>
+                      {item.approvedByName && (
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          oleh {item.approvedByName}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -755,6 +814,27 @@ export function ApprovalsPage() {
         }
         onReject={(id, name) =>
           openActionDialog("attendance", id, "rejected", "Tolak Presensi", name)
+        }
+      />
+
+      <ServiceRequestDetailDialog
+        open={Boolean(selectedService)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedService(null);
+        }}
+        item={selectedService}
+        currentAdminUid={currentUid}
+        onApprove={(id, name) =>
+          openActionDialog(
+            "service",
+            id,
+            "approved",
+            "Setujui Pengajuan",
+            name,
+          )
+        }
+        onReject={(id, name) =>
+          openActionDialog("service", id, "rejected", "Tolak Pengajuan", name)
         }
       />
     </div>

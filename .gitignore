@@ -23,6 +23,8 @@ coverage/
 .packages
 .pub-cache/
 build/
+apps/admin/public/download/*.apk
+apps/admin/public/download/*.zip
 
 # Firebase
 .firebase/

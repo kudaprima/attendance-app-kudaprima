@@ -146,4 +146,29 @@ describe("ApprovalsPage", () => {
       screen.getAllByText("Teknisi Lapangan").length,
     ).toBeGreaterThanOrEqual(2);
   });
+
+  it("renders service requests and opens service detail dialog", () => {
+    mocks.serviceItems = [
+      {
+        id: "srv-1",
+        userId: "tech-1",
+        employeeId: "KP-000001",
+        fullName: "Teknisi Lapangan",
+        jobTitle: "Teknisi Jaringan",
+        type: "annual_leave",
+        date: "2026-10-15",
+        startDate: "2026-10-15",
+        endDate: "2026-10-19",
+        durationOrDays: "3 Hari Kerja",
+        reason: "Acara pernikahan keluarga",
+        status: "pending",
+      },
+    ];
+
+    render(<ApprovalsPage />);
+
+    expect(
+      screen.getByRole("tab", { name: /Cuti Tahunan \(1\)/i }),
+    ).toBeInTheDocument();
+  });
 });

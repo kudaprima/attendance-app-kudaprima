@@ -2,13 +2,15 @@ import brandLogo from "../../../../assets/branding/pt-kuda-prima-logo.png";
 
 import { cn } from "@/lib/utils";
 
+export interface BrandLogoProps {
+  readonly className?: string;
+  readonly compact?: boolean;
+}
+
 export function BrandLogo({
   className,
   compact = false,
-}: {
-  className?: string;
-  compact?: boolean;
-}) {
+}: Readonly<BrandLogoProps>) {
   return (
     <img
       src={brandLogo}

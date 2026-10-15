@@ -40,19 +40,28 @@ export function AttendancePhotoView({
   employeeName,
   className = "",
 }: Readonly<AttendancePhotoViewProps>) {
+  const directPathUrl =
+    photoStoragePath &&
+    (photoStoragePath.startsWith("data:image/") ||
+      photoStoragePath.startsWith("http://") ||
+      photoStoragePath.startsWith("https://"))
+      ? photoStoragePath
+      : null;
+  const effectiveInitialUrl = initialPhotoUrl ?? directPathUrl;
+
   const [storageUrl, setStorageUrl] = useState<string | null>(null);
   const [loadingStorage, setLoadingStorage] = useState(
-    Boolean(!initialPhotoUrl && photoStoragePath),
+    Boolean(!effectiveInitialUrl && photoStoragePath),
   );
   const [loadError, setLoadError] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const archived = isPhotoArchived(capturedAt);
-  const resolvedUrl = initialPhotoUrl ?? storageUrl;
-  const loading = !initialPhotoUrl && loadingStorage;
+  const resolvedUrl = effectiveInitialUrl ?? storageUrl;
+  const loading = !effectiveInitialUrl && loadingStorage;
 
   useEffect(() => {
-    if (initialPhotoUrl || !photoStoragePath || archived) {
+    if (effectiveInitialUrl || !photoStoragePath || archived) {
       return;
     }
 
@@ -93,7 +102,7 @@ export function AttendancePhotoView({
     return () => {
       isMounted = false;
     };
-  }, [initialPhotoUrl, photoStoragePath, archived]);
+  }, [effectiveInitialUrl, photoStoragePath, archived]);
 
   // Handle ESC key for lightbox
   useEffect(() => {

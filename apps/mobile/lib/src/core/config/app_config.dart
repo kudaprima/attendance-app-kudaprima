@@ -16,6 +16,8 @@ abstract final class AppConfig {
   static const officeGeofenceRadiusMeters = 100.0;
   static const offlineQueueLimit = Duration(hours: 12);
   static const photoRetention = Duration(days: 90);
+  static const appVersion = 'v1.0.0';
+  static const companyName = 'PT Kuda Prima';
 
   static String get firebaseEmulatorHost {
     final override = _firebaseEmulatorHostOverride.trim();
